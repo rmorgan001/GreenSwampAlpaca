@@ -2939,7 +2939,10 @@ namespace GreenSwamp.Alpaca.MountControl
                 token.ThrowIfCancellationRequested();
                 if (!axis2AtTarget)
                 {
-                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis2, skyTarget[1] + 0.1 * deltaDegree[1]);
+                    var predictor = (slewType == SlewType.SlewRaDec && Settings.AlignmentMode != AlignmentMode.AltAz)
+                        ? 0
+                        : 0.1;
+                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis2, skyTarget[1] + predictor * deltaDegree[1]);
                 }
 
                 var axis2Done = axis2AtTarget;

@@ -1425,7 +1425,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
                 Datetime = HiResDateTime.UtcNow,
                 Device = MonitorDevice.Telescope,
                 Category = MonitorCategory.Server,
-                Type = MonitorType.Information,
+                Type = MonitorType.Data,
                 Method = MethodBase.GetCurrentMethod()?.Name,
                 Thread = Environment.CurrentManagedThreadId,
                 Message = $"axis|{axis}|X szCmd|{szCmd}|Target|{targetInRadian}|TSteps|{itargetInSteps}|RSteps|{irateInSteps}"
@@ -1495,9 +1495,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
                                 _serial.DiscardInBuffer();
                                 _serial.DiscardOutBuffer();
                                 // send the request
+                                var dt = HiResDateTime.UtcNow;
                                 var cmdData = SendRequest(axis, command, cmdDataStr);
                                 // receive the response
                                 responseString = ReceiveResponse(axis, command, cmdData);
+                                // Debug.WriteLine(" " + dt.ToString("HH:mm:ss.fff") + " Command: " + cmdData +" " + HiResDateTime.UtcNow.ToString("HH:mm:ss.fff") + " Response: " + responseString);
                                 if (!string.IsNullOrEmpty(responseString))
                                 {
                                     _conErrCnt = 0;
