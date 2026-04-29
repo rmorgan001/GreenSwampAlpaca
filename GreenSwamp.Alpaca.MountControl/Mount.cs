@@ -22,15 +22,16 @@ using GreenSwamp.Alpaca.MountControl.Interfaces;
 using GreenSwamp.Alpaca.Principles;
 using GreenSwamp.Alpaca.Server.MountControl;
 using GreenSwamp.Alpaca.Shared;
-using Range = GreenSwamp.Alpaca.Principles.Range;
+using GreenSwamp.Alpaca.Shared.Transport;
+using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Ports;
 using System.Net;
 using System.Reflection;
-using System.ComponentModel;
-using GreenSwamp.Alpaca.Shared.Transport;
+using Range = GreenSwamp.Alpaca.Principles.Range;
 
 namespace GreenSwamp.Alpaca.MountControl
 {
@@ -78,7 +79,6 @@ namespace GreenSwamp.Alpaca.MountControl
         private bool _atPark;
         private double _actualAxisX;
         private double _actualAxisY;
-        private bool _isHome;
         private bool _lowVoltageEventState;
         internal bool _monitorPulse;
         private double _slewSettleTime;
@@ -91,7 +91,6 @@ namespace GreenSwamp.Alpaca.MountControl
         private bool _isPulseGuidingDec;
         internal Vector _rateMoveAxes;
         internal bool _moveAxisActive;
-        private bool _isSlewing;
         private bool _flipOnNextGoto;
         internal SlewType _slewState;
         private Exception? _lastAutoHomeError;
@@ -300,11 +299,9 @@ namespace GreenSwamp.Alpaca.MountControl
             set => _altAzm.X = value;
         }
 
-        public double SiderealTime { get; private set; }
+        public double SiderealTime => SkyServer.GetLocalSiderealTime(Settings.Longitude);
 
-        public double Lha { get; private set; }
-
-        public PointingState IsSideOfPier { get; set; } = PointingState.Unknown;
+        public double Lha => Coordinate.Ra2Ha12(RightAscensionXForm, SiderealTime);
 
         // Computed pier-side (same logic as static SkyServer.SideOfPier)
         public PointingState SideOfPier
@@ -338,6 +335,7 @@ namespace GreenSwamp.Alpaca.MountControl
             get
             {
                 if (!IsConnected) return false;
+                WaitUpdateMountPosition();
                 var home = Axes.AxesMountToApp([_homeAxes.X, _homeAxes.Y], Settings);
                 double dX = Math.Abs(_appAxes.X - home[0]);
                 dX = Math.Min(dX, 360.0 - dX);
@@ -358,7 +356,7 @@ namespace GreenSwamp.Alpaca.MountControl
             (_slewController?.IsSlewing == true) ||
             (Math.Abs(_rateMoveAxes.X) + Math.Abs(_rateMoveAxes.Y)) > 0 ||
             _moveAxisActive ||
-            _isSlewing;
+            _slewState != SlewType.SlewNone;
 
         // IsPulseGuiding — combined pulse guide state
         public bool IsPulseGuiding => _isPulseGuidingRa || _isPulseGuidingDec;
@@ -1230,7 +1228,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            WaitMountPositionUpdated();
+            WaitUpdateMountPosition(5000);
             if (trackingstate)
             {
                 var internalAltAz = Transforms.CoordTypeToInternal(azimuth, altitude);
@@ -1269,7 +1267,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            WaitMountPositionUpdated();
+            if (!WaitUpdateMountPosition(5000)) throw new TimeoutException("Timeout waiting for mount position update after SyncToTargetRaDec");
             if (trackingstate)
             {
                 if (Settings.AlignmentMode == AlignmentMode.AltAz)
@@ -1282,15 +1280,6 @@ namespace GreenSwamp.Alpaca.MountControl
                     ApplyTracking(true);
                 }
             }
-        }
-
-        /// <summary>Block until mount position is updated or timeout — instance version.</summary>
-        public void WaitMountPositionUpdated()
-        {
-            _mountPositionUpdatedEvent.Reset();
-            UpdateSteps();
-            if (!_mountPositionUpdatedEvent.Wait(5000))
-                throw new TimeoutException();
         }
 
         /// <summary>Check if RA/Dec is within sync limits — instance version.</summary>
@@ -1543,6 +1532,43 @@ namespace GreenSwamp.Alpaca.MountControl
         }
 
         /// <summary>
+        /// Waits for a single, event-driven mount position update to complete.
+        /// </summary>
+        /// <param name="waitTime">Maximum time to wait, in milliseconds. Default is 100 ms.</param>
+        /// <remarks>
+        /// This method implements an event-based update sequence:
+        /// 1. Resets the per-instance `_mountPositionUpdatedEvent`.
+        /// 2. Calls `UpdateSteps()` to request an immediate position/step update.
+        /// 3. Waits up to <paramref name="waitTime"/> milliseconds for `_mountPositionUpdatedEvent` to be signalled.
+        ///
+        /// On timeout the method does not throw; instead it logs a warning to the monitor using
+        /// `MonitorLog.LogToMonitor(...)`.
+        /// </remarks>
+        public bool WaitUpdateMountPosition(int waitTime = 100)
+        {
+            // Event-based position update waiting (per-instance event — Step 6)
+            _mountPositionUpdatedEvent.Reset();
+            UpdateSteps();
+            var result = true;
+            if (!_mountPositionUpdatedEvent.Wait(waitTime))
+            {
+                var errorItem = new MonitorEntry
+                {
+                    Datetime = HiResDateTime.UtcNow,
+                    Device = MonitorDevice.Server,
+                    Category = MonitorCategory.Server,
+                    Type = MonitorType.Warning,
+                    Method = MethodBase.GetCurrentMethod()?.Name,
+                    Thread = Environment.CurrentManagedThreadId,
+                    Message = $"Mount:{_instanceName}|Timeout waiting for position update"
+                };
+                MonitorLog.LogToMonitor(errorItem);
+                result = false;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Main get for the Steps
         /// Migrated from SkyServer.UpdateSteps()
         /// </summary>
@@ -1550,7 +1576,7 @@ namespace GreenSwamp.Alpaca.MountControl
         {
             lock (_lastUpdateLock)
             {
-                if (IsMountRunning || (_lastUpdateStepsTime.AddMilliseconds(100) < HiResDateTime.UtcNow))
+                if (IsMountRunning) // || (_lastUpdateStepsTime.AddMilliseconds(100) < HiResDateTime.UtcNow))
                 {
                     switch (Settings.Mount)
                     {
@@ -2065,23 +2091,8 @@ namespace GreenSwamp.Alpaca.MountControl
                 }
 
                 _loopCounter++;
-                SiderealTime = SkyServer.GetLocalSiderealTime(Settings.Longitude);
-                this.UpdateSteps();
-                Lha = Coordinate.Ra2Ha12(RightAscensionXForm, SiderealTime);
-                CheckSlewState();    // Updates this device's _isSlewing
-                CheckAxisLimits();   // Checks this device's axis limits
+                CheckAxisLimits();
                 CheckPecTraining();
-                _isHome = this.AtHome;
-                switch (Settings.AlignmentMode)
-                {
-                    case AlignmentMode.AltAz:
-                    case AlignmentMode.Polar:
-                    case AlignmentMode.GermanPolar:
-                        IsSideOfPier = this.SideOfPier;
-                        break;
-                    default:
-                        break;
-                }
             }
             catch (Exception ex)
             {
@@ -2142,30 +2153,6 @@ namespace GreenSwamp.Alpaca.MountControl
                 Thread = Environment.CurrentManagedThreadId,
                 Message = "Mount detected low voltage: check power supply and wiring"
             });
-        }
-
-        /// <summary>
-        /// Slew-state check
-        /// Updates this device's _isSlewing from its own _slewState and _rateMoveAxes.
-        /// </summary>
-        private void CheckSlewState()
-        {
-            var slewing = false;
-            switch (_slewState)
-            {
-                case SlewType.SlewNone:     slewing = false; break;
-                case SlewType.SlewSettle:   slewing = true;  break;
-                case SlewType.SlewMoveAxis: slewing = true;  break;
-                case SlewType.SlewRaDec:    slewing = true;  break;
-                case SlewType.SlewAltAz:    slewing = true;  break;
-                case SlewType.SlewPark:     slewing = true;  break;
-                case SlewType.SlewHome:     slewing = true;  break;
-                case SlewType.SlewHandpad:  slewing = true;  break;
-                case SlewType.SlewComplete: _slewState = SlewType.SlewNone; break;
-                default:                    _slewState = SlewType.SlewNone; break;
-            }
-            if ((Math.Abs(_rateMoveAxes.X) + Math.Abs(_rateMoveAxes.Y)) > 0) { slewing = true; }
-            _isSlewing = slewing;
         }
 
         /// <summary>
@@ -2398,13 +2385,11 @@ namespace GreenSwamp.Alpaca.MountControl
             if (primaryActive || secondaryActive)
             {
                 _moveAxisActive = true;
-                _isSlewing = true;
                 _slewState = SlewType.SlewMoveAxis;
             }
             if (!primaryActive && !secondaryActive)
             {
                 _moveAxisActive = false;
-                _isSlewing = false;
                 _slewState = SlewType.SlewNone;
                 if (Tracking) SkyPredictor.Set(RightAscensionXForm, DeclinationXForm);
             }
@@ -2873,10 +2858,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 var loopTimer = Stopwatch.StartNew();
 
                 // Event-based position update waiting (per-instance event — Step 6)
-                _mountPositionUpdatedEvent.Reset();
-                UpdateSteps();
-
-                if (!_mountPositionUpdatedEvent.Wait(5000, token))
+                if (!WaitUpdateMountPosition(5000))
                 {
                     var errorItem = new MonitorEntry
                     {
@@ -2996,24 +2978,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     var loopTimer = Stopwatch.StartNew();
 
                     // Event-based position update waiting
-                    _mountPositionUpdatedEvent.Reset();
-                    UpdateSteps();
-
-                    if (!_mountPositionUpdatedEvent.Wait(5000, token))
-                    {
-                        var errorItem = new MonitorEntry
-                        {
-                            Datetime = HiResDateTime.UtcNow,
-                            Device = MonitorDevice.Server,
-                            Category = MonitorCategory.Server,
-                            Type = MonitorType.Error,
-                            Method = MethodBase.GetCurrentMethod()?.Name,
-                            Thread = Environment.CurrentManagedThreadId,
-                            Message = $"Mount:{_instanceName}|Timeout waiting for position update in pulse goto"
-                        };
-                        MonitorLog.LogToMonitor(errorItem);
-                        throw new TimeoutException($"Mount position update timeout in pulse goto (Mount: {_instanceName})");
-                    }
+                    if (!WaitUpdateMountPosition(5000)) throw new TimeoutException($"Mount position update timeout in pulse goto (Mount: {_instanceName})");
 
                     if (maxTries >= 5) { break; }
                     maxTries++;

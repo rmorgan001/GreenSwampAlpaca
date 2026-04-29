@@ -1,4 +1,4 @@
-using ASCOM;
+﻿using ASCOM;
 using ASCOM.Common.DeviceInterfaces;
 using ASCOM.Tools;
 using GreenSwamp.Alpaca.Principles;
@@ -91,6 +91,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             get
             {
                 CheckCapability(_mount.Settings.CanAltAz, "Altitude", false);
+                _mount.WaitUpdateMountPosition();
                 var r = _mount.Altitude;
 
                 var monitorItem = new MonitorEntry
@@ -164,6 +165,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             get
             {
                 CheckCapability(_mount.Settings.CanAltAz, "Azimuth", false);
+                _mount.WaitUpdateMountPosition();
                 var r = _mount.Azimuth;
 
                 var monitorItem = new MonitorEntry
@@ -440,6 +442,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             get
             {
                 CheckCapability(_mount.Settings.CanEquatorial, "Declination", false);
+                _mount.WaitUpdateMountPosition();
                 var dec = _mount.DeclinationXForm;
 
                 var monitorItem = new MonitorEntry
@@ -510,6 +513,9 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
                 string msg = null;
                 try
                 {
+                    // Update all dynamic properties
+                    _mount.WaitUpdateMountPosition();
+
                     // Create an array list to hold the IStateValue entries
                     var deviceState = new List<StateValue>();
 
@@ -729,6 +735,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             get
             {
                 CheckCapability(_mount.Settings.CanEquatorial, "RightAscension", false);
+                _mount.WaitUpdateMountPosition();
                 var ra = _mount.RightAscensionXForm;
 
                 var monitorItem = new MonitorEntry
@@ -1620,7 +1627,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             CheckAltAzSync(Altitude, Azimuth, "SyncToAltAz");
             _mount.AtPark = false;
             _mount.SyncToAltAzm(Azimuth, Altitude);
-            _mount.WaitMountPositionUpdated();
+            _mount.WaitUpdateMountPosition();
         }
 
         public void SyncToCoordinates(double RightAscension, double Declination)
@@ -1650,7 +1657,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
 
             _mount.AtPark = false;
             _mount.SyncToTargetRaDec();
-            _mount.WaitMountPositionUpdated();
+            _mount.WaitUpdateMountPosition();
         }
 
         public void SyncToTarget()
@@ -1678,7 +1685,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
 
             _mount.AtPark = false;
             _mount.SyncToTargetRaDec();
-            _mount.WaitMountPositionUpdated();
+            _mount.WaitUpdateMountPosition();
         }
 
         #region Private Methods
