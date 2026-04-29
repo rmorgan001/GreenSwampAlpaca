@@ -1237,7 +1237,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"RA|{RightAscension}|Dec|{Declination}" };
             MonitorLog.LogToMonitor(monitorItem);
 
-            var raDec = Transforms.CoordTypeToInternal(RightAscension, Declination);
+            var raDec = Transforms.CoordTypeToInternal(RightAscension, Declination, settings: _mount.Settings);
             CheckRange(raDec.X, 0, 24, "SlewToCoordinatesAsync", "RightAscension");
             CheckRange(raDec.Y, -90, 90, "SlewToCoordinatesAsync", "Declination");
             CheckReachable(raDec.X, raDec.Y, SlewType.SlewRaDec);
@@ -1463,7 +1463,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
 
             TargetRightAscension = RightAscension;
             TargetDeclination = Declination;
-            var raDec = Transforms.CoordTypeToInternal(RightAscension, Declination);
+            var raDec = Transforms.CoordTypeToInternal(RightAscension, Declination, settings: _mount.Settings);
 
             // Use SlewController via SlewRaDec (blocks until complete)
             _mount.SlewRaDec(raDec.X, raDec.Y, true);
@@ -1494,7 +1494,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
 
             TargetRightAscension = RightAscension;
             TargetDeclination = Declination;
-            var raDec = Transforms.CoordTypeToInternal(RightAscension, Declination);
+            var raDec = Transforms.CoordTypeToInternal(RightAscension, Declination, settings: _mount.Settings);
 
             // Enable tracking before starting slew
             // _mount.CycleOnTracking(true);
@@ -1529,7 +1529,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             CheckTracking(true, "SlewToTarget");
             CheckReachable(ra, dec, SlewType.SlewRaDec);
 
-            var xy = Transforms.CoordTypeToInternal(ra, dec);
+            var xy = Transforms.CoordTypeToInternal(ra, dec, settings: _mount.Settings);
 
             // Use SlewController via SlewRaDec (blocks until complete)
             _mount.SlewRaDec(xy.X, xy.Y, true);
@@ -1561,7 +1561,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             CheckParked("SlewToTargetAsync");
             CheckReachable(ra, dec, SlewType.SlewRaDec);
 
-            var xy = Transforms.CoordTypeToInternal(ra, dec);
+            var xy = Transforms.CoordTypeToInternal(ra, dec, settings: _mount.Settings);
 
             // Enable tracking before starting slew
             if (!Tracking) Tracking = true;
@@ -1652,8 +1652,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
 
             _mount.TargetDec = Declination;
             _mount.TargetRa = RightAscension;
-            var a = Transforms.CoordTypeToInternal(RightAscension, Declination);
-            CheckRaDecSync(a.X, a.Y, "SyncToCoordinates");
+            var a = Transforms.CoordTypeToInternal(RightAscension, Declination, settings: _mount.Settings);
 
             _mount.AtPark = false;
             _mount.SyncToTargetRaDec();
@@ -1680,7 +1679,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             CheckParked("SyncToTarget");
             CheckTracking(true, "SyncToTarget");
 
-            var a = Transforms.CoordTypeToInternal(_mount.TargetRa, _mount.TargetDec);  
+            var a = Transforms.CoordTypeToInternal(_mount.TargetRa, _mount.TargetDec, settings: _mount.Settings);  
             CheckRaDecSync(a.X, a.Y, "SyncToTarget");
 
             _mount.AtPark = false;

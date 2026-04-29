@@ -352,7 +352,7 @@ namespace GreenSwamp.Alpaca.MountControl
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis2, sync[1]);
                             break;
                         case MountTaskName.SyncTarget:
-                            var a = Transforms.CoordTypeToInternal(mount.TargetRa, mount.TargetDec);
+                            var a = Transforms.CoordTypeToInternal(mount.TargetRa, mount.TargetDec, settings: settings);
                             var targetR = Axes.RaDecToAxesXy([a.X, a.Y], settings);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis1, targetR[0]);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis2, targetR[1]);
@@ -565,7 +565,7 @@ namespace GreenSwamp.Alpaca.MountControl
                             MonitorLog.LogToMonitor(monitorItem);
                             break;
                         case MountTaskName.SyncTarget:
-                            var a = Transforms.CoordTypeToInternal(instance?.TargetRa ?? double.NaN, instance?.TargetDec ?? double.NaN);
+                            var a = Transforms.CoordTypeToInternal(instance?.TargetRa ?? double.NaN, instance?.TargetDec ?? double.NaN, settings: settings);
                             var targetR = Axes.RaDecToAxesXy([a.X, a.Y], settings);
                             _ = new SkySyncAxis(0, q, Axis.Axis1, targetR[0]);
                             _ = new SkySyncAxis(0, q, Axis.Axis2, targetR[1]);

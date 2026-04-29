@@ -41,12 +41,12 @@ namespace GreenSwamp.Alpaca.Server.MountControl
         /// <param name="to"></param>
         /// /// <param name="log"></param>
         /// <returns></returns>
-        public static Vector ConvertRaDec(double rightAscension, double declination, double latitude, double longitude, double elevation, string from, string to, bool log = false)
+        public static Vector ConvertRaDec(double rightAscension, double declination, double latitude, double longitude, double elevation, string from, string to, bool refraction = false, bool log = false)
         {
             xForm.SiteElevation = elevation;
             xForm.SiteLatitude = latitude;
             xForm.SiteLongitude = longitude;
-            xForm.Refraction = MountRegistry.GetInstance(0)?.Settings?.Refraction ?? default;
+            xForm.Refraction = refraction;
             switch (from.ToLower())
             {
                 case "j2000":
@@ -91,7 +91,7 @@ namespace GreenSwamp.Alpaca.Server.MountControl
                     Type = MonitorType.Information,
                     Method = MethodBase.GetCurrentMethod()?.Name,
                     Thread = Environment.CurrentManagedThreadId,
-                    Message = $"lat:{latitude}|long:{longitude}|Ref:{MountRegistry.GetInstance(0)?.Settings?.Refraction ?? default}|Ele:{elevation}|ra/dec:{rightAscension},{declination}|{r.X},{r.Y}"
+                    Message = $"lat:{latitude}|long:{longitude}|Ref:{refraction}|Ele:{elevation}|ra/dec:{rightAscension},{declination}|{r.X},{r.Y}"
                 };
                 MonitorLog.LogToMonitor(monitorItem);
             }
@@ -108,7 +108,7 @@ namespace GreenSwamp.Alpaca.Server.MountControl
         /// <returns></returns>
         public static Vector CoordTypeToInternal(double rightAscension, double declination, bool log = false, SkySettings? settings = null)
         {
-            var s = settings ?? MountRegistry.GetInstance(0)?.Settings;
+            var s = settings;
             //internal is already to-po so return it
             if (s?.EquatorialCoordinateType == EquatorialCoordinateType.Topocentric) return new Vector(rightAscension, declination);
 
@@ -165,7 +165,7 @@ namespace GreenSwamp.Alpaca.Server.MountControl
         /// <returns></returns>
         public static Vector InternalToCoordType(double rightAscension, double declination, bool log = false, SkySettings? settings = null)
         {
-            var s = settings ?? MountRegistry.GetInstance(0)?.Settings;
+            var s = settings;
             var radec = new Vector();
             //internal is already to-po so return it
             if (s?.EquatorialCoordinateType == EquatorialCoordinateType.Topocentric) return new Vector(rightAscension, declination);

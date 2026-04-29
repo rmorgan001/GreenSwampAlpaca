@@ -105,9 +105,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             // to the constructor. Thus we switch() below, and each case should 
             // initialize the array for the rate for the selected axis.
             //
-            // Safety check: Use settings fallback if SlewSpeedEight not yet initialized
-            // (e.g., if AxisRates is queried before mount connects)
-            var speedEight = instance?.SlewSpeedEight ?? MountRegistry.GetInstance(0)?.SlewSpeedEight ?? 4.0;
+            var speedEight = instance?.SlewSpeedEight ?? 4.0;
             var maxSlewRate = speedEight > 0 ? speedEight : 4.0;
 
             switch (axis)
