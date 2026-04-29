@@ -52,15 +52,15 @@ namespace GreenSwamp.Alpaca.MountControl
             _rateMoveAxes.Y = 0.0;
             RateRa = 0.0;
             RateDec = 0.0;
-            if (!SkyServer.AxesStopValidate(this))
+            if (!AxesStopValidate())
             {
                 switch (Settings.Mount)
                 {
                     case MountType.Simulator:
-                        SkyServer.SimTasks(MountTaskName.StopAxes, this);
+                        SimTasks(MountTaskName.StopAxes);
                         break;
                     case MountType.SkyWatcher:
-                        SkyServer.SkyTasks(MountTaskName.StopAxes, this);
+                        SkyTasks(MountTaskName.StopAxes);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -122,10 +122,10 @@ namespace GreenSwamp.Alpaca.MountControl
             switch (Settings.Mount)
             {
                 case MountType.Simulator:
-                    SkyServer.SimTasks(MountTaskName.StopAxes, this);
+                    SimTasks(MountTaskName.StopAxes);
                     break;
                 case MountType.SkyWatcher:
-                    SkyServer.SkyTasks(MountTaskName.StopAxes, this);
+                    SkyTasks(MountTaskName.StopAxes);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -306,13 +306,13 @@ namespace GreenSwamp.Alpaca.MountControl
             switch (Settings.Mount)
             {
                 case MountType.Simulator:
-                    SkyServer.SimTasks(MountTaskName.StopAxes, this);
+                    SimTasks(MountTaskName.StopAxes);
                     var mq = SimQueue!;
                     _ = new CmdAxisToDegrees(mq.NewId, mq, Axis.Axis1, position[0]);
                     _ = new CmdAxisToDegrees(mq.NewId, mq, Axis.Axis2, position[1]);
                     break;
                 case MountType.SkyWatcher:
-                    SkyServer.SkyTasks(MountTaskName.StopAxes, this);
+                    SkyTasks(MountTaskName.StopAxes);
                     var sq = SkyQueue!;
                     _ = new SkySetAxisPosition(sq.NewId, sq, Axis.Axis1, position[0]);
                     _ = new SkySetAxisPosition(sq.NewId, sq, Axis.Axis2, position[1]);

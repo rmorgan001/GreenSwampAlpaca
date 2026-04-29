@@ -561,7 +561,7 @@ namespace GreenSwamp.Alpaca.MountControl
         internal static double[] AxesXyToRaDec(IReadOnlyList<double> axes, SkySettings settings, double? lst = null)
         {
             double[] raDec = [axes[0], axes[1]];
-            double lstVal = lst ?? SkyServer.GetLocalSiderealTime(settings.Longitude);
+            double lstVal = lst ?? Time.Lst(JDate.Epoch2000Days(), JDate.Ole2Jd(HiResDateTime.UtcNow), false, settings.Longitude);
             switch (settings.AlignmentMode)
             {
                 case AlignmentMode.AltAz:
@@ -599,7 +599,7 @@ namespace GreenSwamp.Alpaca.MountControl
         internal static double[] RaDecToAxesXy(IReadOnlyList<double> raDec, SkySettings settings, double? lst = null,
             Func<double[], double[]?>? selectAlternatePosition = null)
         {
-            double lstVal = lst ?? SkyServer.GetLocalSiderealTime(settings.Longitude);
+            double lstVal = lst ?? Time.Lst(JDate.Epoch2000Days(), JDate.Ole2Jd(HiResDateTime.UtcNow), false, settings.Longitude);
             return RaDecToAxesXyCore(raDec, useLst: true, lstVal, settings, selectAlternatePosition: selectAlternatePosition);
         }
 
@@ -798,7 +798,7 @@ namespace GreenSwamp.Alpaca.MountControl
             double? lst = null)
         {
             var axes = new[] { raDec[0], raDec[1] };
-            double lstVal = lst ?? SkyServer.GetLocalSiderealTime(settings.Longitude);
+            double lstVal = lst ?? Time.Lst(JDate.Epoch2000Days(), JDate.Ole2Jd(HiResDateTime.UtcNow), false, settings.Longitude);
 
             switch (settings.AlignmentMode)
             {

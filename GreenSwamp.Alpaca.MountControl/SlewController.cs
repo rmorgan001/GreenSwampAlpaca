@@ -327,7 +327,7 @@ namespace GreenSwamp.Alpaca.MountControl
             // Stop any residual motion from previous operation
             if (operation.Mount._slewState != SlewType.SlewNone)
             {
-                var stopped = SkyServer.AxesStopValidate(operation.Mount);
+                var stopped = operation.Mount.AxesStopValidate();
                 if (!stopped)
                 {
                     await ForceStopAxesAsync(operation.Mount);

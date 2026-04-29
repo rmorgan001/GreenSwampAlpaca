@@ -23,8 +23,10 @@ using GreenSwamp.Alpaca.Mount.Commands;
 using GreenSwamp.Alpaca.Mount.Simulator;
 using GreenSwamp.Alpaca.Mount.SkyWatcher;
 using GreenSwamp.Alpaca.Principles;
+using GreenSwamp.Alpaca.Server.MountControl;
 using GreenSwamp.Alpaca.Shared;
 using System.Reflection;
+using Range = GreenSwamp.Alpaca.Principles.Range;
 
 namespace GreenSwamp.Alpaca.MountControl
 {
@@ -78,13 +80,13 @@ namespace GreenSwamp.Alpaca.MountControl
                 case TrackingMode.Off:
                     break;
                 case TrackingMode.AltAz:
-                    rateChange = SkyServer.CurrentTrackingRate(this);
+                    rateChange = CurrentTrackingRate();
                     break;
                 case TrackingMode.EqN:
-                    rateChange = SkyServer.CurrentTrackingRate(this);
+                    rateChange = CurrentTrackingRate();
                     break;
                 case TrackingMode.EqS:
-                    rateChange = -SkyServer.CurrentTrackingRate(this);
+                    rateChange = -CurrentTrackingRate();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -98,7 +100,7 @@ namespace GreenSwamp.Alpaca.MountControl
                         case AlignmentMode.AltAz:
                             if (rateChange != 0)
                             {
-                                SkyServer.SetAltAzTrackingRates(AltAzTrackingType.Predictor, this);
+                                SetAltAzTrackingRates(AltAzTrackingType.Predictor);
                                 if (_altAzTrackingTimer?.IsRunning != true) StartAltAzTrackingTimerInternal();
                             }
                             else
@@ -123,12 +125,12 @@ namespace GreenSwamp.Alpaca.MountControl
                                 if (_rateMoveAxes.X == 0.0)
                                     _ = new CmdAxisTracking(mq.NewId, mq, Axis.Axis1, rateChange);
                                 var raRate = currentTrackingMode != TrackingMode.Off
-                                    ? SkyServer.GetRaRateDirection(RateRa, Settings) : 0.0;
+                                    ? GetRaRateDirection(RateRa) : 0.0;
                                 _ = new CmdRaDecRate(mq.NewId, mq, Axis.Axis1, raRate);
                                 if (_rateMoveAxes.Y == 0.0)
                                 {
                                     var decRate = currentTrackingMode != TrackingMode.Off
-                                        ? SkyServer.GetDecRateDirection(RateDec, this) : 0.0;
+                                        ? GetDecRateDirection(RateDec) : 0.0;
                                     _ = new CmdRaDecRate(mq.NewId, mq, Axis.Axis2, decRate);
                                 }
                             }
@@ -144,7 +146,7 @@ namespace GreenSwamp.Alpaca.MountControl
                         case AlignmentMode.AltAz:
                             if (rateChange != 0)
                             {
-                                SkyServer.SetAltAzTrackingRates(AltAzTrackingType.Predictor, this);
+                                SetAltAzTrackingRates(AltAzTrackingType.Predictor);
                                 if (_altAzTrackingTimer?.IsRunning != true) StartAltAzTrackingTimerInternal();
                             }
                             else
@@ -196,9 +198,9 @@ namespace GreenSwamp.Alpaca.MountControl
             change += _skyTrackingRate;
             change += SkyHcRate;
             change.X += _rateMoveAxes.X;
-            change.X += Settings.AlignmentMode != AlignmentMode.AltAz ? SkyServer.GetRaRateDirection(RateRa, Settings) : 0;
+            change.X += Settings.AlignmentMode != AlignmentMode.AltAz ? GetRaRateDirection(RateRa) : 0;
             change.Y += _rateMoveAxes.Y;
-            change.Y += Settings.AlignmentMode != AlignmentMode.AltAz ? SkyServer.GetDecRateDirection(RateDec, this) : 0;
+            change.Y += Settings.AlignmentMode != AlignmentMode.AltAz ? GetDecRateDirection(RateDec) : 0;
             CheckAxisLimits();
             var monitorItem = new MonitorEntry
             {
@@ -216,7 +218,7 @@ namespace GreenSwamp.Alpaca.MountControl
 
         internal void SetGuideRates()
         {
-            var rate = SkyServer.CurrentTrackingRate(this);
+            var rate = CurrentTrackingRate();
             GuideRateRa = rate * Settings.GuideRateOffsetX;
             GuideRateDec = rate * Settings.GuideRateOffsetY;
             var monitorItem = new MonitorEntry
@@ -284,6 +286,329 @@ namespace GreenSwamp.Alpaca.MountControl
                 Message = $"{_slewSpeedOne}|{_slewSpeedTwo}|{_slewSpeedThree}|{_slewSpeedFour}|{_slewSpeedFive}|{_slewSpeedSix}|{_slewSpeedSeven}|{_slewSpeedEight}"
             };
             MonitorLog.LogToMonitor(monitorItem);
+        }
+
+        #endregion
+
+        #region Tracking Rate Helpers (formerly SkyServer.TelescopeAPI)
+
+        /// <summary>Calculates the current RA tracking rate (arc seconds per second).</summary>
+        internal double CurrentTrackingRate()
+        {
+            double rate = Settings.TrackingRate switch
+            {
+                DriveRate.Sidereal => Settings.SiderealRate,
+                DriveRate.Solar    => Settings.SolarRate,
+                DriveRate.Lunar    => Settings.LunarRate,
+                DriveRate.King     => Settings.KingRate,
+                _                  => throw new ArgumentOutOfRangeException()
+            };
+
+            if (rate < SiderealRate * 2 & rate != 0)
+                rate += _trackingOffsetRate.X;
+
+            if (Settings.PecOn && Tracking && _pecBinNow != null && !double.IsNaN(_pecBinNow.Item2))
+                if (Math.Abs(_pecBinNow.Item2 - 1) < .04)
+                    rate *= _pecBinNow.Item2;
+
+            rate /= 3600;
+            if (Settings.RaTrackingOffset <= 0) { return rate; }
+            var offsetRate = rate * (Convert.ToDouble(Settings.RaTrackingOffset) / 100000);
+            rate += offsetRate;
+            return rate;
+        }
+
+        /// <summary>Update AltAz tracking rates including delta for tracking error.</summary>
+        internal void SetAltAzTrackingRates(AltAzTrackingType altAzTrackingType)
+        {
+            switch (altAzTrackingType)
+            {
+                case AltAzTrackingType.Predictor:
+                    double[] delta = [0.0, 0.0];
+                    if (SkyPredictor.RaDecSet)
+                    {
+                        WaitUpdateMountPosition(500);
+                        var steps = _steps;
+                        DateTime nextTime = HiResDateTime.UtcNow.AddMilliseconds(Settings.AltAzTrackingUpdateInterval);
+                        var raDec = SkyPredictor.GetRaDecAtTime(nextTime);
+                        var internalRaDec = Transforms.CoordTypeToInternal(raDec[0], raDec[1], settings: Settings);
+                        var skyTarget = Coordinate.RaDec2AltAz(internalRaDec.X, internalRaDec.Y, GetLocalSiderealTime(nextTime), Settings.Latitude);
+                        Array.Reverse(skyTarget);
+                        // GetSyncedAxes is a pass-through; inlined here
+                        var rawPositions = new[] { ConvertStepsToDegrees(steps[0], 0), ConvertStepsToDegrees(steps[1], 1) };
+                        delta[0] = Range.Range180((skyTarget[0] - rawPositions[0]));
+                        delta[1] = Range.Range180((skyTarget[1] - rawPositions[1]));
+                        const double milliSecond = 0.001;
+                        _skyTrackingRate = new Vector(
+                            delta[0] / (Settings.AltAzTrackingUpdateInterval * milliSecond),
+                            delta[1] / (Settings.AltAzTrackingUpdateInterval * milliSecond)
+                        );
+                        var monitorItem = new MonitorEntry
+                        {
+                            Datetime = HiResDateTime.UtcNow,
+                            Device = MonitorDevice.Server,
+                            Category = MonitorCategory.Server,
+                            Type = MonitorType.Data,
+                            Method = MethodBase.GetCurrentMethod()?.Name,
+                            Thread = Environment.CurrentManagedThreadId,
+                            Message = $"Ra:{internalRaDec.X}|Dec:{internalRaDec.Y}|Azimuth delta:{delta[0]}|Altitude delta:{delta[1]}"
+                        };
+                        MonitorLog.LogToMonitor(monitorItem);
+                    }
+                    break;
+            }
+        }
+
+        /// <summary>Set mechanical direction for dec rate. Positive direction means go mechanical north.</summary>
+        internal double GetDecRateDirection(double rate)
+        {
+            bool moveNorth = rate > 0;
+            bool isEast = SideOfPier == PointingState.Normal;
+            bool isWest = SideOfPier == PointingState.ThroughThePole;
+            bool invert = false;
+            rate = Math.Abs(rate);
+
+            switch (Settings.Mount)
+            {
+                case MountType.Simulator:
+                case MountType.SkyWatcher:
+                    switch (Settings.AlignmentMode)
+                    {
+                        case AlignmentMode.AltAz:
+                            break;
+                        case AlignmentMode.Polar:
+                            if (isEast || isWest)
+                            {
+                                if (Settings.Mount == MountType.Simulator)
+                                {
+                                    if (Settings.Latitude < 0)
+                                        invert = (isEast && moveNorth) || (isWest && !moveNorth);
+                                    else
+                                        invert = (isEast && !moveNorth) || (isWest && moveNorth);
+                                }
+                                else
+                                {
+                                    if (Settings.Latitude < 0)
+                                        invert = (isEast && moveNorth) || (isWest && !moveNorth);
+                                    else
+                                        invert = (isEast && !moveNorth) || (isWest && moveNorth);
+                                    if (Settings.PolarMode == PolarMode.Left) invert = !invert;
+                                }
+                            }
+                            break;
+                        case AlignmentMode.GermanPolar:
+                            if (isEast || isWest)
+                            {
+                                if (Settings.Mount == MountType.Simulator)
+                                {
+                                    if (Settings.Latitude < 0)
+                                        invert = (isEast && moveNorth) || (isWest && !moveNorth);
+                                    else
+                                        invert = (isEast && !moveNorth) || (isWest && moveNorth);
+                                }
+                                else
+                                {
+                                    if (Settings.Latitude < 0)
+                                        invert = (isEast && moveNorth) || (isWest && !moveNorth);
+                                    else
+                                        invert = (isEast && moveNorth) || (isWest && !moveNorth);
+                                }
+                            }
+                            break;
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            if (invert) rate = -rate;
+            return rate;
+        }
+
+        /// <summary>Set mechanical direction for ra rate. Positive direction means go mechanical east.</summary>
+        internal double GetRaRateDirection(double rate)
+        {
+            var east = rate > 0;
+            rate = Math.Abs(rate);
+
+            if (Settings.Latitude < 0)
+            {
+                if (!east) { rate = -rate; }
+            }
+            else
+            {
+                if (east) { rate = -rate; }
+            }
+
+            return rate;
+        }
+
+        /// <summary>Pulse guide command on this mount instance.</summary>
+        public void PulseGuide(GuideDirection direction, int duration, double altRate)
+        {
+            if (!IsMountRunning) throw new Exception("Mount not running");
+
+            var monitorItem = new MonitorEntry
+            { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Server, Category = MonitorCategory.Mount, Type = MonitorType.Data, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"{direction}|{duration}" };
+            MonitorLog.LogToMonitor(monitorItem);
+
+            var useAltRate = Math.Abs(altRate) > 0;
+
+            switch (direction)
+            {
+                case GuideDirection.North:
+                case GuideDirection.South:
+                    if (duration == 0)
+                    {
+                        IsPulseGuidingDec = false;
+                        return;
+                    }
+                    IsPulseGuidingDec = true;
+                    _hcPrevMoveDec = null;
+                    var decGuideRate = useAltRate ? altRate : Math.Abs(GuideRateDec);
+                    switch (Settings.AlignmentMode)
+                    {
+                        case AlignmentMode.AltAz:
+                            if (direction == GuideDirection.South) { decGuideRate = -decGuideRate; }
+                            break;
+                        case AlignmentMode.Polar:
+                            if (SideOfPier == PointingState.Normal)
+                            {
+                                if (direction == GuideDirection.North) { decGuideRate = -decGuideRate; }
+                            }
+                            else
+                            {
+                                if (direction == GuideDirection.South) { decGuideRate = -decGuideRate; }
+                            }
+                            if (Settings.PolarMode == PolarMode.Left) decGuideRate = -decGuideRate; // Swap direction because primary OTA is flipped
+                            break;
+                        case AlignmentMode.GermanPolar:
+                            if (SideOfPier == PointingState.Normal)
+                            {
+                                if (direction == GuideDirection.North) { decGuideRate = -decGuideRate; }
+                            }
+                            else
+                            {
+                                if (direction == GuideDirection.South) { decGuideRate = -decGuideRate; }
+                            }
+                            break;
+                    }
+
+                    // Direction switched add backlash compensation
+                    var decBacklashAmount = 0;
+                    if (direction != _lastDecDirection) decBacklashAmount = Settings.DecBacklash;
+                    _lastDecDirection = direction;
+                    _ctsPulseGuideDec?.Cancel();
+                    _ctsPulseGuideDec?.Dispose();
+                    _ctsPulseGuideDec = new CancellationTokenSource();
+
+                    switch (Settings.Mount)
+                    {
+                        case MountType.Simulator:
+                        {
+                            var mq = SimQueue!;
+                            switch (Settings.AlignmentMode)
+                            {
+                                case AlignmentMode.AltAz:
+                                    PulseGuideAltAz((int)Axis.Axis2, decGuideRate, duration, SimPulseGoto, _ctsPulseGuideDec.Token);
+                                    break;
+                                case AlignmentMode.Polar:
+                                    if (!(Settings.Latitude < 0)) decGuideRate = decGuideRate > 0 ? -Math.Abs(decGuideRate) : Math.Abs(decGuideRate);
+                                    _ = new CmdAxisPulse(mq.NewId, mq, Axis.Axis2, decGuideRate, duration, _ctsPulseGuideDec.Token);
+                                    break;
+                                case AlignmentMode.GermanPolar:
+                                    if (!(Settings.Latitude < 0)) decGuideRate = decGuideRate > 0 ? -Math.Abs(decGuideRate) : Math.Abs(decGuideRate);
+                                    _ = new CmdAxisPulse(mq.NewId, mq, Axis.Axis2, decGuideRate, duration, _ctsPulseGuideDec.Token);
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        }
+                        case MountType.SkyWatcher:
+                        {
+                            var sq = SkyQueue!;
+                            switch (Settings.AlignmentMode)
+                            {
+                                case AlignmentMode.AltAz:
+                                    PulseGuideAltAz((int)Axis.Axis2, decGuideRate, duration, SkyPulseGoto, _ctsPulseGuideDec.Token);
+                                    break;
+                                case AlignmentMode.Polar:
+                                    if (!(Settings.Latitude < 0)) decGuideRate = decGuideRate > 0 ? -Math.Abs(decGuideRate) : Math.Abs(decGuideRate);
+                                    _ = new SkyAxisPulse(sq.NewId, sq, Axis.Axis2, decGuideRate, duration, decBacklashAmount, _ctsPulseGuideDec.Token);
+                                    break;
+                                case AlignmentMode.GermanPolar:
+                                    _ = new SkyAxisPulse(sq.NewId, sq, Axis.Axis2, decGuideRate, duration, decBacklashAmount, _ctsPulseGuideDec.Token);
+                                    break;
+                                default:
+                                    break;
+                            }
+                            break;
+                        }
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                    break;
+                case GuideDirection.East:
+                case GuideDirection.West:
+                    if (duration == 0)
+                    {
+                        IsPulseGuidingRa = false;
+                        return;
+                    }
+                    IsPulseGuidingRa = true;
+                    _hcPrevMoveRa = null;
+                    var raGuideRate = useAltRate ? altRate : Math.Abs(GuideRateRa);
+                    if (Settings.AlignmentMode != AlignmentMode.AltAz)
+                    {
+                        if (Settings.Latitude < 0)
+                        {
+                            if (direction == GuideDirection.West) { raGuideRate = -raGuideRate; }
+                        }
+                        else
+                        {
+                            if (direction == GuideDirection.East) { raGuideRate = -raGuideRate; }
+                        }
+                    }
+                    else
+                    {
+                        if (direction == GuideDirection.East) { raGuideRate = -raGuideRate; }
+                    }
+
+                    _ctsPulseGuideRa?.Cancel();
+                    _ctsPulseGuideRa?.Dispose();
+                    _ctsPulseGuideRa = new CancellationTokenSource();
+                    switch (Settings.Mount)
+                    {
+                        case MountType.Simulator:
+                            if (Settings.AlignmentMode == AlignmentMode.AltAz)
+                            {
+                                PulseGuideAltAz((int)Axis.Axis1, raGuideRate, duration, SimPulseGoto, _ctsPulseGuideRa.Token);
+                            }
+                            else
+                            {
+                                var mq = SimQueue!;
+                                _ = new CmdAxisPulse(mq.NewId, mq, Axis.Axis1, raGuideRate, duration, _ctsPulseGuideRa.Token);
+                            }
+                            break;
+                        case MountType.SkyWatcher:
+                            if (Settings.AlignmentMode == AlignmentMode.AltAz)
+                            {
+                                PulseGuideAltAz((int)Axis.Axis1, raGuideRate, duration, SkyPulseGoto, _ctsPulseGuideRa.Token);
+                            }
+                            else
+                            {
+                                var sq = SkyQueue!;
+                                _ = new SkyAxisPulse(sq.NewId, sq, Axis.Axis1, raGuideRate, duration, 0, _ctsPulseGuideRa.Token);
+                            }
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
+            }
         }
 
         #endregion

@@ -454,7 +454,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Update southern hemisphere flag
                     if (_owner?.IsMountRunning == true)
                     {
-                        SkyServer.SkyTasks(MountTaskName.SetSouthernHemisphere, _owner);
+                        _owner?.SkyTasks(MountTaskName.SetSouthernHemisphere);
                     }
                 }
             }
@@ -715,7 +715,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Send to mount
                     if (_owner?.IsMountRunning == true)
                     {
-                        SkyServer.SkyTasks(MountTaskName.MinPulseRa, _owner);
+                        _owner?.SkyTasks(MountTaskName.MinPulseRa);
                     }
                 }
             }
@@ -734,7 +734,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Send to mount
                     if (_owner?.IsMountRunning == true)
                     {
-                        SkyServer.SkyTasks(MountTaskName.MinPulseDec, _owner);
+                        _owner?.SkyTasks(MountTaskName.MinPulseDec);
                     }
                 }
             }
@@ -753,7 +753,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Send to mount
                     if (_owner?.IsMountRunning == true)
                     {
-                        SkyServer.SkyTasks(MountTaskName.DecPulseToGoTo, _owner);
+                        _owner?.SkyTasks(MountTaskName.DecPulseToGoTo);
                     }
                 }
             }
@@ -772,7 +772,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Send to mount
                     if (_owner?.IsMountRunning == true)
                     {
-                        SkyServer.SkyTasks(MountTaskName.SetSt4Guiderate, _owner);
+                        _owner?.SkyTasks(MountTaskName.SetSt4Guiderate);
                     }
                 }
             }
@@ -911,7 +911,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Send to mount
                     if (_owner?.IsMountRunning == true)
                     {
-                        SkyServer.SkyTasks(MountTaskName.FullCurrent, _owner);
+                        _owner?.SkyTasks(MountTaskName.FullCurrent);
                     }
                 }
             }
@@ -930,7 +930,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Send to mount
                     if (_owner?.IsMountRunning == true)
                     {
-                        SkyServer.SkyTasks(MountTaskName.Encoders, _owner);
+                        _owner?.SkyTasks(MountTaskName.Encoders);
                     }
                 }
             }
@@ -949,7 +949,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Send to mount
                     if (_owner?.IsMountRunning == true)
                     {
-                        SkyServer.SkyTasks(MountTaskName.AlternatingPpec, _owner);
+                        _owner?.SkyTasks(MountTaskName.AlternatingPpec);
                     }
                 }
             }

@@ -15,23 +15,9 @@
  */
 
 // ============================================================================
-// SkyServer.Core.cs - Core/Common Functionality
-// ============================================================================
-// This partial class file contains:
-// - Static constructor and initialization
-// - Core fields (private/internal state)
-// - Core mount operations (connect, start, stop)
-// - Position update methods (GetRawDegrees, GetRawSteps, UpdateSteps, etc.)
-// - Coordinate transformations (GetSyncedAxes, GetUnsyncedAxes)
-// - Error handling (SkyErrorHandler, CheckSkyErrors)
-// - Internal utility methods
-// - Event handlers (PropertyChanged, UpdateServerEvent, etc.)
-// - Threading & timing (MediaTimer events)
-// - Alignment model integration
-// Dependencies: Used by both TelescopeAPI and UI partial classes
+// Mount.Tasks.cs - Mount task dispatch (formerly SkyServer.SimTasks / SkyTasks)
 // ============================================================================
 
-using ASCOM.Common.DeviceInterfaces;
 using ASCOM.Tools;
 using GreenSwamp.Alpaca.Mount.Commands;
 using GreenSwamp.Alpaca.Mount.Simulator;
@@ -39,87 +25,20 @@ using GreenSwamp.Alpaca.Mount.SkyWatcher;
 using GreenSwamp.Alpaca.Principles;
 using GreenSwamp.Alpaca.Server.MountControl;
 using GreenSwamp.Alpaca.Shared;
-using System;
 using System.Diagnostics;
 using System.Reflection;
-using Range = GreenSwamp.Alpaca.Principles.Range;
 using SkyWatcherErrorCode = GreenSwamp.Alpaca.Mount.SkyWatcher.ErrorCode;
 
 namespace GreenSwamp.Alpaca.MountControl
 {
-    /// <summary>
-    /// Core functionality for SkyServer - handles mount communication, position tracking, and internal state
-    /// </summary>
-    public static partial class SkyServer
+    public partial class Mount
     {
-        #region Core Fields
-
-        private const double SiderealRate = 15.0410671786691;
-
-        #endregion
-
-        #region Static Constructor
-
-        static SkyServer()
-        {
-            try
-            {
-                var monitorItem = new MonitorEntry
-                {
-                    Datetime = HiResDateTime.UtcNow,
-                    Device = MonitorDevice.Server,
-                    Category = MonitorCategory.Server,
-                    Type = MonitorType.Information,
-                    Method = MethodBase.GetCurrentMethod()?.Name,
-                    Thread = Environment.CurrentManagedThreadId,
-                    Message = "Loading SkyServer"
-                };
-                MonitorLog.LogToMonitor(monitorItem);
-
-                // ToDo: Remove if not needed
-                // initialise the alignment model
-                //AlignmentSettings.Load();
-                //AlignmentModel = new AlignmentModel(
-                //    _settings!.Latitude,
-                //    _settings!.Longitude,
-                //    _settings!.Elevation)
-                //{
-                //    IsAlignmentOn = AlignmentSettings.IsAlignmentOn,
-                //    ThreePointAlgorithm = ThreePointAlgorithmEnum.BestCentre
-                //};
-                //AlignmentModel.Notification += AlignmentModel_Notification;
-
-                }
-            catch (Exception ex)
-            {
-                var monitorItem = new MonitorEntry
-                {
-                    Datetime = HiResDateTime.UtcNow,
-                    Device = MonitorDevice.Server,
-                    Category = MonitorCategory.Server,
-                    Type = MonitorType.Error,
-                    Method = MethodBase.GetCurrentMethod()?.Name,
-                    Thread = Environment.CurrentManagedThreadId,
-                    Message = $"{ex.Message}|{ex.StackTrace}"
-                };
-                MonitorLog.LogToMonitor(monitorItem);
-
-                // ToDo: improve exception handling
-                // AlertState = true;
-                throw;
-            }
-        }
-
-        #endregion
-
         #region Error Handling
-        // Contains: SkyErrorHandler, CheckSkyErrors
 
         /// <summary>
-        /// Handles MountControlException and SkyServerException
+        /// Handles MountControlException and SkyServerException for this mount instance.
         /// </summary>
-        /// <param name="ex"></param>
-        public static void SkyErrorHandler(Exception ex, Mount? mount = null)
+        internal void MountErrorHandler(Exception ex)
         {
             var monitorItem = new MonitorEntry
             {
@@ -133,10 +52,7 @@ namespace GreenSwamp.Alpaca.MountControl
             };
             MonitorLog.LogToMonitor(monitorItem);
 
-            // ToDo: improve exception handling
-            // AlertState = true;
             var extype = ex.GetType().ToString().Trim();
-            var effectiveMount = mount;
             switch (extype)
             {
                 case "GS.SkyWatcher.MountControlException":
@@ -160,15 +76,14 @@ namespace GreenSwamp.Alpaca.MountControl
                         case SkyWatcherErrorCode.ErrWrongAlignmentData:
                         case SkyWatcherErrorCode.ErrQueueFailed:
                         case SkyWatcherErrorCode.ErrTooManyRetries:
-                            effectiveMount?.MountStop();
-                            if (effectiveMount != null) effectiveMount._mountError = mounterr;
+                            MountStop();
+                            _mountError = mounterr;
                             break;
                         default:
-                            effectiveMount?.MountStop();
-                            if (effectiveMount != null) effectiveMount._mountError = mounterr;
+                            MountStop();
+                            _mountError = mounterr;
                             break;
                     }
-
                     break;
                 case "GS.Server.SkyTelescope.SkyServerException":
                     var skyerr = (SkyServerException)ex;
@@ -178,28 +93,24 @@ namespace GreenSwamp.Alpaca.MountControl
                         case ErrorCode.ErrExecutingCommand:
                         case ErrorCode.ErrUnableToDeqeue:
                         case ErrorCode.ErrSerialFailed:
-                            effectiveMount?.MountStop();
-                            if (effectiveMount != null) effectiveMount._mountError = skyerr;
+                            MountStop();
+                            _mountError = skyerr;
                             break;
                         default:
-                            effectiveMount?.MountStop();
-                            if (effectiveMount != null) effectiveMount._mountError = skyerr;
+                            MountStop();
+                            _mountError = skyerr;
                             break;
                     }
-
                     break;
                 default:
-                    if (effectiveMount != null) effectiveMount._mountError = ex;
-                    effectiveMount?.MountStop();
+                    _mountError = ex;
+                    MountStop();
                     break;
             }
         }
 
-        /// <summary>
-        /// Checks command object for errors and unsuccessful execution
-        /// </summary>
-        /// <param name="command"></param>
-        /// <returns>true for errors found and not successful</returns>
+        /// <summary>Checks command object for errors and unsuccessful execution.</summary>
+        /// <returns>true if errors found or not successful</returns>
         private static bool CheckSkyErrors(ISkyCommand command)
         {
             if (command.Exception != null)
@@ -221,73 +132,14 @@ namespace GreenSwamp.Alpaca.MountControl
 
         #endregion
 
-        #region Internal Utility Methods
+        #region Simulator Tasks
 
         /// <summary>
-        /// Convert degrees to radians
+        /// Routes task commands to this mount's Simulator queue.
         /// </summary>
-        /// <param name="degree">Angle in degrees</param>
-        /// <returns>Angle in radians</returns>
-        internal static double DegToRad(double degree)
+        public void SimTasks(MountTaskName taskName)
         {
-            return degree * (Math.PI / 180.0);
-        }
-
-        /// <summary>
-        /// Convert radians to degrees
-        /// </summary>
-        /// <param name="rad">Angle in radians</param>
-        /// <returns>Angle in degrees</returns>
-        internal static double RadToDeg(double rad)
-        {
-            return rad * (180.0 / Math.PI);
-        }
-
-        #endregion
-
-        #region Event Handlers
-        // Contains: GetLocalSiderealTime (longitude overload)
-        // M4: PropertyChangedSkySettings, PropertyChangedAlignmentSettings, UpdateServerEvent,
-        //     LowVoltageEventSet moved to Mount (OnPropertyChangedSkySettings, OnLowVoltageEvent)
-
-        /// <summary>
-        /// Get local sidereal time for the current UTC time using an explicit longitude.
-        /// Use this overload from per-instance code to avoid reading device-00's longitude.
-        /// </summary>
-        internal static double GetLocalSiderealTime(double longitude)
-        {
-            var gsjd = JDate.Ole2Jd(HiResDateTime.UtcNow);
-            return Time.Lst(JDate.Epoch2000Days(), gsjd, false, longitude);
-        }
-
-        #endregion
-
-        #region Alignment
-
-        /// <summary>
-        /// Gets the alignment model corrected target (physical) axis positions for a given calculated axis position.
-        /// </summary>
-        /// <param name="unsynced">Calculated axis position</param>
-        /// <returns>Physical axis position corrected by alignment model</returns>
-        public static double[] GetSyncedAxes(double[] unsynced)
-        {
-                return unsynced;
-        }
-
-        #endregion
-
-        #region Mount-Specific Core Operations
-        // Contains mount-specific implementations for Simulator and SkyWatcher
-
-        #region Simulator Items
-        // Contains: SimTasks 
-
-        /// <summary>
-        /// Instance-aware SimTasks: routes commands and capability writes to the given Mount.
-        /// </summary>
-        public static void SimTasks(MountTaskName taskName, Mount mount)
-        {
-            if (!mount.IsMountRunning) return;
+            if (!IsMountRunning) return;
 
             var monitorItem = new MonitorEntry
             {
@@ -301,10 +153,10 @@ namespace GreenSwamp.Alpaca.MountControl
             };
             MonitorLog.LogToMonitor(monitorItem);
 
-            var settings = mount.Settings;
-            var q = mount.SimQueue!;
+            var settings = Settings;
+            var q = SimQueue!;
 
-            switch (mount.Settings.Mount)
+            switch (Settings.Mount)
             {
                 case MountType.SkyWatcher:
                     break;
@@ -316,18 +168,18 @@ namespace GreenSwamp.Alpaca.MountControl
                         case MountTaskName.AlternatingPpec:
                             break;
                         case MountTaskName.CanAdvancedCmdSupport:
-                            mount._canAdvancedCmdSupport = false;
+                            _canAdvancedCmdSupport = false;
                             break;
                         case MountTaskName.CanPpec:
-                            mount._canPPec = false;
+                            _canPPec = false;
                             break;
                         case MountTaskName.CanPolarLed:
-                            mount._canPolarLed = false;
+                            _canPolarLed = false;
                             break;
                         case MountTaskName.CanHomeSensor:
                             var canHomeCmd = new GetHomeSensorCapability(q.NewId, q);
                             bool.TryParse(Convert.ToString(q.GetCommandResult(canHomeCmd).Result), out bool hasHome);
-                            mount._canHomeSensor = hasHome;
+                            _canHomeSensor = hasHome;
                             break;
                         case MountTaskName.DecPulseToGoTo:
                             break;
@@ -346,47 +198,47 @@ namespace GreenSwamp.Alpaca.MountControl
                         case MountTaskName.SetSouthernHemisphere:
                             break;
                         case MountTaskName.SyncAxes:
-                            var appAxes = mount.AppAxes;
+                            var appAxes = AppAxes;
                             var sync = Axes.AxesAppToMount([appAxes.X, appAxes.Y], settings);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis1, sync[0]);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis2, sync[1]);
                             break;
                         case MountTaskName.SyncTarget:
-                            var a = Transforms.CoordTypeToInternal(mount.TargetRa, mount.TargetDec, settings: settings);
+                            var a = Transforms.CoordTypeToInternal(TargetRa, TargetDec, settings: settings);
                             var targetR = Axes.RaDecToAxesXy([a.X, a.Y], settings);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis1, targetR[0]);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis2, targetR[1]);
                             break;
                         case MountTaskName.SyncAltAz:
-                            var altAzSync = mount._altAzSync;
+                            var altAzSync = _altAzSync;
                             var targetA = new[] { altAzSync.Y, altAzSync.X };
                             targetA = Axes.AzAltToAxesXy(targetA, settings);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis1, targetA[0]);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis2, targetA[1]);
                             break;
                         case MountTaskName.MonitorPulse:
-                            _ = new CmdSetMonitorPulse(0, q, mount._monitorPulse);
+                            _ = new CmdSetMonitorPulse(0, q, _monitorPulse);
                             break;
                         case MountTaskName.Pec:
                             break;
                         case MountTaskName.PecTraining:
                             break;
                         case MountTaskName.Capabilities:
-                            mount._capabilities = @"N/A";
+                            _capabilities = @"N/A";
                             break;
                         case MountTaskName.SetSt4Guiderate:
                             break;
                         case MountTaskName.SetSnapPort1:
-                            _ = new CmdSnapPort(0, q, 1, mount._snapPort1);
-                            mount._snapPort1Result = false;
+                            _ = new CmdSnapPort(0, q, 1, _snapPort1);
+                            _snapPort1Result = false;
                             break;
                         case MountTaskName.SetSnapPort2:
-                            _ = new CmdSnapPort(0, q, 2, mount._snapPort2);
-                            mount._snapPort2Result = true;
+                            _ = new CmdSnapPort(0, q, 2, _snapPort2);
+                            _snapPort2Result = true;
                             break;
                         case MountTaskName.MountName:
                             var mountNameCmd = new CmdMountName(q.NewId, q);
-                            mount._mountName = (string)q.GetCommandResult(mountNameCmd).Result;
+                            _mountName = (string)q.GetCommandResult(mountNameCmd).Result;
                             break;
                         case MountTaskName.GetAxisVersions:
                             break;
@@ -394,27 +246,27 @@ namespace GreenSwamp.Alpaca.MountControl
                             break;
                         case MountTaskName.MountVersion:
                             var mountVersionCmd = new CmdMountVersion(q.NewId, q);
-                            mount._mountVersion = (string)q.GetCommandResult(mountVersionCmd).Result;
+                            _mountVersion = (string)q.GetCommandResult(mountVersionCmd).Result;
                             break;
                         case MountTaskName.StepsPerRevolution:
                             var spr = new CmdSpr(q.NewId, q);
                             var sprnum = (long)q.GetCommandResult(spr).Result;
-                            mount._stepsPerRevolution = [sprnum, sprnum];
+                            _stepsPerRevolution = [sprnum, sprnum];
                             break;
                         case MountTaskName.StepsWormPerRevolution:
                             var spw = new CmdSpw(q.NewId, q);
                             var spwnum = (double)q.GetCommandResult(spw).Result;
-                            mount._stepsWormPerRevolution = [spwnum, spwnum];
+                            _stepsWormPerRevolution = [spwnum, spwnum];
                             break;
                         case MountTaskName.SetHomePositions:
-                            var homeAxesSim = mount.HomeAxes;
+                            var homeAxesSim = HomeAxes;
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis1, homeAxesSim.X);
                             _ = new CmdAxisToDegrees(0, q, Axis.Axis2, homeAxesSim.Y);
                             break;
                         case MountTaskName.GetFactorStep:
                             var factorStepCmd = new CmdFactorSteps(q.NewId, q);
-                            mount._factorStep[0] = (double)q.GetCommandResult(factorStepCmd).Result;
-                            mount._factorStep[1] = mount._factorStep[0];
+                            _factorStep[0] = (double)q.GetCommandResult(factorStepCmd).Result;
+                            _factorStep[1] = _factorStep[0];
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(taskName), taskName, null);
@@ -427,15 +279,14 @@ namespace GreenSwamp.Alpaca.MountControl
 
         #endregion
 
-        #region SkyWatcher Items
-        // Contains: SkyTasks
+        #region SkyWatcher Tasks
 
         /// <summary>
-        /// Instance-aware SkyTasks: routes commands and capability writes to the given Mount.
+        /// Routes task commands to this mount's SkyWatcher queue.
         /// </summary>
-        public static void SkyTasks(MountTaskName taskName, Mount instance)
+        public void SkyTasks(MountTaskName taskName)
         {
-            if (!instance.IsMountRunning) { return; }
+            if (!IsMountRunning) { return; }
 
             var monitorItem = new MonitorEntry
             {
@@ -448,10 +299,10 @@ namespace GreenSwamp.Alpaca.MountControl
                 Message = $"{taskName}"
             };
 
-            var settings = instance.Settings;
-            var q = instance.SkyQueue!;
+            var settings = Settings;
+            var q = SkyQueue!;
 
-            switch (instance.Settings.Mount)
+            switch (Settings.Mount)
             {
                 case MountType.Simulator:
                     break;
@@ -459,49 +310,49 @@ namespace GreenSwamp.Alpaca.MountControl
                     switch (taskName)
                     {
                         case MountTaskName.AllowAdvancedCommandSet:
-                            _ = new SkyAllowAdvancedCommandSet(0, q, instance.Settings.AllowAdvancedCommandSet);
+                            _ = new SkyAllowAdvancedCommandSet(0, q, Settings.AllowAdvancedCommandSet);
                             break;
                         case MountTaskName.AlternatingPpec:
-                            _ = new SkySetAlternatingPPec(0, q, instance.Settings.AlternatingPPec);
+                            _ = new SkySetAlternatingPPec(0, q, Settings.AlternatingPPec);
                             break;
                         case MountTaskName.DecPulseToGoTo:
-                            _ = new SkySetDecPulseToGoTo(0, q, instance.Settings.DecPulseToGoTo);
+                            _ = new SkySetDecPulseToGoTo(0, q, Settings.DecPulseToGoTo);
                             break;
                         case MountTaskName.CanAdvancedCmdSupport:
                             var skyCanAdvanced = new SkyGetAdvancedCmdSupport(q.NewId, q);
                             bool.TryParse(Convert.ToString(q.GetCommandResult(skyCanAdvanced).Result), out bool pAdvancedResult);
-                            instance._canAdvancedCmdSupport = pAdvancedResult;
+                            _canAdvancedCmdSupport = pAdvancedResult;
                             break;
                         case MountTaskName.CanPpec:
                             var skyMountCanPpec = new SkyCanPPec(q.NewId, q);
                             bool.TryParse(Convert.ToString(q.GetCommandResult(skyMountCanPpec).Result), out bool pPecResult);
-                            instance._canPPec = pPecResult;
+                            _canPPec = pPecResult;
                             break;
                         case MountTaskName.CanPolarLed:
                             var skyCanPolarLed = new SkyCanPolarLed(q.NewId, q);
                             bool.TryParse(Convert.ToString(q.GetCommandResult(skyCanPolarLed).Result), out bool polarLedResult);
-                            instance._canPolarLed = polarLedResult;
+                            _canPolarLed = polarLedResult;
                             break;
                         case MountTaskName.CanHomeSensor:
                             var canHomeSky = new SkyCanHomeSensors(q.NewId, q);
                             bool.TryParse(Convert.ToString(q.GetCommandResult(canHomeSky).Result), out bool homeSensorResult);
-                            instance._canHomeSensor = homeSensorResult;
+                            _canHomeSensor = homeSensorResult;
                             break;
                         case MountTaskName.Capabilities:
                             var skyCap = new SkyGetCapabilities(q.NewId, q);
-                            instance._capabilities = (string)q.GetCommandResult(skyCap).Result;
+                            _capabilities = (string)q.GetCommandResult(skyCap).Result;
                             break;
                         case MountTaskName.Encoders:
-                            _ = new SkySetEncoder(0, q, Axis.Axis1, instance.Settings.Encoders);
-                            _ = new SkySetEncoder(0, q, Axis.Axis2, instance.Settings.Encoders);
+                            _ = new SkySetEncoder(0, q, Axis.Axis1, Settings.Encoders);
+                            _ = new SkySetEncoder(0, q, Axis.Axis2, Settings.Encoders);
                             break;
                         case MountTaskName.FullCurrent:
-                            _ = new SkySetFullCurrent(0, q, Axis.Axis1, instance.Settings.FullCurrent);
-                            _ = new SkySetFullCurrent(0, q, Axis.Axis2, instance.Settings.FullCurrent);
+                            _ = new SkySetFullCurrent(0, q, Axis.Axis1, Settings.FullCurrent);
+                            _ = new SkySetFullCurrent(0, q, Axis.Axis2, Settings.FullCurrent);
                             break;
                         case MountTaskName.GetFactorStep:
                             var skyFactor = new SkyGetFactorStepToRad(q.NewId, q);
-                            instance._factorStep = (double[])q.GetCommandResult(skyFactor).Result;
+                            _factorStep = (double[])q.GetCommandResult(skyFactor).Result;
                             break;
                         case MountTaskName.LoadDefaults:
                             _ = new SkyLoadDefaultMountSettings(0, q);
@@ -511,53 +362,53 @@ namespace GreenSwamp.Alpaca.MountControl
                             _ = new SkyAxisStopInstant(0, q, Axis.Axis2);
                             break;
                         case MountTaskName.MinPulseRa:
-                            _ = new SkySetMinPulseDuration(0, q, Axis.Axis1, instance.Settings.MinPulseRa);
+                            _ = new SkySetMinPulseDuration(0, q, Axis.Axis1, Settings.MinPulseRa);
                             break;
                         case MountTaskName.MinPulseDec:
-                            _ = new SkySetMinPulseDuration(0, q, Axis.Axis2, instance.Settings.MinPulseDec);
+                            _ = new SkySetMinPulseDuration(0, q, Axis.Axis2, Settings.MinPulseDec);
                             break;
                         case MountTaskName.MonitorPulse:
-                            _ = new SkySetMonitorPulse(0, q, instance._monitorPulse);
+                            _ = new SkySetMonitorPulse(0, q, _monitorPulse);
                             break;
                         case MountTaskName.PecTraining:
-                            _ = new SkySetPPecTrain(0, q, Axis.Axis1, instance._pPecTraining);
+                            _ = new SkySetPPecTrain(0, q, Axis.Axis1, _pPecTraining);
                             break;
                         case MountTaskName.Pec:
-                            var ppeOcn = new SkySetPPec(q.NewId, q, Axis.Axis1, instance.Settings.PPecOn);
+                            var ppeOcn = new SkySetPPec(q.NewId, q, Axis.Axis1, Settings.PPecOn);
                             var pPecOnStr = (string)q.GetCommandResult(ppeOcn).Result;
                             if (string.IsNullOrEmpty(pPecOnStr))
                             {
-                                instance.Settings.PPecOn = false;
+                                Settings.PPecOn = false;
                                 break;
                             }
-                            if (pPecOnStr.Contains("!")) { instance.Settings.PPecOn = false; }
+                            if (pPecOnStr.Contains("!")) { Settings.PPecOn = false; }
                             break;
                         case MountTaskName.PolarLedLevel:
-                            if (instance.Settings.PolarLedLevel < 0 || instance.Settings.PolarLedLevel > 255) { return; }
-                            _ = new SkySetPolarLedLevel(0, q, Axis.Axis1, instance.Settings.PolarLedLevel);
+                            if (Settings.PolarLedLevel < 0 || Settings.PolarLedLevel > 255) { return; }
+                            _ = new SkySetPolarLedLevel(0, q, Axis.Axis1, Settings.PolarLedLevel);
                             break;
                         case MountTaskName.StopAxes:
                             _ = new SkyAxisStop(0, q, Axis.Axis1);
                             _ = new SkyAxisStop(0, q, Axis.Axis2);
                             break;
                         case MountTaskName.SetSt4Guiderate:
-                            _ = new SkySetSt4GuideRate(0, q, instance.Settings.St4GuideRate);
+                            _ = new SkySetSt4GuideRate(0, q, Settings.St4GuideRate);
                             break;
                         case MountTaskName.SetSouthernHemisphere:
-                            _ = new SkySetSouthernHemisphere(q.NewId, q, instance.Settings.Latitude < 0);
+                            _ = new SkySetSouthernHemisphere(q.NewId, q, Settings.Latitude < 0);
                             break;
                         case MountTaskName.SetSnapPort1:
-                            var sp1 = new SkySetSnapPort(q.NewId, q, 1, instance._snapPort1);
+                            var sp1 = new SkySetSnapPort(q.NewId, q, 1, _snapPort1);
                             bool.TryParse(Convert.ToString(q.GetCommandResult(sp1).Result), out bool port1Result);
-                            instance._snapPort1Result = port1Result;
+                            _snapPort1Result = port1Result;
                             break;
                         case MountTaskName.SetSnapPort2:
-                            var sp2 = new SkySetSnapPort(q.NewId, q, 2, instance._snapPort2);
+                            var sp2 = new SkySetSnapPort(q.NewId, q, 2, _snapPort2);
                             bool.TryParse(Convert.ToString(q.GetCommandResult(sp2).Result), out bool port2Result);
-                            instance._snapPort2Result = port2Result;
+                            _snapPort2Result = port2Result;
                             break;
                         case MountTaskName.SyncAxes:
-                            var appAxesSync = instance.AppAxes;
+                            var appAxesSync = AppAxes;
                             var sync = Axes.AxesAppToMount([appAxesSync.X, appAxesSync.Y], settings);
                             _ = new SkySyncAxis(0, q, Axis.Axis1, sync[0]);
                             _ = new SkySyncAxis(0, q, Axis.Axis2, sync[1]);
@@ -565,20 +416,20 @@ namespace GreenSwamp.Alpaca.MountControl
                             MonitorLog.LogToMonitor(monitorItem);
                             break;
                         case MountTaskName.SyncTarget:
-                            var a = Transforms.CoordTypeToInternal(instance?.TargetRa ?? double.NaN, instance?.TargetDec ?? double.NaN, settings: settings);
-                            var targetR = Axes.RaDecToAxesXy([a.X, a.Y], settings);
+                            var at = Transforms.CoordTypeToInternal(TargetRa, TargetDec, settings: settings);
+                            var targetR = Axes.RaDecToAxesXy([at.X, at.Y], settings);
                             _ = new SkySyncAxis(0, q, Axis.Axis1, targetR[0]);
                             _ = new SkySyncAxis(0, q, Axis.Axis2, targetR[1]);
-                            monitorItem.Message += $",{Utilities.HoursToHMS(a.X, "h ", ":", "", 2)}|{Utilities.DegreesToDMS(a.Y, " ", ":", "", 2)}|{targetR[0]}|{targetR[1]}";
+                            monitorItem.Message += $",{Utilities.HoursToHMS(at.X, "h ", ":", "", 2)}|{Utilities.DegreesToDMS(at.Y, " ", ":", "", 2)}|{targetR[0]}|{targetR[1]}";
                             MonitorLog.LogToMonitor(monitorItem);
                             break;
                         case MountTaskName.SyncAltAz:
-                            var altAzSyncPos = instance._altAzSync;
-                            var targetA = new[] { altAzSyncPos.Y, altAzSyncPos.X };
-                            targetA = Axes.AzAltToAxesXy(targetA, settings);
-                            _ = new SkySyncAxis(0, q, Axis.Axis1, targetA[0]);
-                            _ = new SkySyncAxis(0, q, Axis.Axis2, targetA[1]);
-                            monitorItem.Message += $",{altAzSyncPos.Y}|{altAzSyncPos.X}|{targetA[0]}|{targetA[1]}";
+                            var altAzSyncPos = _altAzSync;
+                            var targetAz = new[] { altAzSyncPos.Y, altAzSyncPos.X };
+                            targetAz = Axes.AzAltToAxesXy(targetAz, settings);
+                            _ = new SkySyncAxis(0, q, Axis.Axis1, targetAz[0]);
+                            _ = new SkySyncAxis(0, q, Axis.Axis2, targetAz[1]);
+                            monitorItem.Message += $",{altAzSyncPos.Y}|{altAzSyncPos.X}|{targetAz[0]}|{targetAz[1]}";
                             MonitorLog.LogToMonitor(monitorItem);
                             break;
                         case MountTaskName.GetAxisVersions:
@@ -591,63 +442,61 @@ namespace GreenSwamp.Alpaca.MountControl
                             break;
                         case MountTaskName.MountName:
                             var skyMountType = new SkyMountType(q.NewId, q);
-                            instance._mountName = (string)q.GetCommandResult(skyMountType).Result;
+                            _mountName = (string)q.GetCommandResult(skyMountType).Result;
                             break;
                         case MountTaskName.MountVersion:
                             var skyMountVersion = new SkyMountVersion(q.NewId, q);
-                            instance._mountVersion = (string)q.GetCommandResult(skyMountVersion).Result;
+                            _mountVersion = (string)q.GetCommandResult(skyMountVersion).Result;
                             break;
                         case MountTaskName.StepsPerRevolution:
                             var skyMountRevolutions = new SkyGetStepsPerRevolution(q.NewId, q);
-                            instance._stepsPerRevolution = (long[])q.GetCommandResult(skyMountRevolutions).Result;
+                            _stepsPerRevolution = (long[])q.GetCommandResult(skyMountRevolutions).Result;
                             break;
                         case MountTaskName.StepsWormPerRevolution:
                             var skyWormRevolutions1 = new SkyGetPecPeriod(q.NewId, q, Axis.Axis1);
-                            instance._stepsWormPerRevolution[0] = (double)q.GetCommandResult(skyWormRevolutions1).Result;
+                            _stepsWormPerRevolution[0] = (double)q.GetCommandResult(skyWormRevolutions1).Result;
                             var skyWormRevolutions2 = new SkyGetPecPeriod(q.NewId, q, Axis.Axis2);
-                            instance._stepsWormPerRevolution[1] = (double)q.GetCommandResult(skyWormRevolutions2).Result;
+                            _stepsWormPerRevolution[1] = (double)q.GetCommandResult(skyWormRevolutions2).Result;
                             break;
                         case MountTaskName.StepTimeFreq:
                             var skyStepTimeFreq = new SkyGetStepTimeFreq(q.NewId, q);
-                            instance._stepsTimeFreq = (long[])q.GetCommandResult(skyStepTimeFreq).Result;
+                            _stepsTimeFreq = (long[])q.GetCommandResult(skyStepTimeFreq).Result;
                             break;
                         case MountTaskName.SetHomePositions:
-                            var homeAxesSky = instance.HomeAxes;
+                            var homeAxesSky = HomeAxes;
                             _ = new SkySetAxisPosition(0, q, Axis.Axis1, homeAxesSky.X);
                             _ = new SkySetAxisPosition(0, q, Axis.Axis2, homeAxesSky.Y);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
-
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
-        #endregion
 
         #endregion
 
-        #region Slewing & Movement Core
+        #region Axes Stop Validate
 
         /// <summary>
-        /// Routes stop commands and status queries to the given Mount's queues.
+        /// Stops axes and waits up to 5 s for them to reach a full stop.
         /// </summary>
-        internal static bool AxesStopValidate(Mount mount)
+        internal bool AxesStopValidate()
         {
-            if (!mount.IsMountRunning) { return true; }
+            if (!IsMountRunning) { return true; }
             Stopwatch stopwatch;
             bool axis2Stopped = false;
             bool axis1Stopped = false;
-            switch (mount.Settings.Mount)
+            switch (Settings.Mount)
             {
                 case MountType.Simulator:
-                    var mq = mount.SimQueue!;
+                    var mq = SimQueue!;
                     stopwatch = Stopwatch.StartNew();
                     while (stopwatch.Elapsed.TotalMilliseconds <= 5000)
                     {
-                        SimTasks(MountTaskName.StopAxes, mount);
+                        SimTasks(MountTaskName.StopAxes);
                         Thread.Sleep(100);
                         var statusX = new CmdAxisStatus(mq.NewId, mq, Axis.Axis1);
                         var axis1Status = (Alpaca.Mount.Simulator.AxisStatus)mq.GetCommandResult(statusX).Result;
@@ -662,9 +511,9 @@ namespace GreenSwamp.Alpaca.MountControl
                     }
                     return false;
                 case MountType.SkyWatcher:
-                    var sq = mount.SkyQueue!;
+                    var sq = SkyQueue!;
                     stopwatch = Stopwatch.StartNew();
-                    SkyTasks(MountTaskName.StopAxes, mount);
+                    SkyTasks(MountTaskName.StopAxes);
                     while (stopwatch.Elapsed.TotalMilliseconds <= 5000)
                     {
                         Thread.Sleep(100);

@@ -299,7 +299,7 @@ namespace GreenSwamp.Alpaca.MountControl
             set => _altAzm.X = value;
         }
 
-        public double SiderealTime => SkyServer.GetLocalSiderealTime(Settings.Longitude);
+        public double SiderealTime => GetLocalSiderealTime(Settings.Longitude);
 
         public double Lha => Coordinate.Ra2Ha12(RightAscensionXForm, SiderealTime);
 
@@ -479,7 +479,7 @@ namespace GreenSwamp.Alpaca.MountControl
             Settings = settings ?? throw new ArgumentNullException(nameof(settings));
             // Wire settings back-reference so settings can call instance-aware tasks
             Settings._owner = this;
-            SkyPredictor = new SkyPredictor(() => SkyServer.CurrentTrackingRate(this));
+            SkyPredictor = new SkyPredictor(() => CurrentTrackingRate());
 
             var monitorItem = new MonitorEntry
             {
@@ -544,13 +544,13 @@ namespace GreenSwamp.Alpaca.MountControl
             {
                 case MountType.Simulator:
                     // defaults
-                    SkyServer.SimTasks(MountTaskName.MountName, this);
-                    SkyServer.SimTasks(MountTaskName.MountVersion, this);
-                    SkyServer.SimTasks(MountTaskName.StepsPerRevolution, this);
-                    SkyServer.SimTasks(MountTaskName.StepsWormPerRevolution, this);
-                    SkyServer.SimTasks(MountTaskName.CanHomeSensor, this);
-                    SkyServer.SimTasks(MountTaskName.GetFactorStep, this);
-                    SkyServer.SimTasks(MountTaskName.Capabilities, this);
+                    SimTasks(MountTaskName.MountName);
+                    SimTasks(MountTaskName.MountVersion);
+                    SimTasks(MountTaskName.StepsPerRevolution);
+                    SimTasks(MountTaskName.StepsWormPerRevolution);
+                    SimTasks(MountTaskName.CanHomeSensor);
+                    SimTasks(MountTaskName.GetFactorStep);
+                    SimTasks(MountTaskName.Capabilities);
 
 
                     // Log instance values for verification
@@ -631,7 +631,7 @@ namespace GreenSwamp.Alpaca.MountControl
                         // ToDo: fix string resource
                         init.Exception = new Exception($"CheckMount{Environment.NewLine}{init.Exception.Message}", init.Exception);
                         // init.Exception = new Exception($"{MediaTypeNames.Application.Current.Resources["CheckMount"]}{Environment.NewLine}{init.Exception.Message}", init.Exception);
-                        SkyServer.SkyErrorHandler(init.Exception, this);
+                        MountErrorHandler(init.Exception);
                         return false;
                     }
 
@@ -659,31 +659,31 @@ namespace GreenSwamp.Alpaca.MountControl
                     // defaults
                     if (Settings.Mount == MountType.SkyWatcher)
                     {
-                        SkyServer.SkyTasks(MountTaskName.AllowAdvancedCommandSet, this);
+                        SkyTasks(MountTaskName.AllowAdvancedCommandSet);
                     }
-                    SkyServer.SkyTasks(MountTaskName.LoadDefaults, this);
-                    SkyServer.SkyTasks(MountTaskName.StepsPerRevolution, this);
-                    SkyServer.SkyTasks(MountTaskName.StepsWormPerRevolution, this);
-                    SkyServer.SkyTasks(MountTaskName.StopAxes, this);
-                    SkyServer.SkyTasks(MountTaskName.Encoders, this);
-                    SkyServer.SkyTasks(MountTaskName.FullCurrent, this);
-                    SkyServer.SkyTasks(MountTaskName.SetSt4Guiderate, this);
-                    SkyServer.SkyTasks(MountTaskName.SetSouthernHemisphere, this);
-                    SkyServer.SkyTasks(MountTaskName.MountName, this);
-                    SkyServer.SkyTasks(MountTaskName.MountVersion, this);
-                    SkyServer.SkyTasks(MountTaskName.StepTimeFreq, this);
-                    SkyServer.SkyTasks(MountTaskName.CanPpec, this);
-                    SkyServer.SkyTasks(MountTaskName.CanPolarLed, this);
-                    SkyServer.SkyTasks(MountTaskName.PolarLedLevel, this);
-                    SkyServer.SkyTasks(MountTaskName.CanHomeSensor, this);
-                    SkyServer.SkyTasks(MountTaskName.DecPulseToGoTo, this);
-                    SkyServer.SkyTasks(MountTaskName.AlternatingPpec, this);
-                    SkyServer.SkyTasks(MountTaskName.MinPulseDec, this);
-                    SkyServer.SkyTasks(MountTaskName.MinPulseRa, this);
-                    SkyServer.SkyTasks(MountTaskName.GetFactorStep, this);
-                    SkyServer.SkyTasks(MountTaskName.Capabilities, this);
-                    SkyServer.SkyTasks(MountTaskName.CanAdvancedCmdSupport, this);
-                    if (_canPPec) SkyServer.SkyTasks(MountTaskName.Pec, this);
+                    SkyTasks(MountTaskName.LoadDefaults);
+                    SkyTasks(MountTaskName.StepsPerRevolution);
+                    SkyTasks(MountTaskName.StepsWormPerRevolution);
+                    SkyTasks(MountTaskName.StopAxes);
+                    SkyTasks(MountTaskName.Encoders);
+                    SkyTasks(MountTaskName.FullCurrent);
+                    SkyTasks(MountTaskName.SetSt4Guiderate);
+                    SkyTasks(MountTaskName.SetSouthernHemisphere);
+                    SkyTasks(MountTaskName.MountName);
+                    SkyTasks(MountTaskName.MountVersion);
+                    SkyTasks(MountTaskName.StepTimeFreq);
+                    SkyTasks(MountTaskName.CanPpec);
+                    SkyTasks(MountTaskName.CanPolarLed);
+                    SkyTasks(MountTaskName.PolarLedLevel);
+                    SkyTasks(MountTaskName.CanHomeSensor);
+                    SkyTasks(MountTaskName.DecPulseToGoTo);
+                    SkyTasks(MountTaskName.AlternatingPpec);
+                    SkyTasks(MountTaskName.MinPulseDec);
+                    SkyTasks(MountTaskName.MinPulseRa);
+                    SkyTasks(MountTaskName.GetFactorStep);
+                    SkyTasks(MountTaskName.Capabilities);
+                    SkyTasks(MountTaskName.CanAdvancedCmdSupport);
+                    if (_canPPec) SkyTasks(MountTaskName.Pec);
 
 
                     // Log instance values for verification
@@ -1085,10 +1085,10 @@ namespace GreenSwamp.Alpaca.MountControl
             switch (Settings.Mount)
             {
                 case MountType.Simulator:
-                    SkyServer.SimTasks(MountTaskName.StopAxes, this);
+                    SimTasks(MountTaskName.StopAxes);
                     break;
                 case MountType.SkyWatcher:
-                    SkyServer.SkyTasks(MountTaskName.StopAxes, this);
+                    SkyTasks(MountTaskName.StopAxes);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -1156,10 +1156,6 @@ namespace GreenSwamp.Alpaca.MountControl
             return await SlewAsync(target, SlewType.SlewPark, tracking: false);
         }
 
-        /// <summary>Issue a pulse guide command — passes this instance to SkyServer.PulseGuide (J1).</summary>
-        public void PulseGuide(GuideDirection direction, int duration, double altRate) =>
-            SkyServer.PulseGuide(direction, duration, altRate, this); // J1: per-instance
-
         /// <summary>Synchronous Alt/Az slew — dispatches on this instance directly.</summary>
         public void SlewAltAz(double altitude, double azimuth) =>
             SlewSync([azimuth, altitude], SlewType.SlewAltAz);
@@ -1218,12 +1214,12 @@ namespace GreenSwamp.Alpaca.MountControl
             switch (Settings.Mount)
             {
                 case MountType.Simulator:
-                    SkyServer.SimTasks(MountTaskName.StopAxes, this);
-                    SkyServer.SimTasks(MountTaskName.SyncAltAz, this);
+                    SimTasks(MountTaskName.StopAxes);
+                    SimTasks(MountTaskName.SyncAltAz);
                     break;
                 case MountType.SkyWatcher:
-                    SkyServer.SkyTasks(MountTaskName.StopAxes, this);
-                    SkyServer.SkyTasks(MountTaskName.SyncAltAz, this);
+                    SkyTasks(MountTaskName.StopAxes);
+                    SkyTasks(MountTaskName.SyncAltAz);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -1257,12 +1253,12 @@ namespace GreenSwamp.Alpaca.MountControl
             switch (Settings.Mount)
             {
                 case MountType.Simulator:
-                    SkyServer.SimTasks(MountTaskName.StopAxes, this);
-                    SkyServer.SimTasks(MountTaskName.SyncTarget, this);
+                    SimTasks(MountTaskName.StopAxes);
+                    SimTasks(MountTaskName.SyncTarget);
                     break;
                 case MountType.SkyWatcher:
-                    SkyServer.SkyTasks(MountTaskName.StopAxes, this);
-                    SkyServer.SkyTasks(MountTaskName.SyncTarget, this);
+                    SkyTasks(MountTaskName.StopAxes);
+                    SkyTasks(MountTaskName.SyncTarget);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -1288,7 +1284,7 @@ namespace GreenSwamp.Alpaca.MountControl
             if (!Settings.SyncLimitOn) { return true; }
             if (Settings.NoSyncPastMeridian) { return false; }
             var xy = Axes.RaDecToAxesXy([ra, dec], Settings);
-            var target = Axes.AxesMountToApp(SkyServer.GetSyncedAxes(xy), Settings);
+            var target = Axes.AxesMountToApp(xy, Settings);
             var current = new[] { _appAxes.X, _appAxes.Y };
             var a = Math.Abs(target[0]) - Math.Abs(current[0]);
             var b = Math.Abs(target[1]) - Math.Abs(current[1]);
@@ -1313,7 +1309,7 @@ namespace GreenSwamp.Alpaca.MountControl
             if (!Settings.SyncLimitOn) { return true; }
             if (Settings.NoSyncPastMeridian) { return false; }
             var xy = Axes.AzAltToAxesXy([az, alt], Settings);
-            var target = Axes.AxesMountToApp(SkyServer.GetSyncedAxes(xy), Settings);
+            var target = Axes.AxesMountToApp(xy, Settings);
             var current = new[] { _appAxes.X, _appAxes.Y };
             if (Settings.AlignmentMode == AlignmentMode.AltAz)
             {
@@ -1604,7 +1600,7 @@ namespace GreenSwamp.Alpaca.MountControl
         {
             // N7: Pass computed LST directly — avoids SkyServer.SiderealTime which reads _defaultInstance
             //     (device-00), so device-01 would always see LST=0.0 if device-00 is not running.
-            var lst = SkyServer.GetLocalSiderealTime(Settings.Longitude);
+            var lst = GetLocalSiderealTime(Settings.Longitude);
 
             // Implement PEC
             PecCheck();
@@ -2010,7 +2006,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 _trackingProcessor.Start(CancellationToken.None);
 
                 // start with a stop
-                SkyServer.AxesStopValidate(this);
+                AxesStopValidate();
 
                 // Event to get mount positions and update UI
                 // Ensure DisplayInterval is valid for MediaTimer (must be > 0)
@@ -2054,7 +2050,7 @@ namespace GreenSwamp.Alpaca.MountControl
             if (_mediaTimer != null) { _mediaTimer.Tick -= OnUpdateServerEvent; }
             _mediaTimer?.Stop();
             _mediaTimer?.Dispose();
-            SkyServer.AxesStopValidate(this); // N6: now safe — no timer can race and re-queue motion
+            AxesStopValidate(); // N6: now safe — no timer can race and re-queue motion
 
             if (SimQueue?.IsRunning == true) { SimQueue.Stop(); }
 
@@ -2096,7 +2092,7 @@ namespace GreenSwamp.Alpaca.MountControl
             }
             catch (Exception ex)
             {
-                SkyServer.SkyErrorHandler(ex, this);
+                MountErrorHandler(ex);
             }
             finally
             {
@@ -2245,15 +2241,15 @@ namespace GreenSwamp.Alpaca.MountControl
             _moveAxisActive = false;
             _rateMoveAxes = new Vector(0, 0);
             _rateRaDec = new Vector(0, 0);
-            if (!SkyServer.AxesStopValidate(this))
+            if (!AxesStopValidate())
             {
                 switch (Settings.Mount)
                 {
                     case MountType.Simulator:
-                        SkyServer.SimTasks(MountTaskName.StopAxes, this);
+                        SimTasks(MountTaskName.StopAxes);
                         break;
                     case MountType.SkyWatcher:
-                        SkyServer.SkyTasks(MountTaskName.StopAxes, this);
+                        SkyTasks(MountTaskName.StopAxes);
                         break;
                 }
             }
@@ -2488,7 +2484,7 @@ namespace GreenSwamp.Alpaca.MountControl
             const int timer = 120;
             var stopwatch = Stopwatch.StartNew();
 
-            SkyServer.SimTasks(MountTaskName.StopAxes, this);
+            SimTasks(MountTaskName.StopAxes);
 
             #region First Slew
             token.ThrowIfCancellationRequested();
@@ -2518,7 +2514,7 @@ namespace GreenSwamp.Alpaca.MountControl
             }
             stopwatch.Stop();
 
-            SkyServer.AxesStopValidate(this);
+            AxesStopValidate();
             monitorItem = new MonitorEntry
             {
                 Datetime = HiResDateTime.UtcNow,
@@ -2538,7 +2534,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 SimPrecisionGoto(target, slewType, token);
             #endregion
 
-            SkyServer.SimTasks(MountTaskName.StopAxes, this);
+            SimTasks(MountTaskName.StopAxes);
             return success;
         }
 
@@ -2765,7 +2761,7 @@ namespace GreenSwamp.Alpaca.MountControl
             const int timer = 240;
             var stopwatch = Stopwatch.StartNew();
 
-            SkyServer.SkyTasks(MountTaskName.StopAxes, this);
+            SkyTasks(MountTaskName.StopAxes);
 
             #region First Slew
             token.ThrowIfCancellationRequested();
@@ -2803,7 +2799,7 @@ namespace GreenSwamp.Alpaca.MountControl
             }
             stopwatch.Stop();
 
-            SkyServer.AxesStopValidate(this);
+            AxesStopValidate();
             monitorItem = new MonitorEntry
             {
                 Datetime = HiResDateTime.UtcNow,
@@ -2823,7 +2819,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 SkyPrecisionGoto(target, slewType, token);
             #endregion
 
-            SkyServer.SkyTasks(MountTaskName.StopAxes, this);
+            SkyTasks(MountTaskName.StopAxes);
             return success;
         }
 

@@ -35,10 +35,10 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
                             switch (instance.Settings.Mount)
                             {
                                 case MountType.Simulator:
-                                    SkyServer.SimTasks(MountTaskName.SetSnapPort1, instance);
+                                    instance.SimTasks(MountTaskName.SetSnapPort1);
                                     break;
                                 case MountType.SkyWatcher:
-                                    SkyServer.SkyTasks(MountTaskName.SetSnapPort1, instance);
+                                    instance.SkyTasks(MountTaskName.SetSnapPort1);
                                     break;
                                 default:
                                     throw new DriverException("Mount type error");
@@ -59,10 +59,10 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
                             switch (instance.Settings.Mount)
                             {
                                 case MountType.Simulator:
-                                    SkyServer.SimTasks(MountTaskName.SetSnapPort2, instance);
+                                    instance.SimTasks(MountTaskName.SetSnapPort2);
                                     break;
                                 case MountType.SkyWatcher:
-                                    SkyServer.SkyTasks(MountTaskName.SetSnapPort2, instance);
+                                    instance.SkyTasks(MountTaskName.SetSnapPort2);
                                     break;
                                 default:
                                     throw new DriverException("Mount type error");
