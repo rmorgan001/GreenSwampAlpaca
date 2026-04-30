@@ -517,6 +517,32 @@ namespace GreenSwamp.Alpaca.MountControl
         void IMountController.Start() => MountStart();
         void IMountController.Stop() => MountStop();
         void IMountController.Reset() => MountReset();
+
+        /// <summary>
+        /// Public wrapper for connecting to the mount
+        /// </summary>
+        public bool Connect() => MountConnect();
+
+        /// <summary>
+        /// Public wrapper for disconnecting from the mount
+        /// </summary>
+        public void Disconnect() => MountStop();
+
+        /// <summary>
+        /// Public wrapper for starting mount operations
+        /// </summary>
+        public void Start() => MountStart();
+
+        /// <summary>
+        /// Public wrapper for stopping mount operations
+        /// </summary>
+        public void Stop() => MountStop();
+
+        /// <summary>
+        /// Public wrapper for resetting the mount to home position
+        /// </summary>
+        public void Reset() => MountReset();
+
         /// <summary>
         /// Emergency stop - halt all motion immediately
         /// </summary>
