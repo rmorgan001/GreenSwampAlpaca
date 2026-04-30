@@ -66,7 +66,7 @@ namespace GreenSwamp.Alpaca.MountControl
         /// Reset mount to home position
         /// Migrated from SkyServer.MountReset()
         /// </summary>
-        private void MountReset()
+        public void MountReset()
         {
             // Set home positions using current settings (already loaded)
             _homeAxes = GetHomeAxes(Settings.HomeAxisX, Settings.HomeAxisY);

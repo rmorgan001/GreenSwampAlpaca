@@ -226,7 +226,7 @@ namespace GreenSwamp.Alpaca.MountControl
         /// Sets up defaults after an established connection.
         /// Migrated from SkyServer.MountConnect()
         /// </summary>
-        private bool MountConnect()
+        public bool MountConnect()
         {
             _targetRaDec = new Vector(double.NaN, double.NaN);
             var positions = this.GetDefaultPositions();
@@ -559,7 +559,7 @@ namespace GreenSwamp.Alpaca.MountControl
         /// Start connection, queues, and events
         /// Migrated from SkyServer.MountStart()
         /// </summary>
-        private void MountStart()
+        public void MountStart()
         {
             var monitorItem = new MonitorEntry
             { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Server, Category = MonitorCategory.Mount, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"{Settings.Mount}" };
@@ -649,7 +649,7 @@ namespace GreenSwamp.Alpaca.MountControl
         /// Stop queues and events
         /// Migrated from SkyServer.MountStop()
         /// </summary>
-        internal void MountStop()
+        public void MountStop()
         {
             var monitorItem = new MonitorEntry
                 { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Server, Category = MonitorCategory.Server, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"{Settings.Mount}" };

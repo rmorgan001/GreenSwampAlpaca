@@ -511,68 +511,12 @@ namespace GreenSwamp.Alpaca.MountControl
         /// </summary>
         public bool IsRunning => IsMountRunning;
 
-        /// <summary>
-        /// Connect to mount hardware
-        /// Implemented (was stub in 3.1)
-        /// </summary>
-        public bool Connect()
-        {
-            LogMount($"Connect() called on mount {Id}");
-
-            // Call the actual connect implementation
-            // This will be MountConnect() migrated from static
-            return MountConnect();
-        }
-
-
-        /// <summary>
-        /// Disconnect from mount hardware
-        /// Delegates to static method
-        /// </summary>
-        public void Disconnect()
-        {
-            LogMount($"Disconnect() called on mount {Id}");
-
-            // Stop mount operations (timers, tracking, queues, serial)
-            MountStop();
-
-        }
-
-        /// <summary>
-        /// Start mount operations
-        /// Delegates to static method
-        /// </summary>
-        public void Start()
-        {
-            LogMount($"Start() called on mount {Id}");
-
-            // Call instance method directly
-            MountStart();
-        }
-
-        /// <summary>
-        /// Stop mount operations
-        /// Delegates to static method
-        /// </summary>
-        public void Stop()
-        {
-            LogMount($"Stop() called on mount {Id}");
-
-            // Call method directly
-            MountStop();
-        }
-
-        /// <summary>
-        /// Reset mount to home position
-        /// Delegates to static method
-        /// </summary>
-        public void Reset()
-        {
-            LogMount($"Reset() called on mount {Id}");
-
-            // Call method directly
-            MountReset();
-        }
+        // IMountController explicit implementation
+        bool IMountController.Connect() => MountConnect();
+        void IMountController.Disconnect() => MountStop();
+        void IMountController.Start() => MountStart();
+        void IMountController.Stop() => MountStop();
+        void IMountController.Reset() => MountReset();
         /// <summary>
         /// Emergency stop - halt all motion immediately
         /// </summary>

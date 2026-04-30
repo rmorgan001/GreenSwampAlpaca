@@ -97,7 +97,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 {
                     try
                     {
-                        instance.Disconnect();
+                        instance.MountStop();
                     }
                     catch
                     {

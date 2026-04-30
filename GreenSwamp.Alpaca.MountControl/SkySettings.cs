@@ -258,7 +258,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     // SIDE EFFECT: Stop mount when type changes
                     if (_owner?.IsMountRunning == true)
                     {
-                        _owner.Stop();
+                        _owner.MountStop();
                     }
                 }
             }
