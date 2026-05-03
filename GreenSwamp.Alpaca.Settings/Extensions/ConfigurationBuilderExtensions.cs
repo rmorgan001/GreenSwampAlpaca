@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -63,7 +63,7 @@ namespace GreenSwamp.Alpaca.Settings.Extensions
                 appData, 
                 "GreenSwampAlpaca", 
                 appVersion, 
-                "appsettings.user.json");
+                "monitor.settings.user.json");
 
             // Issue 5.1 Fix: Validate JSON file before loading
             // Empty files (0 bytes) or corrupt JSON will cause AddJsonFile to throw unhandled exceptions

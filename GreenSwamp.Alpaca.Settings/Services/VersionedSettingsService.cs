@@ -28,8 +28,8 @@ namespace GreenSwamp.Alpaca.Settings.Services
     /// <summary>
     /// Versioned settings service — per-device file storage redesign (S1–S8).
     /// Each device's settings are stored in device-nn.settings.json.
-    /// Alpaca discovery metadata is stored in appsettings.alpaca.user.json.
-    /// Server-wide monitor settings are stored in appsettings.user.json.
+    /// Alpaca discovery metadata is stored in devices.alpaca.user.json.
+    /// Server-wide monitor settings are stored in monitor.settings.user.json.
     /// </summary>
     public class VersionedSettingsService : IVersionedSettingsService
     {
@@ -46,9 +46,10 @@ namespace GreenSwamp.Alpaca.Settings.Services
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
         public string CurrentVersion { get; private set; }
-        public string UserSettingsPath => Path.Combine(_currentVersionPath, "appsettings.user.json");
-        public string AlpacaSettingsPath => Path.Combine(_currentVersionPath, "appsettings.alpaca.user.json");
+        public string MonitorSettingsPath => Path.Combine(_currentVersionPath, "monitor.settings.user.json");
+        public string AlpacaDevicesSettingsPath => Path.Combine(_currentVersionPath, "devices.alpaca.user.json");
         public string ServerConfigPath => Path.Combine(_currentVersionPath, "appsettings.server.user.json");
+        public string ObservatorySettingsPath => Path.Combine(_currentVersionPath, "observatory.settings.json");
 
         public event EventHandler<SkySettings>? DeviceSettingsChanged;
         public event EventHandler<MonitorSettings>? MonitorSettingsChanged;
@@ -65,6 +66,51 @@ namespace GreenSwamp.Alpaca.Settings.Services
             _currentVersionPath = Path.Combine(_appDataRoot, CurrentVersion);
 
             Directory.CreateDirectory(_currentVersionPath);
+
+            // Migrate legacy file names from earlier versions of the application.
+            // Must run before any file read operations.
+            MigrateLegacyFileNames();
+        }
+
+        // Renames pre-rename-era files to the new canonical names on first startup
+        // after an upgrade. Safe to call on every startup — no-ops when already migrated.
+        private void MigrateLegacyFileNames()
+        {
+            MigrateFile(
+                oldName: "appsettings.user.json",
+                newPath: MonitorSettingsPath,
+                label: "monitor settings");
+
+            MigrateFile(
+                oldName: "appsettings.alpaca.user.json",
+                newPath: AlpacaDevicesSettingsPath,
+                label: "Alpaca devices");
+        }
+
+        private void MigrateFile(string oldName, string newPath, string label)
+        {
+            var oldPath = Path.Combine(_currentVersionPath, oldName);
+
+            if (!File.Exists(oldPath))
+                return; // Nothing to migrate.
+
+            if (File.Exists(newPath))
+            {
+                // Both files exist — the new name takes precedence; leave old file in place for safety.
+                LogSafe("WARN", $"Legacy {label} file '{oldName}' found alongside new '{Path.GetFileName(newPath)}'. " +
+                                $"Using new file; legacy file left in place.");
+                return;
+            }
+
+            try
+            {
+                File.Move(oldPath, newPath);
+                LogSafe("INFO", $"Migrated {label} file: '{oldName}' → '{Path.GetFileName(newPath)}'.");
+            }
+            catch (Exception ex)
+            {
+                LogSafe("ERROR", $"Failed to migrate {label} file '{oldName}': {ex.Message}");
+            }
         }
 
         // ── Path helpers ──────────────────────────────────────────────────────
@@ -257,7 +303,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 }
             }
 
-            if (!File.Exists(AlpacaSettingsPath))
+            if (!File.Exists(AlpacaDevicesSettingsPath))
                 InitialiseAlpacaSettingsFile();
         }
 
@@ -275,12 +321,12 @@ namespace GreenSwamp.Alpaca.Settings.Services
             {
                 var doc = new { AlpacaDevices = alpacaDevices };
                 var json = JsonSerializer.Serialize(doc, _jsonOptions);
-                File.WriteAllText(AlpacaSettingsPath, json, Encoding.UTF8);
-                LogSafe("INFO", "Created appsettings.alpaca.user.json from factory defaults.");
+                File.WriteAllText(AlpacaDevicesSettingsPath, json, Encoding.UTF8);
+                LogSafe("INFO", "Created devices.alpaca.user.json from factory defaults.");
             }
             catch (Exception ex)
             {
-                LogSafe("ERROR", $"Failed to create appsettings.alpaca.user.json: {ex.Message}");
+                LogSafe("ERROR", $"Failed to create devices.alpaca.user.json: {ex.Message}");
             }
         }
 
@@ -288,19 +334,19 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
         public List<AlpacaDevice> GetAlpacaDevices()
         {
-            if (!File.Exists(AlpacaSettingsPath))
+            if (!File.Exists(AlpacaDevicesSettingsPath))
                 InitialiseAlpacaSettingsFile();
 
             try
             {
-                var json = File.ReadAllText(AlpacaSettingsPath);
+                var json = File.ReadAllText(AlpacaDevicesSettingsPath);
                 var doc = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
                 if (doc != null && doc.TryGetValue("AlpacaDevices", out var element))
                     return element.Deserialize<List<AlpacaDevice>>() ?? new List<AlpacaDevice>();
             }
             catch (Exception ex)
             {
-                LogSafe("ERROR", $"Error reading AlpacaDevices from appsettings.alpaca.user.json: {ex.Message}");
+                LogSafe("ERROR", $"Error reading AlpacaDevices from devices.alpaca.user.json: {ex.Message}");
             }
 
             return new List<AlpacaDevice>();
@@ -364,11 +410,11 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
         private List<AlpacaDevice> ReadAlpacaDevicesUnlocked()
         {
-            if (!File.Exists(AlpacaSettingsPath)) return new List<AlpacaDevice>();
+            if (!File.Exists(AlpacaDevicesSettingsPath)) return new List<AlpacaDevice>();
 
             try
             {
-                var json = File.ReadAllText(AlpacaSettingsPath);
+                var json = File.ReadAllText(AlpacaDevicesSettingsPath);
                 var doc = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
                 if (doc != null && doc.TryGetValue("AlpacaDevices", out var element))
                     return element.Deserialize<List<AlpacaDevice>>() ?? new List<AlpacaDevice>();
@@ -382,9 +428,9 @@ namespace GreenSwamp.Alpaca.Settings.Services
         {
             var doc = new { AlpacaDevices = devices };
             var json = JsonSerializer.Serialize(doc, _jsonOptions);
-            var tempPath = AlpacaSettingsPath + ".tmp";
+            var tempPath = AlpacaDevicesSettingsPath + ".tmp";
             await File.WriteAllTextAsync(tempPath, json, Encoding.UTF8);
-            File.Move(tempPath, AlpacaSettingsPath, overwrite: true);
+            File.Move(tempPath, AlpacaDevicesSettingsPath, overwrite: true);
         }
 
         // ── Validation ────────────────────────────────────────────────────────
@@ -500,13 +546,13 @@ namespace GreenSwamp.Alpaca.Settings.Services
         {
             var result = new ValidationResult { IsValid = true };
 
-            if (!File.Exists(AlpacaSettingsPath))
+            if (!File.Exists(AlpacaDevicesSettingsPath))
             {
                 result.Warnings.Add(new ValidationError
                 {
                     ErrorCode = "ALPACA_FILE_NOT_FOUND",
                     Severity = "info",
-                    Message = "appsettings.alpaca.user.json not found.",
+                    Message = "devices.alpaca.user.json not found.",
                     Resolution = "File will be created on first run."
                 });
                 return result;
@@ -515,7 +561,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
             List<AlpacaDevice> devices;
             try
             {
-                var json = File.ReadAllText(AlpacaSettingsPath);
+                var json = File.ReadAllText(AlpacaDevicesSettingsPath);
                 var doc = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
                 if (doc == null || !doc.TryGetValue("AlpacaDevices", out var element))
                 {
@@ -524,7 +570,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                     {
                         ErrorCode = "ALPACA_FILE_PARSE_ERROR",
                         Severity = "error",
-                        Message = "AlpacaDevices key missing from appsettings.alpaca.user.json.",
+                        Message = "AlpacaDevices key missing from devices.alpaca.user.json.",
                         Resolution = "Delete the file and restart to regenerate."
                     });
                     return result;
@@ -538,7 +584,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 {
                     ErrorCode = "ALPACA_FILE_PARSE_ERROR",
                     Severity = "error",
-                    Message = $"Invalid JSON in appsettings.alpaca.user.json: {ex.Message}",
+                    Message = $"Invalid JSON in devices.alpaca.user.json: {ex.Message}",
                     Resolution = "Delete the file and restart to regenerate."
                 });
                 return result;
@@ -552,7 +598,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                     ErrorCode = "ALPACA_MAX_DEVICES_EXCEEDED",
                     Severity = "error",
                     Message = $"AlpacaDevices array has {devices.Count} entries; maximum is 100.",
-                    Resolution = "Remove excess entries from appsettings.alpaca.user.json."
+                    Resolution = "Remove excess entries from devices.alpaca.user.json."
                 });
             }
 
@@ -568,7 +614,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                         Severity = "error",
                         DeviceNumber = d.DeviceNumber,
                         Message = $"DeviceNumber {d.DeviceNumber} is out of range 0–99.",
-                        Resolution = "Correct the DeviceNumber in appsettings.alpaca.user.json."
+                        Resolution = "Correct the DeviceNumber in devices.alpaca.user.json."
                     });
                 }
 
@@ -581,7 +627,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                         Severity = "error",
                         DeviceNumber = d.DeviceNumber,
                         Message = $"Duplicate DeviceNumber {d.DeviceNumber} in AlpacaDevices.",
-                        Resolution = "Remove duplicate entries from appsettings.alpaca.user.json."
+                        Resolution = "Remove duplicate entries from devices.alpaca.user.json."
                     });
                 }
 
@@ -681,13 +727,13 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
             try
             {
-                var userSettings = await ReadSettingsFileAsync(UserSettingsPath);
+                var userSettings = await ReadSettingsFileAsync(MonitorSettingsPath);
                 userSettings["MonitorSettings"] = JsonSerializer.SerializeToElement(settings);
 
                 var json = JsonSerializer.Serialize(userSettings, _jsonOptions);
-                var tempPath = UserSettingsPath + ".tmp";
+                var tempPath = MonitorSettingsPath + ".tmp";
                 await File.WriteAllTextAsync(tempPath, json, Encoding.UTF8);
-                File.Move(tempPath, UserSettingsPath, overwrite: true);
+                File.Move(tempPath, MonitorSettingsPath, overwrite: true);
 
                 LogSafe("INFO", $"Monitor settings saved for version {CurrentVersion}");
             }

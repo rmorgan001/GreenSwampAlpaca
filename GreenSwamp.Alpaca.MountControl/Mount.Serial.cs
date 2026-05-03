@@ -524,24 +524,24 @@ namespace GreenSwamp.Alpaca.MountControl
                     version = version.Substring(0, plusIndex);
                 }
 
-                var userSettingsPath = Path.Combine(appData, "GreenSwampAlpaca", version, "appsettings.user.json");
+                var userSettingsPath = Path.Combine(appData, "GreenSwampAlpaca", version, "monitor.settings.user.json");
                 var logDirectoryPath = GsFile.GetLogPath();
 
                 if (File.Exists(userSettingsPath))
                 {
-                    // Copy the appsettings.user.json file to the log directory
-                    var destinationPath = Path.Combine(logDirectoryPath, "appsettings.user.json");
+                    // Copy the monitor.settings.user.json file to the log directory
+                    var destinationPath = Path.Combine(logDirectoryPath, "monitor.settings.user.json");
                     File.Copy(userSettingsPath, destinationPath, true);
 
                     monitorItem = new MonitorEntry
-                    { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Server, Category = MonitorCategory.Mount, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"Copied appsettings.user.json to {logDirectoryPath}" };
+                    { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Server, Category = MonitorCategory.Mount, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"Copied monitor.settings.user.json to {logDirectoryPath}" };
                     MonitorLog.LogToMonitor(monitorItem);
                 }
                 else
                 {
                     // Settings file doesn't exist yet - log info (it will be created later by the settings service)
                     monitorItem = new MonitorEntry
-                    { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Server, Category = MonitorCategory.Mount, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"appsettings.user.json not found at {userSettingsPath} - will be created on first settings save" };
+                    { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Server, Category = MonitorCategory.Mount, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"monitor.settings.user.json not found at {userSettingsPath} - will be created on first settings save" };
                     MonitorLog.LogToMonitor(monitorItem);
                 }
             }

@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -18,7 +18,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
 {
     /// <summary>
     /// ASCOM Alpaca device discovery metadata.
-    /// Stored in appsettings.alpaca.user.json — one entry per registered device.
+    /// Stored in devices.alpaca.user.json — one entry per registered device.
     /// Does NOT contain operational settings (those are in device-nn.settings.json).
     /// </summary>
     public class AlpacaDevice

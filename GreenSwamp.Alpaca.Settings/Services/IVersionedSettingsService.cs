@@ -21,8 +21,8 @@ namespace GreenSwamp.Alpaca.Settings.Services
     /// <summary>
     /// Interface for versioned settings service (redesigned for per-device file storage).
     /// Each device's settings are stored in a dedicated device-nn.settings.json file.
-    /// Alpaca discovery metadata is stored in appsettings.alpaca.user.json.
-    /// Server-wide settings (monitor) are stored in appsettings.user.json.
+    /// Alpaca discovery metadata is stored in devices.alpaca.user.json.
+    /// Server-wide settings (monitor) are stored in monitor.settings.user.json.
     /// </summary>
     public interface IVersionedSettingsService
     {
@@ -31,29 +31,29 @@ namespace GreenSwamp.Alpaca.Settings.Services
         /// <summary>Gets the current application version.</summary>
         string CurrentVersion { get; }
 
-        /// <summary>Gets the path to appsettings.user.json for the current version.</summary>
-        string UserSettingsPath { get; }
+        /// <summary>Gets the path to monitor.settings.user.json for the current version.</summary>
+        string MonitorSettingsPath { get; }
 
-        /// <summary>Gets the path to appsettings.alpaca.user.json for the current version.</summary>
-        string AlpacaSettingsPath { get; }
+        /// <summary>Gets the path to devices.alpaca.user.json for the current version.</summary>
+        string AlpacaDevicesSettingsPath { get; }
 
         /// <summary>Gets the path to device-nn.settings.json for the specified device number (0-99).</summary>
         string GetDeviceSettingsPath(int deviceNumber);
 
-        // ── Server-wide settings (appsettings.user.json) ─────────────────────
+        // ── Server-wide settings (monitor.settings.user.json) ────────────────
 
         /// <summary>Gets the current monitor settings.</summary>
         MonitorSettings GetMonitorSettings();
 
-        /// <summary>Saves monitor settings to appsettings.user.json.</summary>
+        /// <summary>Saves monitor settings to monitor.settings.user.json.</summary>
         Task SaveMonitorSettingsAsync(MonitorSettings settings);
 
-        // ── Alpaca discovery (appsettings.alpaca.user.json) ──────────────────
+        // ── Alpaca discovery (devices.alpaca.user.json) ───────────────────────
 
         /// <summary>Gets Alpaca device discovery metadata for all configured devices.</summary>
         List<AlpacaDevice> GetAlpacaDevices();
 
-        /// <summary>Replaces the full AlpacaDevices list in appsettings.alpaca.user.json.</summary>
+        /// <summary>Replaces the full AlpacaDevices list in devices.alpaca.user.json.</summary>
         Task SaveAlpacaDevicesAsync(List<AlpacaDevice> devices);
 
         /// <summary>Adds a new AlpacaDevice entry. Validates device number uniqueness and 100-device limit.</summary>
@@ -85,10 +85,13 @@ namespace GreenSwamp.Alpaca.Settings.Services
         /// <summary>Validates device-nn.settings.json for the specified device number.</summary>
         ValidationResult ValidateDeviceSettings(int deviceNumber);
 
-        /// <summary>Validates appsettings.alpaca.user.json.</summary>
+        /// <summary>Validates devices.alpaca.user.json.</summary>
         ValidationResult ValidateAlpacaDevices();
 
         // ── Observatory settings (observatory.settings.json) ─────────────────
+
+        /// <summary>Gets the path to observatory.settings.json for the current version.</summary>
+        string ObservatorySettingsPath { get; }
 
         /// <summary>Gets the observatory physical settings. Creates observatory.settings.json from
         /// app defaults on first run if absent (Behaviour B4).</summary>

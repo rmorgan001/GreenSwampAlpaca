@@ -1,4 +1,4 @@
-@using GreenSwamp.Alpaca.Settings.Services
+﻿@using GreenSwamp.Alpaca.Settings.Services
 @using GreenSwamp.Alpaca.Settings.Models
 @inject IVersionedSettingsService SettingsService
 
@@ -49,7 +49,7 @@
             <!-- Settings File Path -->
             <div class="mb-3">
                 <small class="text-muted">
-                    <strong>Settings file:</strong> <code>@SettingsService.UserSettingsPath</code>
+                    <strong>Settings file:</strong> <code>@SettingsService.MonitorSettingsPath</code>
                 </small>
             </div>
 
@@ -199,7 +199,7 @@
     {
         try
         {
-            var settingsPath = SettingsService.UserSettingsPath;
+            var settingsPath = SettingsService.MonitorSettingsPath;
             var directory = System.IO.Path.GetDirectoryName(settingsPath);
             
             if (!string.IsNullOrEmpty(directory) && System.IO.Directory.Exists(directory))
