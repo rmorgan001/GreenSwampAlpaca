@@ -17,6 +17,12 @@
             Defaults to 0 (legacy anonymous slot) when not explicitly set.
             </summary>
         </member>
+        <member name="T:ASCOM.Alpaca.AscomLoggerAdapter">
+            <summary>
+            Adapts a <see cref="T:Microsoft.Extensions.Logging.ILogger"/> to the
+            <see cref="T:ASCOM.Common.Interfaces.ILogger"/> interface required by ASCOM discovery components.
+            </summary>
+        </member>
         <member name="T:ASCOM.Alpaca.AlpacaController">
             <summary>
             A Custom REST MVC controller with additions to help handle Alpaca responses and error responses.
@@ -1536,6 +1542,12 @@
         <member name="P:ASCOM.Alpaca.DeviceManager.ServerTransactionID">
             <summary>
             A server wide Transaction ID Counter
+            </summary>
+        </member>
+        <member name="P:ASCOM.Alpaca.Logging.Log">
+            <summary>
+            Returns an ASCOM ILogger adapter wrapping the current MEL logger.
+            Used by ASCOM discovery components that require ASCOM.Common.Interfaces.ILogger.
             </summary>
         </member>
     </members>

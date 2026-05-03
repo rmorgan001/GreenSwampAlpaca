@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -40,6 +40,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
         private readonly SemaphoreSlim _alpacaFileLock = new(1, 1);
         private readonly SemaphoreSlim _monitorFileLock = new(1, 1);
         private readonly SemaphoreSlim _observatoryFileLock = new(1, 1);
+        private readonly SemaphoreSlim _serverConfigFileLock = new(1, 1);
         private readonly ConcurrentDictionary<int, SemaphoreSlim> _deviceFileLocks = new();
 
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
@@ -47,9 +48,11 @@ namespace GreenSwamp.Alpaca.Settings.Services
         public string CurrentVersion { get; private set; }
         public string UserSettingsPath => Path.Combine(_currentVersionPath, "appsettings.user.json");
         public string AlpacaSettingsPath => Path.Combine(_currentVersionPath, "appsettings.alpaca.user.json");
+        public string ServerConfigPath => Path.Combine(_currentVersionPath, "appsettings.server.user.json");
 
         public event EventHandler<SkySettings>? DeviceSettingsChanged;
         public event EventHandler<MonitorSettings>? MonitorSettingsChanged;
+        public event EventHandler<ServerConfig>? ServerConfigChanged;
 
         public VersionedSettingsService(IConfiguration configuration)
         {
@@ -598,6 +601,68 @@ namespace GreenSwamp.Alpaca.Settings.Services
             }
 
             return result;
+        }
+
+        // ── Server configuration ──────────────────────────────────────────────
+
+        public ServerConfig GetServerConfig()
+        {
+            if (!File.Exists(ServerConfigPath))
+            {
+                // First run: seed from appsettings.json "ServerConfig" section then persist
+                var defaults = new ServerConfig();
+                _configuration.GetSection("ServerConfig").Bind(defaults);
+                // TODO: one-time migration — if ASCOM XML profile exists, copy values here before returning defaults
+                LogSafe("INFO", "appsettings.server.user.json not found — seeding from factory defaults.");
+                try
+                {
+                    var seedJson = JsonSerializer.Serialize(defaults, _jsonOptions);
+                    var tempPath = ServerConfigPath + ".tmp";
+                    File.WriteAllText(tempPath, seedJson, Encoding.UTF8);
+                    File.Move(tempPath, ServerConfigPath, overwrite: true);
+                    LogSafe("INFO", "Created appsettings.server.user.json from factory defaults.");
+                }
+                catch (Exception ex)
+                {
+                    LogSafe("WARNING", $"Failed to write appsettings.server.user.json on first run: {ex.Message}");
+                }
+                return defaults;
+            }
+
+            try
+            {
+                var json = File.ReadAllText(ServerConfigPath);
+                var config = JsonSerializer.Deserialize<ServerConfig>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                return config ?? new ServerConfig();
+            }
+            catch (Exception ex)
+            {
+                LogSafe("ERROR", $"Error reading appsettings.server.user.json: {ex.Message} — returning defaults.");
+                return new ServerConfig();
+            }
+        }
+
+        public async Task SaveServerConfigAsync(ServerConfig config)
+        {
+            ArgumentNullException.ThrowIfNull(config);
+
+            if (!await _serverConfigFileLock.WaitAsync(TimeSpan.FromSeconds(5)))
+                throw new TimeoutException("Timeout acquiring server config file lock.");
+
+            try
+            {
+                var json = JsonSerializer.Serialize(config, _jsonOptions);
+                var tempPath = ServerConfigPath + ".tmp";
+                await File.WriteAllTextAsync(tempPath, json, Encoding.UTF8);
+                File.Move(tempPath, ServerConfigPath, overwrite: true);
+                LogSafe("INFO", "Server configuration saved to appsettings.server.user.json.");
+            }
+            finally
+            {
+                _serverConfigFileLock.Release();
+            }
+
+            ServerConfigChanged?.Invoke(this, config);
         }
 
         // ── Monitor settings ──────────────────────────────────────────────────

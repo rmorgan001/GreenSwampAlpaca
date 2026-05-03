@@ -1,12 +1,25 @@
 ﻿using ASCOM.Alpaca;
+using GreenSwamp.Alpaca.Settings.Models;
 
 namespace GreenSwamp.Alpaca.Server
 {
+    /// <summary>
+    /// Implements IAlpacaConfiguration using the unified ServerConfig model
+    /// from GreenSwamp.Alpaca.Settings, replacing the former ASCOM XMLProfile-backed
+    /// ServerSettings static class.
+    /// </summary>
     internal class AlpacaConfiguration : IAlpacaConfiguration
     {
-        public bool RunInStrictAlpacaMode => ServerSettings.RunInStrictAlpacaMode;
+        private readonly ServerConfig _config;
 
-        public bool PreventRemoteDisconnects => ServerSettings.PreventRemoteDisconnects;
+        internal AlpacaConfiguration(ServerConfig config)
+        {
+            _config = config;
+        }
+
+        public bool RunInStrictAlpacaMode => _config.RunInStrictAlpacaMode;
+
+        public bool PreventRemoteDisconnects => _config.PreventRemoteDisconnects;
 
         public string ServerName => Program.ServerName;
 
@@ -14,18 +27,18 @@ namespace GreenSwamp.Alpaca.Server
 
         public string ServerVersion => Program.ServerVersion;
 
-        public string Location => ServerSettings.Location;
+        public string Location => _config.Location;
 
-        public bool AllowImageBytesDownload => ServerSettings.AllowImageBytesDownload;
+        public bool AllowImageBytesDownload => _config.AllowImageBytesDownload;
 
-        public bool AllowDiscovery => ServerSettings.AllowDiscovery;
+        public bool AllowDiscovery => _config.AllowDiscovery;
 
-        public int ServerPort => ServerSettings.ServerPort;
+        public int ServerPort => _config.ServerPort;
 
-        public bool AllowRemoteAccess => ServerSettings.AllowRemoteAccess;
+        public bool AllowRemoteAccess => _config.AllowRemoteAccess;
 
-        public bool LocalRespondOnlyToLocalHost => ServerSettings.LocalRespondOnlyToLocalHost;
+        public bool LocalRespondOnlyToLocalHost => _config.LocalRespondOnlyToLocalHost;
 
-        public bool RunSwagger => ServerSettings.RunSwagger;
+        public bool RunSwagger => _config.RunSwagger;
     }
 }

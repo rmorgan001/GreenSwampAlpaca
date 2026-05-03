@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -109,6 +109,17 @@ namespace GreenSwamp.Alpaca.Settings.Services
         /// all [CommonSetting] properties are preserved. Operation is atomic.</summary>
         Task ChangeAlignmentModeAsync(int deviceNumber, AlignmentMode newMode);
 
+        // ── Server configuration (appsettings.server.user.json) ──────────────
+
+        /// <summary>Gets the path to appsettings.server.user.json for the current version.</summary>
+        string ServerConfigPath { get; }
+
+        /// <summary>Gets the current server configuration. Returns defaults if the file is absent.</summary>
+        ServerConfig GetServerConfig();
+
+        /// <summary>Saves server configuration atomically to appsettings.server.user.json.</summary>
+        Task SaveServerConfigAsync(ServerConfig config);
+
         // ── Events ────────────────────────────────────────────────────────────
 
         /// <summary>Event raised when device settings are changed via SaveDeviceSettingsAsync.</summary>
@@ -116,5 +127,8 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
         /// <summary>Event raised when monitor settings are changed.</summary>
         event EventHandler<MonitorSettings>? MonitorSettingsChanged;
+
+        /// <summary>Event raised when server configuration is changed via SaveServerConfigAsync.</summary>
+        event EventHandler<ServerConfig>? ServerConfigChanged;
     }
 }

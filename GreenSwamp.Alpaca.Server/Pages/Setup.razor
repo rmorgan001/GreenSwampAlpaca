@@ -1,8 +1,10 @@
 ﻿@page "/setup"
 
 @inject NavigationManager NavManager
+@inject GreenSwamp.Alpaca.Settings.Services.IVersionedSettingsService SettingsService
 
-@using ASCOM.Common.Interfaces 
+@using ASCOM.Common.Interfaces
+@using ASCOM.Alpaca
 
 <fieldset>
     <legend>Server Settings</legend>
@@ -47,7 +49,7 @@
             <th>Addresses server is listening on.</th>
         </tr>
 
-        @if (ServerSettings.AllowRemoteAccess)
+        @if (_config.AllowRemoteAccess)
         {
             try
             {
@@ -174,115 +176,83 @@
 
 @code {
 
-    bool Discovery
-    {
-        get;
-        set;
-    } = ServerSettings.AllowDiscovery;
+    private GreenSwamp.Alpaca.Settings.Models.ServerConfig _config = new();
 
-    bool StrictAPIMode
-    {
-        get;
-        set;
-    } = ServerSettings.RunInStrictAlpacaMode;
+    // ── Form-bound properties ─────────────────────────────────────────────────
 
-    bool LocalHostOnlyOnHost
-    {
-        get;
-        set;
-    } = ServerSettings.LocalRespondOnlyToLocalHost;
+    bool Discovery { get; set; }
+    bool StrictAPIMode { get; set; }
+    bool LocalHostOnlyOnHost { get; set; }
+    bool RemoteAccess { get; set; }
+    UInt16 ServerPort { get; set; }
+    bool StartBrowser { get; set; }
+    bool EnableShutdown { get; set; } = false;
+    string Location { get; set; } = string.Empty;
+    bool AllowShutdown => !EnableShutdown;
+    bool PreventRemoteDisconnects { get; set; }
+    bool RequireAuthorization { get; set; }
+    bool DisableAuth => !RequireAuthorization;
+    string UserName { get; set; } = string.Empty;
+    LogLevel LoggingLevel { get; set; }
+    string Password { get; set; } = string.Empty;
+    string Password2 { get; set; } = string.Empty;
+    bool RunSwagger { get; set; }
 
-    bool RemoteAccess
-    {
-        get;
-        set;
-    } = ServerSettings.AllowRemoteAccess;
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    UInt16 ServerPort
+    protected override void OnInitialized()
     {
-        get;
-        set;
-    } = ServerSettings.ServerPort;
-
-    bool StartBrowser
-    {
-        get;
-        set;
-    } = ServerSettings.AutoStartBrowser;
-
-    bool EnableShutdown
-    {
-        get;
-        set;
-    } = false;
-
-    string Location
-    {
-        get;
-        set;
-    } = ServerSettings.Location;
-
-    bool AllowShutdown
-    {
-        get
-        {
-            return !EnableShutdown;
-        }
+        _config = SettingsService.GetServerConfig();
+        LoadFormFromConfig();
     }
 
-    bool PreventRemoteDisconnects
+    private void LoadFormFromConfig()
     {
-        get;
-        set;
-    } = ServerSettings.PreventRemoteDisconnects;
+        Discovery           = _config.AllowDiscovery;
+        StrictAPIMode       = _config.RunInStrictAlpacaMode;
+        LocalHostOnlyOnHost = _config.LocalRespondOnlyToLocalHost;
+        RemoteAccess        = _config.AllowRemoteAccess;
+        ServerPort          = _config.ServerPort;
+        StartBrowser        = _config.AutoStartBrowser;
+        Location            = _config.Location;
+        PreventRemoteDisconnects = _config.PreventRemoteDisconnects;
+        RequireAuthorization = _config.UseAuth;
+        UserName            = _config.UserName;
+        RunSwagger          = _config.RunSwagger;
 
-    bool RequireAuthorization
+        if (Enum.TryParse<LogLevel>(_config.LoggingLevel, out var level))
+            LoggingLevel = level;
+        else
+            LoggingLevel = LogLevel.Information;
+    }
+
+    // ── Save helpers ─────────────────────────────────────────────────────────
+
+    private async Task ApplyAndSaveAsync()
     {
-        get;
-        set;
-    } = ServerSettings.UseAuth;
+        _config.AllowDiscovery             = Discovery;
+        _config.RunInStrictAlpacaMode      = StrictAPIMode;
+        _config.LocalRespondOnlyToLocalHost = LocalHostOnlyOnHost;
+        _config.AllowRemoteAccess          = RemoteAccess;
+        _config.ServerPort                 = ServerPort;
+        _config.AutoStartBrowser           = StartBrowser;
+        _config.Location                   = Location;
+        _config.PreventRemoteDisconnects   = PreventRemoteDisconnects;
+        _config.UseAuth                    = RequireAuthorization;
+        _config.UserName                   = UserName;
+        _config.RunSwagger                 = RunSwagger;
+        _config.LoggingLevel               = LoggingLevel.ToString();
 
-    bool DisableAuth => !RequireAuthorization;
+        await SettingsService.SaveServerConfigAsync(_config);
+    }
 
-    string UserName
-    {
-        get;
-        set;
-    } = ServerSettings.UserName;
+    // ── Event handlers ────────────────────────────────────────────────────────
 
-    LogLevel LoggingLevel
-    {
-        get;
-        set;
-    } = ServerSettings.LoggingLevel;
-
-
-    string Password
-    {
-        get;
-        set;
-    } = string.Empty;
-
-    string Password2
-    {
-        get;
-        set;
-    } = string.Empty;
-
-    bool RunSwagger
-    {
-        get;
-        set;
-    } = ServerSettings.RunSwagger;
-
-    void SaveDiscovery()
+    async Task SaveDiscovery()
     {
         try
         {
-            ServerSettings.AllowDiscovery = Discovery;
-
-            ServerSettings.LocalRespondOnlyToLocalHost = LocalHostOnlyOnHost;
-
+            await ApplyAndSaveAsync();
             DisplaySuccess("Discovery Settings Saved");
         }
         catch (Exception ex)
@@ -291,37 +261,12 @@
         }
     }
 
-    void SaveServerSettings()
+    async Task SaveServerSettings()
     {
         try
         {
-            bool SettingsChanged = false;
-
-            if (ServerSettings.AllowRemoteAccess != RemoteAccess)
-            {
-                ServerSettings.AllowRemoteAccess = RemoteAccess;
-                SettingsChanged = true;
-            }
-
-            if (ServerSettings.ServerPort != ServerPort)
-            {
-                ServerSettings.ServerPort = ServerPort;
-                SettingsChanged = true;
-            }
-
-            ServerSettings.Location = Location;
-
-            ServerSettings.AutoStartBrowser = StartBrowser;
-
-            ServerSettings.RunInStrictAlpacaMode = StrictAPIMode;
-
-            DisplaySuccess("Server Settings Saved");
-
-            if (SettingsChanged) //If any core settings change call a restart.
-            {
-                Program.Main(Array.Empty<string>());
-            }
-
+            await ApplyAndSaveAsync();
+            DisplaySuccess("Server Settings Saved \u2014 restart the server to apply port/access changes.");
         }
         catch (Exception ex)
         {
@@ -329,12 +274,11 @@
         }
     }
 
-    void SaveDriverSettings()
+    async Task SaveDriverSettings()
     {
         try
         {
-            ServerSettings.PreventRemoteDisconnects = PreventRemoteDisconnects;
-
+            await ApplyAndSaveAsync();
             DisplaySuccess("Driver Settings Saved");
         }
         catch (Exception ex)
@@ -343,32 +287,33 @@
         }
     }
 
-    void SaveLogSettings()
+    async Task SaveLogSettings()
     {
         try
         {
-            ServerSettings.LoggingLevel = LoggingLevel;
+            _config.LoggingLevel = LoggingLevel.ToString();
+            await SettingsService.SaveServerConfigAsync(_config);
             DisplaySuccess("Logging Settings Saved");
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             DisplayError(ex.Message);
         }
     }
 
-    void SaveSecuritySettings()
+    async Task SaveSecuritySettings()
     {
         try
         {
             if (RequireAuthorization)
             {
-                if (UserName == null || UserName == string.Empty)
+                if (string.IsNullOrEmpty(UserName))
                 {
                     DisplayWarning("You must set a User Name");
                     return;
                 }
 
-                if (Password == null || Password == string.Empty)
+                if (string.IsNullOrEmpty(Password))
                 {
                     DisplayWarning("You must set a Password");
                     return;
@@ -380,15 +325,17 @@
                     return;
                 }
 
-                ServerSettings.UserName = UserName;
-                ServerSettings.Password = Password;
-                ServerSettings.UseAuth = RequireAuthorization;
+                _config.UserName = UserName;
+                _config.Password = Hash.GetStoragePassword(Password);
+                _config.UseAuth  = true;
 
+                await SettingsService.SaveServerConfigAsync(_config);
                 NavManager.NavigateTo("/");
             }
             else
             {
-                ServerSettings.UseAuth = RequireAuthorization;
+                _config.UseAuth = false;
+                await SettingsService.SaveServerConfigAsync(_config);
             }
 
             DisplaySuccess("Security Saved!");
@@ -399,12 +346,12 @@
         }
     }
 
-    void SaveSwaggerSettings()
+    async Task SaveSwaggerSettings()
     {
         try
         {
-            ServerSettings.RunSwagger = RunSwagger;
-
+            _config.RunSwagger = RunSwagger;
+            await SettingsService.SaveServerConfigAsync(_config);
             DisplaySuccess("Open API Settings saved!");
         }
         catch (Exception ex)
@@ -425,18 +372,7 @@
         }
     }
 
-    public void DisplayError(string message)
-    {
-        
-    }
-
-    public void DisplayWarning(string message)
-    {
-        
-    }
-
-    public void DisplaySuccess(string message)
-    {
-        
-    }
+    public void DisplayError(string message) { }
+    public void DisplayWarning(string message) { }
+    public void DisplaySuccess(string message) { }
 }

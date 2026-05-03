@@ -1,6 +1,6 @@
 ﻿using ASCOM.Alpaca;
-using ASCOM.Common;
 using GreenSwamp.Alpaca.MountControl;
+using Microsoft.Extensions.Logging;
 using GreenSwamp.Alpaca.Server.Models;
 using GreenSwamp.Alpaca.Settings.Extensions;
 using GreenSwamp.Alpaca.Settings.Models;
@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 
 #nullable enable
 namespace GreenSwamp.Alpaca.Server
@@ -30,9 +29,12 @@ namespace GreenSwamp.Alpaca.Server
         internal const string ServerName = "Green Swamp Alpaca Server";
         internal const string ServerVersion = "1.0";
 
-        internal static ASCOM.Common.Interfaces.ILogger? Logger;
+        internal static ILogger? Logger;
 
         internal static IHostApplicationLifetime? Lifetime;
+
+        /// <summary>Bootstrap server configuration read before the DI container is built.</summary>
+        internal static ServerConfig BootstrapConfig { get; private set; } = new ServerConfig();
 
         public static async Task Main(string[] args)
         {
@@ -40,9 +42,23 @@ namespace GreenSwamp.Alpaca.Server
             //Then fill in the ToDos in this file. Each is marked with a //ToDo
             //You shouldn't need to do anything in the Startup and Logging or Finish Building and Start Server regions
 
-            //For Debug ConsoleLogger is very nice. For production TraceLogger is recommended.
-            Logger = new ASCOM.Tools.ConsoleLogger();
-            // Logger = new ASCOM.Tools.TraceLogger("txt", true);
+            // Bootstrap logger — active before the DI container is built.
+            // Log level is read from the "Logging" section in appsettings.json after the host is built.
+            // To get verbose output set "Logging:LogLevel:Default" to "Debug" in appsettings.json.
+            using var bootstrapLoggerFactory = LoggerFactory.Create(b =>
+                b.AddSimpleConsole(o => { o.TimestampFormat = "yyyy-MM-dd HH:mm:ss "; o.SingleLine = true; })
+                 .SetMinimumLevel(LogLevel.Debug));
+            Logger = bootstrapLoggerFactory.CreateLogger<Program>();
+
+            // Bootstrap: read ServerConfig from disk before the DI container exists.
+            // Used for port-collision detection and --urls binding below.
+            var bootstrapConfigPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "GreenSwampAlpaca",
+                ServerConfig.GetVersion(),
+                "appsettings.server.user.json");
+            BootstrapConfig = ServerConfig.LoadBootstrap(bootstrapConfigPath);
+            Logger.LogInformation($"Bootstrap server config loaded from: {bootstrapConfigPath}");
 
             //This region contains startup and logging features, most of the time you shouldn't need to customize this
             //You can add custom Command Line arguments here
@@ -57,10 +73,10 @@ namespace GreenSwamp.Alpaca.Server
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     //Already running, start the browser, detects based on port in use
-                    if (IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpConnections().Any(con => con.LocalEndPoint.Port == ServerSettings.ServerPort && (con.State == TcpState.Listen || con.State == TcpState.Established)))
+                    if (IPGlobalProperties.GetIPGlobalProperties().GetActiveTcpConnections().Any(con => con.LocalEndPoint.Port == BootstrapConfig.ServerPort && (con.State == TcpState.Listen || con.State == TcpState.Established)))
                     {
                         Logger.LogInformation("Detected driver port already open, starting web browser on IP and Port. If this fails something else is using the port");
-                        StartBrowser(ServerSettings.ServerPort);
+                        StartBrowser(BootstrapConfig.ServerPort);
                         return;
                     }
                 }
@@ -72,7 +88,7 @@ namespace GreenSwamp.Alpaca.Server
                         if(Process.GetProcessesByName(entryAssembly.Location).Length > 1)
                         {
                             Logger.LogInformation("Detected driver already running, starting web browser on IP and Port");
-                            StartBrowser(ServerSettings.ServerPort);
+                            StartBrowser(BootstrapConfig.ServerPort);
                             return;
                         }
                     }
@@ -88,10 +104,11 @@ namespace GreenSwamp.Alpaca.Server
             if (args?.Any(str => str.Contains("--reset")) ?? false)
             {
                 Logger.LogInformation("Resetting Settings");
-                ServerSettings.Reset();
-
-                //If you have any device settings you should reset them as well or add a specific reset command.
-
+                // Deleting appsettings.server.user.json resets server config; VersionedSettingsService
+                // will recreate it from factory defaults on next startup.
+                if (File.Exists(bootstrapConfigPath))
+                    File.Delete(bootstrapConfigPath);
+                Logger.LogInformation($"Deleted {bootstrapConfigPath} — factory defaults will apply on next start.");
                 return;
             }
 
@@ -99,13 +116,14 @@ namespace GreenSwamp.Alpaca.Server
             if (args?.Any(str => str.Contains("--reset-auth")) ?? false)
             {
                 Logger.LogInformation("Turning off Authentication to allow password reset.");
-                ServerSettings.UseAuth = false;
+                BootstrapConfig.UseAuth = false;
+                ServerConfig.SaveBootstrap(bootstrapConfigPath, BootstrapConfig);
                 Logger.LogInformation("Authentication off, you can change the password and then re-enable Authentication.");
             }
 
             if (args?.Any(str => str.Contains("--local-address")) ?? false)
             {
-                Console.WriteLine($"http://localhost:{ServerSettings.ServerPort}");
+                Console.WriteLine($"http://localhost:{BootstrapConfig.ServerPort}");
             }
 
             if (!args?.Any(str => str.Contains("--urls")) ?? true)
@@ -121,7 +139,7 @@ namespace GreenSwamp.Alpaca.Server
                 string startupUrlArg = "--urls=http://";
 
                 //If set to allow remote access bind to all local ips, otherwise bind only to localhost
-                if (ServerSettings.AllowRemoteAccess)
+                if (BootstrapConfig.AllowRemoteAccess)
                 {
                     startupUrlArg += "*";
                 }
@@ -130,7 +148,7 @@ namespace GreenSwamp.Alpaca.Server
                     startupUrlArg += "localhost";
                 }
 
-                startupUrlArg += ":" + ServerSettings.ServerPort;
+                startupUrlArg += ":" + BootstrapConfig.ServerPort;
 
                 Logger.LogInformation("Startup URL args: " + startupUrlArg);
 
@@ -140,6 +158,9 @@ namespace GreenSwamp.Alpaca.Server
             }
 
             var builder = WebApplication.CreateBuilder(args ?? []);
+
+            // Apply the same timestamp format to the host's console logger.
+            builder.Logging.AddSimpleConsole(o => { o.TimestampFormat = "yyyy-MM-dd HH:mm:ss "; o.SingleLine = true; });
 
             // Load versioned user settings support
             builder.Configuration.AddVersionedUserSettings();
@@ -160,11 +181,8 @@ namespace GreenSwamp.Alpaca.Server
 
             //ToDo you can add devices here
 
-            //Attach the logger
-            ASCOM.Alpaca.Logging.AttachLogger(Logger);
-
-            //Load the configuration
-            DeviceManager.LoadConfiguration(new AlpacaConfiguration());
+            //Load the configuration — pass BootstrapConfig so AlpacaConfiguration has no ASCOM XMLProfile dependency
+            DeviceManager.LoadConfiguration(new AlpacaConfiguration(BootstrapConfig));
 
             // Device registration moved to after app.Build() to use UnifiedDeviceRegistry
             // This ensures proper synchronization between DeviceManager and MountRegistry
@@ -202,12 +220,17 @@ namespace GreenSwamp.Alpaca.Server
             {
                 // Configure base address to call the same server (for Blazor Server self-calls)
                 // The service will make HTTP calls to /setup endpoints on the same server
-                client.BaseAddress = new Uri($"http://localhost:{ServerSettings.ServerPort}");
+                client.BaseAddress = new Uri($"http://localhost:{BootstrapConfig.ServerPort}");
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
             Logger.LogInformation("DeviceManagementService registered with HttpClient for device manager UI");
 
             var app = builder.Build();
+
+            // Replace bootstrap logger with the DI-resolved logger so the host's configured
+            // log levels (from appsettings.json "Logging" section) take effect from this point.
+            Logger = app.Services.GetRequiredService<ILogger<Program>>();
+            ASCOM.Alpaca.Logging.AttachLogger(Logger);
 
             // Initialize settings bridges for bidirectional sync
             try
@@ -404,11 +427,13 @@ namespace GreenSwamp.Alpaca.Server
 
             app.MapFallbackToPage("/_Host");
 
-            if (ServerSettings.AutoStartBrowser)
+            // Re-read server config post-build so any first-run seed is reflected
+            var startupConfig = app.Services.GetRequiredService<IVersionedSettingsService>().GetServerConfig();
+            if (startupConfig.AutoStartBrowser)
             {
                 try
                 {
-                    StartBrowser(ServerSettings.ServerPort);
+                    StartBrowser(startupConfig.ServerPort);
                 }
                 catch (Exception ex)
                 {

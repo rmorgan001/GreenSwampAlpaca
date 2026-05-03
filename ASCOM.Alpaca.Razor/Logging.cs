@@ -1,36 +1,36 @@
-﻿using ASCOM.Common;
-using ASCOM.Common.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.Extensions.Logging;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ASCOM.Alpaca
 {
     public class Logging
     {
-        static internal ILogger Log
-        {
-            get;
-            private set;
-        } = new ASCOM.Tools.ConsoleLogger();
+        private static ILogger? _log;
+        private static AscomLoggerAdapter? _adapter;
+
+        /// <summary>
+        /// Returns an ASCOM ILogger adapter wrapping the current MEL logger.
+        /// Used by ASCOM discovery components that require ASCOM.Common.Interfaces.ILogger.
+        /// </summary>
+        internal static ASCOM.Common.Interfaces.ILogger? Log => _adapter;
 
         public static void AttachLogger(ILogger log)
         {
-            Log = log;
+            _log = log;
+            _adapter = new AscomLoggerAdapter(log);
         }
-
 
         public static void LogError(string message)
         {
             try
             {
-                Log.LogError(message);
+                if (_log != null)
+                    _log.LogError(message);
+                else
+                    Console.Error.WriteLine($"[ERROR] {message}");
             }
             catch
-            { 
+            {
                 //Log should never throw.
             }
         }
@@ -39,7 +39,10 @@ namespace ASCOM.Alpaca
         {
             try
             {
-                Log.LogVerbose(message);
+                if (_log != null)
+                    _log.LogDebug(message);
+                else
+                    Console.WriteLine($"[DEBUG] {message}");
             }
             catch
             {
@@ -51,7 +54,10 @@ namespace ASCOM.Alpaca
         {
             try
             {
-                Log.LogWarning(message);
+                if (_log != null)
+                    _log.LogWarning(message);
+                else
+                    Console.WriteLine($"[WARN] {message}");
             }
             catch
             {
