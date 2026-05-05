@@ -9,166 +9,92 @@
 
 <PageTitle>Telescope State</PageTitle>
 
-<h3>Telescope Device State</h3>
+<MudText Typo="Typo.h5" GutterBottom="true">Telescope Device State</MudText>
 
-<div class="device-selector mb-3">
+<MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" Class="mb-4">
     @foreach (var kvp in MountRegistry.GetAllInstances())
     {
         var dn = kvp.Key;
-        var activeClass = dn == DeviceNumber ? "btn btn-primary btn-sm me-1" : "btn btn-outline-secondary btn-sm me-1";
-        <a href="/telescope-state/@dn" class="@activeClass">Device @dn</a>
+        <MudButton Color="@(dn == DeviceNumber ? Color.Primary : Color.Default)"
+                   Href="@($"/telescope-state/{dn}")">Device @dn</MudButton>
     }
-</div>
+</MudButtonGroup>
 
-<div class="state-container">
-    <div class="state-section">
-        <h4>Connection & Status</h4>
-        <div class="state-grid">
-            <div class="state-item">
-                <span class="state-label">Mount Running:</span>
-                <span class="state-value @GetStatusClass(_state.IsMountRunning)">@_state.IsMountRunning</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Slewing:</span>
-                <span class="state-value @GetStatusClass(_state.Slewing)">@_state.Slewing</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Tracking:</span>
-                <span class="state-value @GetStatusClass(_state.Tracking)">@_state.Tracking</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">At Park:</span>
-                <span class="state-value @GetStatusClass(_state.AtPark)">@_state.AtPark</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">At Home:</span>
-                <span class="state-value @GetStatusClass(_state.AtHome)">@_state.AtHome</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Slew State:</span>
-                <span class="state-value">@_state.SlewState</span>
-            </div>
-        </div>
-    </div>
+<MudCard Class="mb-4">
+    <MudCardHeader><MudText Typo="Typo.subtitle1">Connection &amp; Status</MudText></MudCardHeader>
+    <MudCardContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Mount Running</MudText><MudText Color="@StatusColor(_state.IsMountRunning)">@_state.IsMountRunning</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Slewing</MudText><MudText Color="@StatusColor(_state.Slewing)">@_state.Slewing</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Tracking</MudText><MudText Color="@StatusColor(_state.Tracking)">@_state.Tracking</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">At Park</MudText><MudText>@_state.AtPark</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">At Home</MudText><MudText>@_state.AtHome</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Slew State</MudText><MudText>@_state.SlewState</MudText></MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
 
-    <div class="state-section">
-        <h4>Current Position (ASCOM)</h4>
-        <div class="state-grid">
-            <div class="state-item">
-                <span class="state-label">Right Ascension:</span>
-                <span class="state-value">@FormatHMS(_state.RightAscension)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Declination:</span>
-                <span class="state-value">@FormatDMS(_state.Declination)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Altitude:</span>
-                <span class="state-value">@FormatDegrees(_state.Altitude)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Azimuth:</span>
-                <span class="state-value">@FormatDegrees(_state.Azimuth)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Side of Pier:</span>
-                <span class="state-value">@_state.SideOfPier</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Local Hour Angle:</span>
-                <span class="state-value">@FormatHMS(_state.LocalHourAngle)</span>
-            </div>
-        </div>
-    </div>
+<MudCard Class="mb-4">
+    <MudCardHeader><MudText Typo="Typo.subtitle1">Current Position (ASCOM)</MudText></MudCardHeader>
+    <MudCardContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Right Ascension</MudText><MudText>@FormatHMS(_state.RightAscension)</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Declination</MudText><MudText>@FormatDMS(_state.Declination)</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Altitude</MudText><MudText>@FormatDegrees(_state.Altitude)</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Azimuth</MudText><MudText>@FormatDegrees(_state.Azimuth)</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Side of Pier</MudText><MudText>@_state.SideOfPier</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Local Hour Angle</MudText><MudText>@FormatHMS(_state.LocalHourAngle)</MudText></MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
 
-    <div class="state-section">
-        <h4>Target Position</h4>
-        <div class="state-grid">
-            <div class="state-item">
-                <span class="state-label">Target RA:</span>
-                <span class="state-value">@FormatHMS(_state.TargetRightAscension)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Target Dec:</span>
-                <span class="state-value">@FormatDMS(_state.TargetDeclination)</span>
-            </div>
-        </div>
-    </div>
+<MudCard Class="mb-4">
+    <MudCardHeader><MudText Typo="Typo.subtitle1">Target Position</MudText></MudCardHeader>
+    <MudCardContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6"><MudText Typo="Typo.caption">Target RA</MudText><MudText>@FormatHMS(_state.TargetRightAscension)</MudText></MudItem>
+            <MudItem xs="12" sm="6"><MudText Typo="Typo.caption">Target Dec</MudText><MudText>@FormatDMS(_state.TargetDeclination)</MudText></MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
 
-    <div class="state-section">
-        <h4>Axis Positions (Mount Coordinates)</h4>
-        <div class="state-grid">
-            <div class="state-item">
-                <span class="state-label">Actual Axis X:</span>
-                <span class="state-value">@FormatDegrees(_state.ActualAxisX)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Actual Axis Y:</span>
-                <span class="state-value">@FormatDegrees(_state.ActualAxisY)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">App Axis X:</span>
-                <span class="state-value">@FormatDegrees(_state.AppAxisX)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">App Axis Y:</span>
-                <span class="state-value">@FormatDegrees(_state.AppAxisY)</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Axis 1 Steps:</span>
-                <span class="state-value">@_state.Axis1Steps.ToString("N0")</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Axis 2 Steps:</span>
-                <span class="state-value">@_state.Axis2Steps.ToString("N0")</span>
-            </div>
-        </div>
-    </div>
+<MudCard Class="mb-4">
+    <MudCardHeader><MudText Typo="Typo.subtitle1">Axis Positions (Mount Coordinates)</MudText></MudCardHeader>
+    <MudCardContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Actual Axis X</MudText><MudText>@FormatDegrees(_state.ActualAxisX)</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Actual Axis Y</MudText><MudText>@FormatDegrees(_state.ActualAxisY)</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">App Axis X</MudText><MudText>@FormatDegrees(_state.AppAxisX)</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">App Axis Y</MudText><MudText>@FormatDegrees(_state.AppAxisY)</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Axis 1 Steps</MudText><MudText>@_state.Axis1Steps.ToString("N0")</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Axis 2 Steps</MudText><MudText>@_state.Axis2Steps.ToString("N0")</MudText></MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
 
-    <div class="state-section">
-        <h4>Tracking & Guiding</h4>
-        <div class="state-grid">
-            <div class="state-item">
-                <span class="state-label">Pulse Guide RA:</span>
-                <span class="state-value @GetStatusClass(_state.IsPulseGuidingRa)">@_state.IsPulseGuidingRa</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Pulse Guide Dec:</span>
-                <span class="state-value @GetStatusClass(_state.IsPulseGuidingDec)">@_state.IsPulseGuidingDec</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Tracking Rate:</span>
-                <span class="state-value">@_state.TrackingRate</span>
-            </div>
-        </div>
-    </div>
+<MudCard Class="mb-4">
+    <MudCardHeader><MudText Typo="Typo.subtitle1">Tracking &amp; Guiding</MudText></MudCardHeader>
+    <MudCardContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Pulse Guide RA</MudText><MudText Color="@StatusColor(_state.IsPulseGuidingRa)">@_state.IsPulseGuidingRa</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Pulse Guide Dec</MudText><MudText Color="@StatusColor(_state.IsPulseGuidingDec)">@_state.IsPulseGuidingDec</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Tracking Rate</MudText><MudText>@_state.TrackingRate</MudText></MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
 
-    <div class="state-section">
-        <h4>Time & Performance</h4>
-        <div class="state-grid">
-            <div class="state-item">
-                <span class="state-label">UTC Date:</span>
-                <span class="state-value">@_state.UTCDate.ToString("yyyy-MM-dd HH:mm:ss.fff")</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Local Date:</span>
-                <span class="state-value">@_state.LocalDate.ToString("yyyy-MM-dd HH:mm:ss.fff")</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Loop Counter:</span>
-                <span class="state-value">@_state.LoopCounter.ToString("N0")</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Timer Overruns:</span>
-                <span class="state-value @GetWarningClass(_state.TimerOverruns)">@_state.TimerOverruns</span>
-            </div>
-            <div class="state-item">
-                <span class="state-label">Last Update:</span>
-                <span class="state-value">@_state.LastUpdate.ToString("HH:mm:ss.fff")</span>
-            </div>
-        </div>
-    </div>
-</div>
+<MudCard Class="mb-4">
+    <MudCardHeader><MudText Typo="Typo.subtitle1">Time &amp; Performance</MudText></MudCardHeader>
+    <MudCardContent>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">UTC Date</MudText><MudText>@_state.UTCDate.ToString("yyyy-MM-dd HH:mm:ss.fff")</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Local Date</MudText><MudText>@_state.LocalDate.ToString("yyyy-MM-dd HH:mm:ss.fff")</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Loop Counter</MudText><MudText>@_state.LoopCounter.ToString("N0")</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Timer Overruns</MudText><MudText Color="@OverrunColor(_state.TimerOverruns)">@_state.TimerOverruns</MudText></MudItem>
+            <MudItem xs="12" sm="6" md="4"><MudText Typo="Typo.caption">Last Update</MudText><MudText>@_state.LastUpdate.ToString("HH:mm:ss.fff")</MudText></MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
 
 @code {
     [Parameter] public int DeviceNumber { get; set; }
@@ -236,13 +162,6 @@
         return $"{degrees:F4}°";
     }
     
-    private string GetStatusClass(bool status)
-    {
-        return status ? "status-active" : "status-inactive";
-    }
-    
-    private string GetWarningClass(int value)
-    {
-        return value > 0 ? "status-warning" : "";
-    }
+    private Color StatusColor(bool active) => active ? Color.Success : Color.Default;
+    private Color OverrunColor(int value) => value > 0 ? Color.Warning : Color.Default;
 }

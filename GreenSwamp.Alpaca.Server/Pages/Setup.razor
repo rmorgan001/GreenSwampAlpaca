@@ -6,173 +6,142 @@
 @using ASCOM.Common.Interfaces
 @using ASCOM.Alpaca
 
-<fieldset>
-    <legend>Server Settings</legend>
+<PageTitle>Server Settings</PageTitle>
 
-    <p>Server Version: @Program.ServerVersion</p>
+<MudText Typo="Typo.h5" GutterBottom="true">Server Settings</MudText>
 
-    <label>Server Location: </label>
-    <input type="text" style="width:21ch;" @bind="Location">
+@if (!string.IsNullOrEmpty(_feedback))
+{
+    <MudAlert Severity="_feedbackSeverity" Dense="true" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="() => _feedback = string.Empty">
+        @_feedback
+    </MudAlert>
+}
 
-    <br />
+<MudStack Spacing="4">
 
+    @* ── Server ───────────────────────────────────────────────────────────── *@
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.subtitle1">Server</MudText></MudCardHeader>
+        <MudCardContent>
+            <MudText Typo="Typo.caption" Class="mb-2">Version: @Program.ServerVersion</MudText>
+            <MudTextField @bind-Value="Location" Label="Server Location" Style="max-width:320px;" Class="mb-3" />
+            <MudCheckBox @bind-Value="RemoteAccess" Label="Allow Remote Access" Class="mb-2" />
+            <MudNumericField T="UInt16" @bind-Value="ServerPort" Label="Server (Alpaca) Port" Min="1" Max="65535" Style="max-width:200px;" Class="mb-3" />
+            <MudCheckBox @bind-Value="StartBrowser" Label="Open Browser on Start" Class="mb-2" />
+            <MudCheckBox @bind-Value="StrictAPIMode" Label="Require Strict API Compliance" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveServerSettings">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
 
-    <label>Allow Remote Access:</label>
-    <input type="checkbox" @bind="RemoteAccess">
-
-    <br />
-
-    <label>Server (Alpaca) Port:</label>
-    <input type="number" @bind="ServerPort" min="1" max="65535" style="width:20ch;">
-
-    <br />
-
-    <label>Open Browser on Start:</label>
-    <input type="checkbox" @bind="StartBrowser">
-
-    <br />
-
-    <label>Require Strict API Compliance:</label>
-    <input type="checkbox" @bind="StrictAPIMode">
-
-    <br />
-
-    <button @onclick="SaveServerSettings" style="min-width:12ch; vertical-align:middle;">Save</button>
-
-</fieldset>
-
-<fieldset>
-    <legend>Bound Addresses</legend>
-
-    <table>
-        <tr>
-            <th>Addresses server is listening on.</th>
-        </tr>
-
-        @if (_config.AllowRemoteAccess)
-        {
-            try
+    @* ── Bound Addresses ─────────────────────────────────────────────────── *@
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.subtitle1">Bound Addresses</MudText></MudCardHeader>
+        <MudCardContent>
+            @if (_config.AllowRemoteAccess)
             {
-                @foreach (var address in ASCOM.Alpaca.DiscoveryManager.AdapterAddress)
+                try
                 {
-                    <tr>
-                        <td>@address</td>
-                    </tr>
+                    @foreach (var address in ASCOM.Alpaca.DiscoveryManager.AdapterAddress)
+                    {
+                        <MudText>@address</MudText>
+                    }
                 }
+                catch { }
             }
-            catch
+            else
             {
-
+                <MudText>localhost</MudText>
             }
-        }
-        else
-        {
-            <tr>
-                <td>localhost</td>
-            </tr>
-        }
-    </table>
-</fieldset>
+        </MudCardContent>
+    </MudCard>
 
-<fieldset>
-    <legend>Driver Settings</legend>
+    @* ── Driver ───────────────────────────────────────────────────────────── *@
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.subtitle1">Driver Settings</MudText></MudCardHeader>
+        <MudCardContent>
+            <MudCheckBox @bind-Value="PreventRemoteDisconnects" Label="Prevent Disconnects" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveDriverSettings">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
 
-    <br />
+    @* ── Discovery ────────────────────────────────────────────────────────── *@
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.subtitle1">Alpaca Discovery Settings</MudText></MudCardHeader>
+        <MudCardContent>
+            <MudCheckBox @bind-Value="Discovery" Label="Allow Discovery" Class="mb-2" />
+            <MudCheckBox @bind-Value="LocalHostOnlyOnHost" Label="Respond to localhost on loopback only" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveDiscovery">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
 
-    <label>Prevent Disconnects:</label>
-    <input type="checkbox" @bind="PreventRemoteDisconnects">
+    @* ── Security ─────────────────────────────────────────────────────────── *@
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.subtitle1">Security Settings</MudText></MudCardHeader>
+        <MudCardContent>
+            <MudCheckBox @bind-Value="RequireAuthorization" Label="Require Authorization" Class="mb-3" />
+            <MudTextField @bind-Value="UserName" Label="User Name" Disabled="@DisableAuth" Style="max-width:280px;" Class="mb-3" />
+            <MudTextField @bind-Value="Password" Label="Password" InputType="InputType.Password" Disabled="@DisableAuth" Style="max-width:280px;" Class="mb-3" />
+            <MudTextField @bind-Value="Password2" Label="Repeat Password" InputType="InputType.Password" Disabled="@DisableAuth" Style="max-width:280px;" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSecuritySettings">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
 
-    <br />
+    @* ── Log Level ────────────────────────────────────────────────────────── *@
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.subtitle1">Log Settings</MudText></MudCardHeader>
+        <MudCardContent>
+            <MudText Typo="Typo.body2" Class="mb-3">The logging system will log at or above the specified level.</MudText>
+            <MudSelect @bind-Value="LoggingLevel" Label="Log Level" Style="max-width:220px;">
+                <MudSelectItem Value="@LogLevel.Verbose">Verbose</MudSelectItem>
+                <MudSelectItem Value="@LogLevel.Debug">Debug</MudSelectItem>
+                <MudSelectItem Value="@LogLevel.Information">Information</MudSelectItem>
+                <MudSelectItem Value="@LogLevel.Warning">Warning</MudSelectItem>
+                <MudSelectItem Value="@LogLevel.Error">Error</MudSelectItem>
+                <MudSelectItem Value="@LogLevel.Fatal">Fatal</MudSelectItem>
+            </MudSelect>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveLogSettings">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
 
-    <button @onclick="SaveDriverSettings" style="min-width:12ch; vertical-align:middle;">Save</button>
-</fieldset>
+    @* ── OpenAPI ──────────────────────────────────────────────────────────── *@
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.subtitle1">OpenAPI / Swagger</MudText></MudCardHeader>
+        <MudCardContent>
+            <MudText Typo="Typo.body2" Class="mb-3">
+                The OpenAPI / Swagger integration allows the Alpaca API documentation to be shown by this server
+                and enables direct browser calls. Takes effect on next startup.
+            </MudText>
+            <MudCheckBox @bind-Value="RunSwagger" Label="Run OpenAPI" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveSwaggerSettings">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
 
-<fieldset>
-    <legend>Alpaca Discovery Settings</legend>
+    @* ── Shutdown ─────────────────────────────────────────────────────────── *@
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.subtitle1">Shutdown Driver</MudText></MudCardHeader>
+        <MudCardContent>
+            <MudCheckBox @bind-Value="EnableShutdown" Label="Confirm shutdown" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="@AllowShutdown" OnClick="Shutdown">
+                Shutdown
+            </MudButton>
+        </MudCardActions>
+    </MudCard>
 
-    <br />
-
-    <label>Allow Discovery:</label>
-    <input type="checkbox" @bind="Discovery">
-
-    <br />
-
-    <label>Respond to localhost on loopback only:</label>
-    <input type="checkbox" @bind="LocalHostOnlyOnHost">
-
-    <br />
-
-    <button @onclick="SaveDiscovery" style="min-width:12ch; vertical-align:middle;">Save</button>
-
-</fieldset>
-
-<fieldset>
-    <legend>Security Settings</legend>
-
-    <br />
-
-    <label>Require Authorization:</label>
-    <input type="checkbox" @bind="RequireAuthorization">
-
-    <br />
-
-    <label>User Name:</label>
-    <input type="text" @bind="UserName" style="width:21ch;" disabled="@DisableAuth">
-
-    <br />
-
-    <label>Password:</label>
-    <input type="password" @bind="Password" style="width:21ch;" disabled="@DisableAuth">
-
-    <br />
-
-    <label>Repeat:</label>
-    <input type="password" @bind="Password2" style="width:21ch;" disabled="@DisableAuth">
-
-    <br />
-
-    <button @onclick="SaveSecuritySettings" style="min-width:12ch; vertical-align:middle;">Save</button>
-
-</fieldset>
-
-<fieldset>
-    <legend>Log Settings</legend>
-    <p>The logging system will log out at or above the specified level.</p>
-    <label>Log Level:</label>
-    <select @bind="LoggingLevel">
-        <option value="@LogLevel.Verbose">Verbose</option>
-        <option value="@LogLevel.Debug">Debug</option>
-        <option value="@LogLevel.Information">Information</option>
-        <option value="@LogLevel.Warning">Warning</option>
-        <option value="@LogLevel.Error">Error</option>
-        <option value="@LogLevel.Fatal">Fatal</option>
-    </select>
-
-    <br />
-
-    <button @onclick="SaveLogSettings" style="min-width:12ch; vertical-align:middle;">Save</button>
-</fieldset>
-
-<fieldset>
-    <legend>Run OpenAPI / Swagger</legend>
-    <p>The OpenAPI / Swagger integration allows for the Alpaca API documentation to be shown by this server. It also allows calls to be made directly in the browser. Note that this will apply on the next time this driver runs.</p>
-
-    <label>Run OpenAPI:</label>
-    <input type="checkbox" @bind="RunSwagger">
-    <br />
-    <button @onclick="SaveSwaggerSettings" style="min-width:12ch; vertical-align:middle;">Save</button>
-
-</fieldset>
-
-
-<fieldset>
-    <legend>Shutdown Driver</legend>
-    <br />
-    <span>Shutdown:</span>
-    <input type="checkbox"
-    @bind="EnableShutdown">
-    <button @onclick="Shutdown" style="min-width:12ch; vertical-align:middle;" disabled="@AllowShutdown">Shutdown</button>
-</fieldset>
+</MudStack>
 
 @code {
 
@@ -372,7 +341,10 @@
         }
     }
 
-    public void DisplayError(string message) { }
-    public void DisplayWarning(string message) { }
-    public void DisplaySuccess(string message) { }
+    public void DisplayError(string message)   { _feedback = message; _feedbackSeverity = Severity.Error;   }
+    public void DisplayWarning(string message) { _feedback = message; _feedbackSeverity = Severity.Warning; }
+    public void DisplaySuccess(string message) { _feedback = message; _feedbackSeverity = Severity.Success; }
+
+    private string _feedback = string.Empty;
+    private Severity _feedbackSeverity = Severity.Normal;
 }
