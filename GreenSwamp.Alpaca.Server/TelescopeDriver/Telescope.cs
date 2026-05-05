@@ -1320,10 +1320,14 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             switch (Axis)
             {
                 case TelescopeAxis.Primary:
+                    // var stopPrimary = Rate == 0 && _mount.RateMovePrimaryAxis != 0 && AlignmentMode != AlignmentMode.AltAz;
                     _mount.RateMovePrimaryAxis = Rate;
+                    // if (stopPrimary) _mount.AxisStopValidate(Mount.Commands.Axis.Axis1);
                     break;
                 case TelescopeAxis.Secondary:
+                    // var stopSecondary = Rate == 0 && _mount.RateMoveSecondaryAxis != 0 && AlignmentMode != AlignmentMode.AltAz;
                     _mount.RateMoveSecondaryAxis = Rate;
+                    // if (stopSecondary) _mount.AxisStopValidate(Mount.Commands.Axis.Axis2);
                     break;
                 case TelescopeAxis.Tertiary:
                 default:

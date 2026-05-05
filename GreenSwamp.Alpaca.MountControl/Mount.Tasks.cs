@@ -481,6 +481,41 @@ namespace GreenSwamp.Alpaca.MountControl
         #region Axes Stop Validate
 
         /// <summary>
+        /// Waits up to 5 s for a single axis to reach a full stop.
+        /// Used by MoveAxis(rate=0) to block until the specific axis has physically stopped,
+        /// without affecting the other axis which may still be moving.
+        /// </summary>
+        public bool AxisStopValidate(Axis axis)
+        {
+            if (!IsMountRunning) { return true; }
+            var stopwatch = Stopwatch.StartNew();
+            switch (Settings.Mount)
+            {
+                case MountType.Simulator:
+                    var mq = SimQueue!;
+                    while (stopwatch.Elapsed.TotalMilliseconds <= 5000)
+                    {
+                        Thread.Sleep(100);
+                        var status = new CmdAxisStatus(mq.NewId, mq, axis);
+                        var axisStatus = (Alpaca.Mount.Simulator.AxisStatus)mq.GetCommandResult(status).Result;
+                        if (axisStatus.Stopped) return true;
+                    }
+                    return false;
+                case MountType.SkyWatcher:
+                    var sq = SkyQueue!;
+                    while (stopwatch.Elapsed.TotalMilliseconds <= 5000)
+                    {
+                        Thread.Sleep(100);
+                        var statusCmd = new SkyIsAxisFullStop(sq.NewId, sq, axis);
+                        if (Convert.ToBoolean(sq.GetCommandResult(statusCmd).Result)) return true;
+                    }
+                    return false;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        /// <summary>
         /// Stops axes and waits up to 5 s for them to reach a full stop.
         /// </summary>
         internal bool AxesStopValidate()
