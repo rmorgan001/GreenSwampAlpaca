@@ -9,7 +9,7 @@
     --gs-bg-app:         #121212;
     --gs-bg-paper:       #1e1e1e;
     --gs-bg-elevated:    #2a2a2a;
-    --gs-bg-sidebar:     linear-gradient(180deg, #052767 0%, #3a0647 70%);
+    --gs-bg-sidebar:     #0d1117;
 
     /* Primary: Material Grey */
     --gs-grey-50:        #fafafa;
@@ -22,6 +22,7 @@
     /* Accent: Material Green */
     --gs-accent-300:     #81c784;
     --gs-accent-500:     #4caf50;
+    --gs-accent-500-rgb: 76, 175, 80;
     --gs-accent-700:     #388e3c;
     --gs-accent-a200:    #69f0ae;
 

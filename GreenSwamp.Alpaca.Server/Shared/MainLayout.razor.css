@@ -10,13 +10,13 @@ main {
 }
 
 .sidebar {
-    background-color: #0d1117;
-    border-right:     1px solid rgba(76, 175, 80, 0.2);
+    background-color: var(--gs-bg-sidebar);
+    border-right:     1px solid rgba(var(--gs-accent-500-rgb), 0.2);
 }
 
 .top-row {
-    background-color: #1e1e1e;
-    border-bottom:    1px solid rgba(255, 255, 255, 0.12);
+    background-color: var(--gs-bg-paper);
+    border-bottom:    1px solid var(--gs-divider);
     justify-content:  flex-end;
     height:           3.5rem;
     display:          flex;
