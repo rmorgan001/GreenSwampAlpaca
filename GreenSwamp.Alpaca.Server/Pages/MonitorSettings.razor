@@ -1,4 +1,4 @@
-﻿@page "/monitorsettings"
+@page "/monitorsettings"
 
 @inject NavigationManager NavManager
 
@@ -30,32 +30,32 @@
     <div class="card mb-3 bg-light">
         <div class="card-header">
             <h5 class="card-title mb-0">
-                <span class="oi oi-layers me-2" aria-hidden="true"></span>Configuration Presets
+                <span class="material-symbols-outlined me-2" aria-hidden="true">layers</span>Configuration Presets
             </h5>
         </div>
         <div class="card-body">
             <div class="row g-2">
                 <div class="col-md-3">
                     <button class="btn btn-outline-success w-100" @onclick="ApplyDevelopmentPreset">
-                        <span class="oi oi-wrench me-1"></span> Development
+                        <span class="material-symbols-outlined me-1">build</span> Development
                         <small class="d-block text-muted">Maximum logging</small>
                     </button>
                 </div>
                 <div class="col-md-3">
                     <button class="btn btn-outline-primary w-100" @onclick="ApplyProductionPreset">
-                        <span class="oi oi-check me-1"></span> Production
+                        <span class="material-symbols-outlined me-1">check</span> Production
                         <small class="d-block text-muted">Minimal logging</small>
                     </button>
                 </div>
                 <div class="col-md-3">
                     <button class="btn btn-outline-warning w-100" @onclick="ApplyTroubleshootingPreset">
-                        <span class="oi oi-bug me-1"></span> Troubleshooting
+                        <span class="material-symbols-outlined me-1">bug_report</span> Troubleshooting
                         <small class="d-block text-muted">Mount + Driver</small>
                     </button>
                 </div>
                 <div class="col-md-3">
                     <button class="btn btn-outline-info w-100" @onclick="ApplyProfileDebugPreset">
-                        <span class="oi oi-document me-1"></span> Profile Debug
+                        <span class="material-symbols-outlined me-1">description</span> Profile Debug
                         <small class="d-block text-muted">Settings loading</small>
                     </button>
                 </div>
@@ -74,7 +74,7 @@
                 <div class="card mb-3">
                     <div class="card-header bg-primary text-white">
                         <h5 class="card-title mb-0">
-                            <span class="oi oi-hard-drive me-2" aria-hidden="true"></span>Device Filters
+                            <span class="material-symbols-outlined me-2" aria-hidden="true">storage</span>Device Filters
                         </h5>
                     </div>
                     <div class="card-body">
@@ -112,7 +112,7 @@
                 <div class="card mb-3">
                     <div class="card-header bg-info text-white">
                         <h5 class="card-title mb-0">
-                            <span class="oi oi-tag me-2" aria-hidden="true"></span>Category Filters
+                            <span class="material-symbols-outlined me-2" aria-hidden="true">label</span>Category Filters
                         </h5>
                     </div>
                     <div class="card-body">
@@ -162,7 +162,7 @@
                 <div class="card mb-3">
                     <div class="card-header bg-warning">
                         <h5 class="card-title mb-0">
-                            <span class="oi oi-task me-2" aria-hidden="true"></span>Type Filters (Log Levels)
+                            <span class="material-symbols-outlined me-2" aria-hidden="true">task</span>Type Filters (Log Levels)
                         </h5>
                     </div>
                     <div class="card-body">
@@ -213,7 +213,7 @@
                 <div class="card mb-3">
                     <div class="card-header bg-success text-white">
                         <h5 class="card-title mb-0">
-                            <span class="oi oi-document me-2" aria-hidden="true"></span>Logging Options
+                            <span class="material-symbols-outlined me-2" aria-hidden="true">description</span>Logging Options
                         </h5>
                     </div>
                     <div class="card-body">
@@ -256,7 +256,7 @@
                         @if (!_settings.StartMonitor)
                         {
                             <div class="alert alert-danger mt-2">
-                                <strong><span class="oi oi-warning me-1"></span> Warning!</strong> StartMonitor is OFF. No logs will be written to files!
+                                <strong><span class="material-symbols-outlined me-1">warning</span> Warning!</strong> StartMonitor is OFF. No logs will be written to files!
                             </div>
                         }
                     </div>
@@ -266,14 +266,14 @@
                 <div class="card mb-3 border-primary">
                     <div class="card-header bg-primary text-white">
                         <h5 class="card-title mb-0">
-                            <span class="oi oi-eye me-2" aria-hidden="true"></span>What Will Be Logged?
+                            <span class="material-symbols-outlined me-2" aria-hidden="true">visibility</span>What Will Be Logged?
                         </h5>
                     </div>
                     <div class="card-body">
                         @if (GetEnabledCount() == 0)
                         {
                             <div class="alert alert-warning">
-                                <strong><span class="oi oi-ban me-1"></span> Nothing!</strong> All filters are disabled.
+                                <strong><span class="material-symbols-outlined me-1">block</span> Nothing!</strong> All filters are disabled.
                             </div>
                         }
                         else
@@ -283,21 +283,21 @@
                                 <ul class="mb-0">
                                     @if (_settings.LogSession)
                                     {
-                                        <li>✅ GSSessionLog*.txt (Information, Warning, Error)</li>
+                                        <li>âœ… GSSessionLog*.txt (Information, Warning, Error)</li>
                                     }
                                     @if (_settings.LogMonitor && _settings.StartMonitor)
                                     {
-                                        <li>✅ GSMonitorLog*.txt (All enabled filters)</li>
+                                        <li>âœ… GSMonitorLog*.txt (All enabled filters)</li>
                                     }
                                     else if (_settings.LogMonitor && !_settings.StartMonitor)
                                     {
-                                        <li>❌ GSMonitorLog*.txt (StartMonitor is OFF)</li>
+                                        <li>âŒ GSMonitorLog*.txt (StartMonitor is OFF)</li>
                                     }
                                     @if (_settings.LogCharting)
                                     {
-                                        <li>✅ GSChartingLog*.txt (Charting data)</li>
+                                        <li>âœ… GSChartingLog*.txt (Charting data)</li>
                                     }
-                                    <li>✅ GSErrorLog*.txt (Always enabled)</li>
+                                    <li>âœ… GSErrorLog*.txt (Always enabled)</li>
                                 </ul>
                             </div>
 
@@ -324,7 +324,7 @@
                 <div class="card mb-3">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
-                            <span class="oi oi-wrench me-2" aria-hidden="true"></span>Miscellaneous
+                            <span class="material-symbols-outlined me-2" aria-hidden="true">build</span>Miscellaneous
                         </h5>
                     </div>
                     <div class="card-body">
@@ -360,29 +360,29 @@
                 <div class="card mb-3 bg-light">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
-                            <span class="oi oi-flash me-2" aria-hidden="true"></span>Quick Actions
+                            <span class="material-symbols-outlined me-2" aria-hidden="true">bolt</span>Quick Actions
                         </h5>
                     </div>
                     <div class="card-body">
                         <div class="row g-2">
                             <div class="col-6">
                                 <button type="button" class="btn btn-outline-primary btn-sm w-100" @onclick="SelectAllDevices">
-                                    <span class="oi oi-check me-1"></span> All Devices
+                                    <span class="material-symbols-outlined me-1">select_all</span> All Devices
                                 </button>
                             </div>
                             <div class="col-6">
                                 <button type="button" class="btn btn-outline-primary btn-sm w-100" @onclick="SelectAllCategories">
-                                    <span class="oi oi-check me-1"></span> All Categories
+                                    <span class="material-symbols-outlined me-1">select_all</span> All Categories
                                 </button>
                             </div>
                             <div class="col-6">
                                 <button type="button" class="btn btn-outline-primary btn-sm w-100" @onclick="SelectAllTypes">
-                                    <span class="oi oi-check me-1"></span> All Types
+                                    <span class="material-symbols-outlined me-1">select_all</span> All Types
                                 </button>
                             </div>
                             <div class="col-6">
                                 <button type="button" class="btn btn-outline-danger btn-sm w-100" @onclick="ClearAllFilters">
-                                    <span class="oi oi-x me-1"></span> Clear All
+                                    <span class="material-symbols-outlined me-1">close</span> Clear All
                                 </button>
                             </div>
                         </div>
@@ -401,21 +401,21 @@
                     }
                     else
                     {
-                        <span class="oi oi-check me-2"></span>
+                        <span class="material-symbols-outlined me-2">save</span>
                     }
                     Save Changes
                 </button>
 
                 <button type="button" class="btn btn-secondary btn-lg" @onclick="ResetToDefaults" disabled="@_saving">
-                    <span class="oi oi-reload me-2"></span> Reset to Defaults
+                    <span class="material-symbols-outlined me-2">restart_alt</span> Reset to Defaults
                 </button>
 
                 <button type="button" class="btn btn-info btn-lg" @onclick="ReloadSettings">
-                    <span class="oi oi-loop-circular me-2"></span> Reload from File
+                    <span class="material-symbols-outlined me-2">sync</span> Reload from File
                 </button>
 
                 <a href="/MONITOR_SETTINGS_GUIDE.md" class="btn btn-outline-info btn-lg ms-auto" target="_blank">
-                    <span class="oi oi-book me-2"></span> Documentation
+                    <span class="material-symbols-outlined me-2">menu_book</span> Documentation
                 </a>
             </div>
         </div>

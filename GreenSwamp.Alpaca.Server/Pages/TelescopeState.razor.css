@@ -1,85 +1,101 @@
-/* Telescope State Display Styles */
+﻿/* Telescope State Display Styles */
 
 .state-container {
-    padding: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
+    padding:    var(--gs-space-6);
+    max-width:  1400px;
+    margin:     0 auto;
 }
 
 .state-section {
-    background: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
+    background:    var(--gs-bg-paper);
+    border:        1px solid var(--gs-divider);
+    border-radius: 4px;
+    padding:       var(--gs-space-4);
+    margin-bottom: var(--gs-space-4);
 }
 
 .state-section h4 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--bs-primary);
-    color: var(--bs-primary);
+    margin-top:     0;
+    margin-bottom:  var(--gs-space-4);
+    padding-bottom: var(--gs-space-2);
+    border-bottom:  2px solid var(--gs-accent-500);
+    color:          var(--gs-accent-500);
+    font-size:      14px;
+    font-weight:    500;
+    letter-spacing: 0.03em;
 }
 
 .state-grid {
-    display: grid;
+    display:               grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 10px 20px;
+    gap:                   8px 20px;
 }
 
 .state-item {
-    display: flex;
+    display:         flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    background: var(--bs-secondary-bg);
-    border-radius: 4px;
+    align-items:     center;
+    padding:         6px 10px;
+    background:      var(--gs-bg-elevated);
+    border-radius:   4px;
 }
 
 .state-label {
-    font-weight: 600;
-    color: var(--bs-body-color);
-    margin-right: 10px;
+    font-weight:    500;
+    color:          var(--gs-text-secondary);
+    font-size:      12px;
+    letter-spacing: 0.02em;
+    margin-right:   10px;
+    flex-shrink:    0;
 }
 
 .state-value {
-    font-family: 'Courier New', monospace;
-    color: var(--bs-emphasis-color);
+    font-family: var(--gs-font-mono);
+    font-size:   13px;
+    color:       var(--gs-text-primary);
     font-weight: 500;
 }
 
 .status-active {
-    color: #28a745;
-    font-weight: bold;
+    color:       var(--gs-success);
+    font-weight: 700;
 }
 
 .status-inactive {
-    color: #6c757d;
+    color: var(--gs-text-disabled);
 }
 
 .status-warning {
-    color: #ffc107;
-    font-weight: bold;
+    color:       var(--gs-warning);
+    font-weight: 700;
 }
 
-/* Responsive design */
 @media (max-width: 768px) {
     .state-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .state-container {
-        padding: 10px;
+        padding: var(--gs-space-3);
     }
 }
 
-/* Animation for value changes */
+@keyframes gs-live-pulse {
+    0%   { opacity: 1;    }
+    50%  { opacity: 0.55; }
+    100% { opacity: 1;    }
+}
+
+.gs-live {
+    animation: gs-live-pulse 2s ease-in-out infinite;
+    color:     var(--gs-success);
+}
+
 @keyframes valueChange {
-    0% { background-color: var(--bs-info-bg-subtle); }
-    100% { background-color: var(--bs-secondary-bg); }
+    0%   { background-color: rgba(76, 175, 80, 0.15); }
+    100% { background-color: var(--gs-bg-elevated); }
 }
 
 .state-item:has(.state-value:focus-within) {
-    animation: valueChange 0.3s ease-in-out;
+    animation: valueChange 0.4s ease-in-out;
 }

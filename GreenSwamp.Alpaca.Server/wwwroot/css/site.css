@@ -1,84 +1,552 @@
-@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+﻿/* =============================================================
+   GreenSwamp Alpaca — Design System
+   Material Design Dark · Grey base · Green accent
+   ============================================================= */
 
+/* --- CSS Custom Properties ---------------------------------- */
+:root {
+    /* Base surfaces */
+    --gs-bg-app:         #121212;
+    --gs-bg-paper:       #1e1e1e;
+    --gs-bg-elevated:    #2a2a2a;
+    --gs-bg-sidebar:     linear-gradient(180deg, #052767 0%, #3a0647 70%);
+
+    /* Primary: Material Grey */
+    --gs-grey-50:        #fafafa;
+    --gs-grey-100:       #f5f5f5;
+    --gs-grey-300:       #e0e0e0;
+    --gs-grey-500:       #9e9e9e;
+    --gs-grey-700:       #616161;
+    --gs-grey-900:       #212121;
+
+    /* Accent: Material Green */
+    --gs-accent-300:     #81c784;
+    --gs-accent-500:     #4caf50;
+    --gs-accent-700:     #388e3c;
+    --gs-accent-a200:    #69f0ae;
+
+    /* Text */
+    --gs-text-primary:   rgba(255, 255, 255, 0.87);
+    --gs-text-secondary: rgba(255, 255, 255, 0.60);
+    --gs-text-disabled:  rgba(255, 255, 255, 0.38);
+    --gs-text-hint:      rgba(255, 255, 255, 0.38);
+
+    /* Dividers */
+    --gs-divider:        rgba(255, 255, 255, 0.12);
+
+    /* Status / Semantic */
+    --gs-success:        #66bb6a;
+    --gs-warning:        #ffa726;
+    --gs-error:          #f44336;
+    --gs-info:           #42a5f5;
+
+    /* Spacing (8dp grid) */
+    --gs-space-1: 4px;
+    --gs-space-2: 8px;
+    --gs-space-3: 12px;
+    --gs-space-4: 16px;
+    --gs-space-6: 24px;
+    --gs-space-8: 32px;
+
+    /* Typography */
+    --gs-font-sans: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --gs-font-mono: 'Roboto Mono', 'Courier New', monospace;
+}
+
+/* --- Bootstrap 5.3 dark-mode variable bridge ---------------- */
+/* Map Bootstrap's own tokens to our GS palette so BS components
+   inherit the dark theme even without data-bs-theme on every element */
+[data-bs-theme="dark"],
+:root {
+    --bs-body-bg:            #121212;
+    --bs-body-bg-rgb:        18, 18, 18;
+    --bs-body-color:         rgba(255, 255, 255, 0.87);
+    --bs-body-color-rgb:     255, 255, 255;
+    --bs-secondary-bg:       #2a2a2a;
+    --bs-secondary-bg-rgb:   42, 42, 42;
+    --bs-tertiary-bg:        #1e1e1e;
+    --bs-tertiary-bg-rgb:    30, 30, 30;
+    --bs-border-color:       rgba(255, 255, 255, 0.12);
+    --bs-border-color-translucent: rgba(255, 255, 255, 0.10);
+    --bs-heading-color:      rgba(255, 255, 255, 0.87);
+    --bs-link-color:         #4caf50;
+    --bs-link-hover-color:   #81c784;
+    --bs-card-bg:            #1e1e1e;
+    --bs-card-cap-bg:        #2a2a2a;
+    --bs-card-border-color:  rgba(255, 255, 255, 0.12);
+    --bs-emphasis-color:     rgba(255, 255, 255, 0.87);
+    --bs-secondary-color:    rgba(255, 255, 255, 0.60);
+    --bs-primary:            #4caf50;
+    --bs-primary-rgb:        76, 175, 80;
+    --bs-success-rgb:        102, 187, 106;
+    --bs-warning-rgb:        255, 167, 38;
+    --bs-danger-rgb:         244, 67, 54;
+    --bs-info-rgb:           66, 165, 245;
+    color-scheme:            dark;
+}
+
+/* --- Base --------------------------------------------------- */
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family:      var(--gs-font-sans) !important;
+    font-size:        14px;
+    font-weight:      400;
+    color:            var(--gs-text-primary) !important;
+    background-color: var(--gs-bg-app) !important;
 }
 
-h1:focus {
-    outline: none;
+/* Ensure main content area stays dark */
+main, .content, article {
+    background-color: var(--gs-bg-app) !important;
+    color:            var(--gs-text-primary);
 }
+
+h1 { font-size: 1.5rem;    font-weight: 300; color: var(--gs-text-primary); }
+h2 { font-size: 1.125rem;  font-weight: 400; color: var(--gs-text-primary); }
+h3 { font-size: 1rem;      font-weight: 500; color: var(--gs-text-primary); }
+h4 { font-size: 0.9375rem; font-weight: 500; color: var(--gs-text-primary); }
+
+h1:focus { outline: none; }
 
 a, .btn-link {
-    color: #0071c1;
+    color: var(--gs-accent-500);
 }
 
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+a:hover {
+    color: var(--gs-accent-300);
 }
 
 .content {
     padding-top: 1.1rem;
 }
 
+/* --- Material Symbols sizing -------------------------------- */
+.material-symbols-outlined {
+    font-size:   1.25rem;
+    line-height: 1;
+    vertical-align: middle;
+    margin-right: var(--gs-space-2);
+    color: var(--gs-text-secondary);
+}
+
+.nav-item ::deep .material-symbols-outlined {
+    color: inherit;
+}
+
+/* --- Monospace / telemetry ---------------------------------- */
+.gs-monospace {
+    font-family:    var(--gs-font-mono);
+    font-size:      13px;
+    font-weight:    500;
+    letter-spacing: 0.03em;
+    color:          var(--gs-text-primary);
+}
+
+/* --- Cards / panels ---------------------------------------- */
+.gs-card {
+    background:    var(--gs-bg-paper);
+    border:        1px solid var(--gs-divider);
+    border-radius: 4px;
+    padding:       var(--gs-space-4);
+    margin-bottom: var(--gs-space-6);
+    color:         var(--gs-text-primary);
+}
+
+.gs-card-header {
+    font-size:      18px;
+    font-weight:    400;
+    color:          var(--gs-text-primary);
+    border-bottom:  1px solid var(--gs-divider);
+    padding-bottom: var(--gs-space-2);
+    margin-bottom:  var(--gs-space-4);
+}
+
+/* --- Bootstrap card dark override -------------------------- */
+.card {
+    background-color: var(--gs-bg-paper) !important;
+    border-color:     var(--gs-divider)  !important;
+    color:            var(--gs-text-primary) !important;
+}
+
+.card-header {
+    background-color: var(--gs-bg-elevated) !important;
+    border-color:     var(--gs-divider)  !important;
+    color:            var(--gs-text-primary) !important;
+}
+
+.card-body {
+    background-color: var(--gs-bg-paper) !important;
+}
+
+/* --- Fieldsets --------------------------------------------- */
+fieldset {
+    border:        2px solid var(--gs-divider);
+    background:    var(--gs-bg-paper);
+    border-radius: 4px;
+    padding:       var(--gs-space-4);
+    margin-bottom: var(--gs-space-4);
+    width:         100%;
+    max-width:     640px;
+}
+
+fieldset legend {
+    background:     var(--gs-accent-500);
+    color:          #fff;
+    padding:        2px 10px;
+    font-size:      13px;
+    font-weight:    500;
+    border-radius:  2px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-left:    12px;
+    max-width:      none;
+    box-shadow:     none;
+}
+
+/* --- Buttons ----------------------------------------------- */
+.btn-primary,
+.btn-gs-primary {
+    background-color: var(--gs-accent-500) !important;
+    border-color:     var(--gs-accent-500) !important;
+    color:            #fff !important;
+    font-weight:      500;
+    letter-spacing:   0.06em;
+    text-transform:   uppercase;
+    border-radius:    4px;
+    transition:       background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-primary:hover,
+.btn-gs-primary:hover {
+    background-color: var(--gs-accent-700) !important;
+    border-color:     var(--gs-accent-700) !important;
+    box-shadow:       0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.btn-gs-secondary,
+.btn-outline-secondary {
+    background-color: transparent !important;
+    color:            var(--gs-text-secondary) !important;
+    border-color:     var(--gs-divider) !important;
+    font-weight:      500;
+    text-transform:   uppercase;
+    letter-spacing:   0.06em;
+    border-radius:    4px;
+    transition:       background-color 0.2s ease;
+}
+
+.btn-gs-secondary:hover,
+.btn-outline-secondary:hover {
+    background-color: var(--gs-bg-elevated) !important;
+    color:            var(--gs-text-primary) !important;
+    border-color:     var(--gs-grey-500) !important;
+}
+
+.btn-outline-success {
+    color:        var(--gs-success) !important;
+    border-color: var(--gs-success) !important;
+    background:   transparent !important;
+}
+.btn-outline-success:hover {
+    background-color: rgba(102, 187, 106, 0.15) !important;
+}
+
+.btn-outline-warning {
+    color:        var(--gs-warning) !important;
+    border-color: var(--gs-warning) !important;
+    background:   transparent !important;
+}
+.btn-outline-warning:hover {
+    background-color: rgba(255, 167, 38, 0.15) !important;
+}
+
+.btn-outline-info {
+    color:        var(--gs-info) !important;
+    border-color: var(--gs-info) !important;
+    background:   transparent !important;
+}
+.btn-outline-info:hover {
+    background-color: rgba(66, 165, 245, 0.15) !important;
+}
+
+.btn-gs-danger {
+    background-color: transparent;
+    color:            var(--gs-error);
+    border:           1px solid var(--gs-error);
+    border-radius:    4px;
+    padding:          5px 15px;
+    font-weight:      500;
+    text-transform:   uppercase;
+    letter-spacing:   0.06em;
+}
+
+.btn-gs-danger:hover {
+    background-color: rgba(244, 67, 54, 0.12);
+}
+
+/* --- Form controls ----------------------------------------- */
+.form-control,
+.form-select {
+    background-color: var(--gs-bg-elevated);
+    color:            var(--gs-text-primary);
+    border:           1px solid var(--gs-divider);
+    border-radius:    4px;
+    font-family:      var(--gs-font-sans);
+    font-size:        14px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--gs-bg-elevated);
+    color:            var(--gs-text-primary);
+    border-color:     var(--gs-accent-500);
+    box-shadow:       0 0 0 1px var(--gs-accent-500);
+    outline:          none;
+}
+
+.form-control::placeholder {
+    color: var(--gs-text-hint);
+}
+
+.form-label {
+    color:          var(--gs-text-secondary);
+    font-size:      12px;
+    font-weight:    500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom:  4px;
+}
+
+.form-check-input {
+    background-color: var(--gs-bg-elevated);
+    border-color:     var(--gs-divider);
+}
+
+.form-check-input:checked {
+    background-color: var(--gs-accent-500);
+    border-color:     var(--gs-accent-500);
+}
+
+.form-check-label {
+    color: var(--gs-text-primary);
+}
+
+/* --- Tabs -------------------------------------------------- */
+.nav-tabs {
+    border-bottom: 1px solid var(--gs-divider);
+}
+
+.nav-tabs .nav-link {
+    color:            var(--gs-text-secondary);
+    background:       transparent;
+    border:           none;
+    border-bottom:    2px solid transparent;
+    border-radius:    0;
+    padding:          8px 16px;
+    font-size:        14px;
+    font-weight:      500;
+    letter-spacing:   0.05em;
+    transition:       color 0.2s, border-color 0.2s;
+}
+
+.nav-tabs .nav-link:hover {
+    color:            var(--gs-text-primary);
+    border-bottom-color: var(--gs-grey-500);
+    background:       transparent;
+}
+
+.nav-tabs .nav-link.active,
+.nav-tabs .nav-link:focus {
+    color:       var(--gs-accent-500);
+    background:  transparent;
+    border-color: transparent;
+    border-bottom: 2px solid var(--gs-accent-500);
+}
+
+/* --- Status badges ----------------------------------------- */
+.gs-badge {
+    display:        inline-flex;
+    align-items:    center;
+    padding:        2px 10px;
+    border-radius:  12px;
+    font-size:      12px;
+    font-weight:    500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.gs-badge-connected    { background: rgba(102,187,106,0.2); color: var(--gs-success); }
+.gs-badge-disconnected { background: rgba(244, 67, 54,0.2); color: var(--gs-error);   }
+.gs-badge-slewing      { background: rgba(255,167, 38,0.2); color: var(--gs-warning); }
+.gs-badge-tracking     { background: rgba( 66,165,245,0.2); color: var(--gs-info);    }
+.gs-badge-parked       { background: rgba(158,158,158,0.2); color: var(--gs-grey-300);}
+
+/* --- Monitor / log viewer ---------------------------------- */
+.gs-monitor {
+    background:    #000;
+    color:         var(--gs-text-primary);
+    font-family:   var(--gs-font-mono);
+    font-size:     13px;
+    padding:       var(--gs-space-2);
+    border-radius: 4px;
+    border:        1px solid var(--gs-divider);
+    overflow-y:    auto;
+    max-height:    350px;
+}
+
+.gs-monitor-row {
+    display:               grid;
+    grid-template-columns: 3rem 7rem 1fr;
+    gap:                   0 var(--gs-space-2);
+    padding:               1px 0;
+}
+
+.gs-monitor-row:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.gs-monitor-index   { font-weight: 700; color: var(--gs-text-secondary); }
+.gs-monitor-time    { color: var(--gs-text-secondary); }
+.gs-monitor-message { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* --- Data tables ------------------------------------------- */
+.gs-table {
+    width:           100%;
+    border-collapse: collapse;
+    font-size:       14px;
+}
+
+.gs-table th {
+    color:          var(--gs-text-secondary);
+    font-size:      12px;
+    font-weight:    500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding:        8px 12px;
+    border-bottom:  1px solid var(--gs-divider);
+    text-align:     left;
+}
+
+.gs-table td {
+    color:         var(--gs-text-primary);
+    padding:       8px 12px;
+    border-bottom: 1px solid var(--gs-divider);
+}
+
+.gs-table td.gs-value { font-family: var(--gs-font-mono); font-size: 13px; }
+
+.gs-table tbody tr:hover { background: var(--gs-bg-elevated); }
+
+/* --- Bootstrap table dark override ------------------------- */
+.table {
+    color:        var(--gs-text-primary) !important;
+    border-color: var(--gs-divider) !important;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: var(--gs-bg-elevated);
+    color:            var(--gs-text-primary);
+}
+
+/* --- Alerts ------------------------------------------------ */
+.alert-success {
+    background: rgba(102,187,106,0.15);
+    color:      var(--gs-success);
+    border:     1px solid rgba(102,187,106,0.3);
+}
+
+.alert-danger {
+    background: rgba(244,67,54,0.15);
+    color:      #ef9a9a;
+    border:     1px solid rgba(244,67,54,0.3);
+}
+
+.alert-warning {
+    background: rgba(255,167,38,0.15);
+    color:      var(--gs-warning);
+    border:     1px solid rgba(255,167,38,0.3);
+}
+
+.alert-info {
+    background: rgba(66,165,245,0.15);
+    color:      var(--gs-info);
+    border:     1px solid rgba(66,165,245,0.3);
+}
+
+.btn-close {
+    filter: invert(1) grayscale(100%) brightness(2);
+}
+
+/* --- Validation -------------------------------------------- */
 .valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+    outline: 1px solid var(--gs-success);
 }
 
 .invalid {
-    outline: 1px solid red;
+    outline: 1px solid var(--gs-error);
 }
 
 .validation-message {
-    color: red;
+    color:     var(--gs-error);
+    font-size: 12px;
 }
 
+/* --- Live / animated values -------------------------------- */
+@keyframes gs-live-pulse {
+    0%   { opacity: 1;   }
+    50%  { opacity: 0.55;}
+    100% { opacity: 1;   }
+}
+
+.gs-live {
+    animation: gs-live-pulse 2s ease-in-out infinite;
+    color:     var(--gs-success);
+}
+
+/* --- Misc Bootstrap overrides ------------------------------ */
+.text-muted {
+    color: var(--gs-text-secondary) !important;
+}
+
+code {
+    background-color: var(--gs-bg-elevated);
+    color:            var(--gs-accent-300);
+    padding:          1px 5px;
+    border-radius:    3px;
+    font-family:      var(--gs-font-mono);
+    font-size:        0.85em;
+}
+
+/* --- Blazor error UI --------------------------------------- */
 #blazor-error-ui {
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
+    background:  var(--gs-bg-paper);
+    border-top:  2px solid var(--gs-error);
+    bottom:      0;
+    box-shadow:  0 -2px 6px rgba(0, 0, 0, 0.5);
+    color:       var(--gs-text-primary);
+    display:     none;
+    left:        0;
+    padding:     0.6rem 1.25rem 0.7rem 1.25rem;
+    position:    fixed;
+    width:       100%;
+    z-index:     1000;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .dismiss {
+    cursor:   pointer;
+    position: absolute;
+    right:    0.75rem;
+    top:      0.5rem;
+    color:    var(--gs-text-secondary);
+}
 
 .blazor-error-boundary {
-    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
-    padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
+    background: var(--gs-bg-paper);
+    border:     1px solid var(--gs-error);
+    padding:    1rem 1rem 1rem 3.7rem;
+    color:      var(--gs-text-primary);
+    border-radius: 4px;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
-
-
-fieldset {
-    border: 3px solid #002157;
-    background: #eee;
-    border-radius: 5px;
-    padding: 3px;
-    width: 600px;
-    margin-bottom: 10px;
+.blazor-error-boundary::after {
+    content: "An error has occurred.";
 }
-
-    fieldset legend {
-        background: #002157;
-        color: #fff;
-        padding: 3px 3px;
-        font-size: 18px;
-        box-shadow: 0 0 0 3px #000;
-        margin-left: 10px;
-        max-width: 22ch;
-    }

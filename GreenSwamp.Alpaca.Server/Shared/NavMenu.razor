@@ -1,6 +1,8 @@
 ﻿<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">GreenSwamp.Alpaca.Server</a>
+        <a class="navbar-brand gs-brand" href="">
+            <span class="gs-brand-prefix">GS</span><span class="gs-brand-suffix">Alpaca</span>
+        </a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -11,7 +13,7 @@
     <nav class="flex-column">
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+                <span class="material-symbols-outlined" aria-hidden="true">home</span> Home
             </NavLink>
         </div>
         @foreach (var device in ASCOM.Alpaca.DeviceManager.Cameras)
@@ -19,7 +21,7 @@
             string path = $"/setup/v1/Camera/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-camera-slr" aria-hidden="true"></span> Camera - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">photo_camera</span> Camera - @device.Key
                 </NavLink>
             </div>
         }
@@ -28,7 +30,7 @@
             string path = $"/setup/v1/covercalibrator/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-contrast" aria-hidden="true"></span> CoverCalibrator - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">contrast</span> CoverCalibrator - @device.Key
                 </NavLink>
             </div>
         }
@@ -37,7 +39,7 @@
             string path = $"/setup/v1/dome/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-aperture" aria-hidden="true"></span> Dome - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">lens</span> Dome - @device.Key
                 </NavLink>
             </div>
         }
@@ -46,7 +48,7 @@
             string path = $"/setup/v1/filterwheel/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-sun" aria-hidden="true"></span> Filter Wheel - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">filter_center_focus</span> Filter Wheel - @device.Key
                 </NavLink>
             </div>
         }
@@ -55,7 +57,7 @@
             string path = $"/setup/v1/focuser/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-elevator" aria-hidden="true"></span> Focuser - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">adjust</span> Focuser - @device.Key
                 </NavLink>
             </div>
         }
@@ -64,7 +66,7 @@
             string path = $"/setup/v1/ObservingConditions/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-cloudy" aria-hidden="true"></span> ObservingConditions - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">partly_cloudy_day</span> ObservingConditions - @device.Key
                 </NavLink>
             </div>
         }
@@ -73,7 +75,7 @@
             string path = $"/setup/v1/rotator/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-loop-circular" aria-hidden="true"></span> Rotator - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">rotate_right</span> Rotator - @device.Key
                 </NavLink>
             </div>
         }
@@ -82,7 +84,7 @@
             string path = $"/setup/v1/SafetyMonitor/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-ban" aria-hidden="true"></span> SafetyMonitor - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">shield</span> SafetyMonitor - @device.Key
                 </NavLink>
             </div>
         }
@@ -91,7 +93,7 @@
             string path = $"/setup/v1/switch/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-circle-check" aria-hidden="true"></span> Switch - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">toggle_on</span> Switch - @device.Key
                 </NavLink>
             </div>
         }
@@ -100,38 +102,38 @@
             string path = $"/setup/v1/telescope/{device.Key}/setup";
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="@path" Match="NavLinkMatch.All">
-                    <span class="oi oi-star" aria-hidden="true"></span> Telescope - @device.Key
+                    <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span> Telescope - @device.Key
                 </NavLink>
             </div>
         }
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/setup" Match="NavLinkMatch.All">
-                <span class="oi oi-cog" aria-hidden="true"></span> Server Settings
+                <span class="material-symbols-outlined" aria-hidden="true">settings</span> Server Settings
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/device-manager" Match="NavLinkMatch.All">
-                <span class="oi oi-hard-drive" aria-hidden="true"></span> Device Manager
+                <span class="material-symbols-outlined" aria-hidden="true">device_hub</span> Device Manager
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/mountsettings" Match="NavLinkMatch.All">
-                <span class="oi oi-cog" aria-hidden="true"></span> Mount Settings
+                <span class="material-symbols-outlined" aria-hidden="true">tune</span> Mount Settings
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/settings-health" Match="NavLinkMatch.All">
-                <span class="oi oi-heart" aria-hidden="true"></span> Settings Health
+                <span class="material-symbols-outlined" aria-hidden="true">monitor_heart</span> Settings Health
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/monitorsettings" Match="NavLinkMatch.All">
-                <span class="oi oi-cog" aria-hidden="true"></span> Monitor Settings
+                <span class="material-symbols-outlined" aria-hidden="true">list_alt</span> Monitor Settings
             </NavLink>
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/telescope-state" Match="NavLinkMatch.All">
-                <span class="oi oi-monitor" aria-hidden="true"></span> Telescope State
+                <span class="material-symbols-outlined" aria-hidden="true">display_settings</span> Telescope State
             </NavLink>
         </div>
     </nav>
