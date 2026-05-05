@@ -5,6 +5,7 @@ using GreenSwamp.Alpaca.Server.Models;
 using GreenSwamp.Alpaca.Settings.Extensions;
 using GreenSwamp.Alpaca.Settings.Models;
 using GreenSwamp.Alpaca.Settings.Services;
+using MudBlazor.Services;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Reflection;
@@ -193,6 +194,7 @@ namespace GreenSwamp.Alpaca.Server
             // Add services to the container.
             builder.Services.AddRazorPages();
             builder.Services.AddServerSideBlazor();
+            builder.Services.AddMudServices();
 
             //Load any xml comments for this program, this helps with swagger
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
