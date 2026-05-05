@@ -54,38 +54,6 @@
     --gs-font-mono: 'Roboto Mono', 'Courier New', monospace;
 }
 
-/* --- Bootstrap 5.3 dark-mode variable bridge ---------------- */
-/* Map Bootstrap's own tokens to our GS palette so BS components
-   inherit the dark theme even without data-bs-theme on every element */
-[data-bs-theme="dark"],
-:root {
-    --bs-body-bg:            #121212;
-    --bs-body-bg-rgb:        18, 18, 18;
-    --bs-body-color:         rgba(255, 255, 255, 0.87);
-    --bs-body-color-rgb:     255, 255, 255;
-    --bs-secondary-bg:       #2a2a2a;
-    --bs-secondary-bg-rgb:   42, 42, 42;
-    --bs-tertiary-bg:        #1e1e1e;
-    --bs-tertiary-bg-rgb:    30, 30, 30;
-    --bs-border-color:       rgba(255, 255, 255, 0.12);
-    --bs-border-color-translucent: rgba(255, 255, 255, 0.10);
-    --bs-heading-color:      rgba(255, 255, 255, 0.87);
-    --bs-link-color:         #4caf50;
-    --bs-link-hover-color:   #81c784;
-    --bs-card-bg:            #1e1e1e;
-    --bs-card-cap-bg:        #2a2a2a;
-    --bs-card-border-color:  rgba(255, 255, 255, 0.12);
-    --bs-emphasis-color:     rgba(255, 255, 255, 0.87);
-    --bs-secondary-color:    rgba(255, 255, 255, 0.60);
-    --bs-primary:            #4caf50;
-    --bs-primary-rgb:        76, 175, 80;
-    --bs-success-rgb:        102, 187, 106;
-    --bs-warning-rgb:        255, 167, 38;
-    --bs-danger-rgb:         244, 67, 54;
-    --bs-info-rgb:           66, 165, 245;
-    color-scheme:            dark;
-}
-
 /* --- Base --------------------------------------------------- */
 html, body {
     font-family:      var(--gs-font-sans) !important;
@@ -161,23 +129,6 @@ a:hover {
     margin-bottom:  var(--gs-space-4);
 }
 
-/* --- Bootstrap card dark override -------------------------- */
-.card {
-    background-color: var(--gs-bg-paper) !important;
-    border-color:     var(--gs-divider)  !important;
-    color:            var(--gs-text-primary) !important;
-}
-
-.card-header {
-    background-color: var(--gs-bg-elevated) !important;
-    border-color:     var(--gs-divider)  !important;
-    color:            var(--gs-text-primary) !important;
-}
-
-.card-body {
-    background-color: var(--gs-bg-paper) !important;
-}
-
 /* --- Fieldsets --------------------------------------------- */
 fieldset {
     border:        2px solid var(--gs-divider);
@@ -204,71 +155,6 @@ fieldset legend {
 }
 
 /* --- Buttons ----------------------------------------------- */
-.btn-primary,
-.btn-gs-primary {
-    background-color: var(--gs-accent-500) !important;
-    border-color:     var(--gs-accent-500) !important;
-    color:            #fff !important;
-    font-weight:      500;
-    letter-spacing:   0.06em;
-    text-transform:   uppercase;
-    border-radius:    4px;
-    transition:       background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn-primary:hover,
-.btn-gs-primary:hover {
-    background-color: var(--gs-accent-700) !important;
-    border-color:     var(--gs-accent-700) !important;
-    box-shadow:       0 2px 4px rgba(0, 0, 0, 0.4);
-}
-
-.btn-gs-secondary,
-.btn-outline-secondary {
-    background-color: transparent !important;
-    color:            var(--gs-text-secondary) !important;
-    border-color:     var(--gs-divider) !important;
-    font-weight:      500;
-    text-transform:   uppercase;
-    letter-spacing:   0.06em;
-    border-radius:    4px;
-    transition:       background-color 0.2s ease;
-}
-
-.btn-gs-secondary:hover,
-.btn-outline-secondary:hover {
-    background-color: var(--gs-bg-elevated) !important;
-    color:            var(--gs-text-primary) !important;
-    border-color:     var(--gs-grey-500) !important;
-}
-
-.btn-outline-success {
-    color:        var(--gs-success) !important;
-    border-color: var(--gs-success) !important;
-    background:   transparent !important;
-}
-.btn-outline-success:hover {
-    background-color: rgba(102, 187, 106, 0.15) !important;
-}
-
-.btn-outline-warning {
-    color:        var(--gs-warning) !important;
-    border-color: var(--gs-warning) !important;
-    background:   transparent !important;
-}
-.btn-outline-warning:hover {
-    background-color: rgba(255, 167, 38, 0.15) !important;
-}
-
-.btn-outline-info {
-    color:        var(--gs-info) !important;
-    border-color: var(--gs-info) !important;
-    background:   transparent !important;
-}
-.btn-outline-info:hover {
-    background-color: rgba(66, 165, 245, 0.15) !important;
-}
-
 .btn-gs-danger {
     background-color: transparent;
     color:            var(--gs-error);
@@ -282,85 +168,6 @@ fieldset legend {
 
 .btn-gs-danger:hover {
     background-color: rgba(244, 67, 54, 0.12);
-}
-
-/* --- Form controls ----------------------------------------- */
-.form-control,
-.form-select {
-    background-color: var(--gs-bg-elevated);
-    color:            var(--gs-text-primary);
-    border:           1px solid var(--gs-divider);
-    border-radius:    4px;
-    font-family:      var(--gs-font-sans);
-    font-size:        14px;
-}
-
-.form-control:focus,
-.form-select:focus {
-    background-color: var(--gs-bg-elevated);
-    color:            var(--gs-text-primary);
-    border-color:     var(--gs-accent-500);
-    box-shadow:       0 0 0 1px var(--gs-accent-500);
-    outline:          none;
-}
-
-.form-control::placeholder {
-    color: var(--gs-text-hint);
-}
-
-.form-label {
-    color:          var(--gs-text-secondary);
-    font-size:      12px;
-    font-weight:    500;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin-bottom:  4px;
-}
-
-.form-check-input {
-    background-color: var(--gs-bg-elevated);
-    border-color:     var(--gs-divider);
-}
-
-.form-check-input:checked {
-    background-color: var(--gs-accent-500);
-    border-color:     var(--gs-accent-500);
-}
-
-.form-check-label {
-    color: var(--gs-text-primary);
-}
-
-/* --- Tabs -------------------------------------------------- */
-.nav-tabs {
-    border-bottom: 1px solid var(--gs-divider);
-}
-
-.nav-tabs .nav-link {
-    color:            var(--gs-text-secondary);
-    background:       transparent;
-    border:           none;
-    border-bottom:    2px solid transparent;
-    border-radius:    0;
-    padding:          8px 16px;
-    font-size:        14px;
-    font-weight:      500;
-    letter-spacing:   0.05em;
-    transition:       color 0.2s, border-color 0.2s;
-}
-
-.nav-tabs .nav-link:hover {
-    color:            var(--gs-text-primary);
-    border-bottom-color: var(--gs-grey-500);
-    background:       transparent;
-}
-
-.nav-tabs .nav-link.active,
-.nav-tabs .nav-link:focus {
-    color:       var(--gs-accent-500);
-    background:  transparent;
-    border-color: transparent;
-    border-bottom: 2px solid var(--gs-accent-500);
 }
 
 /* --- Status badges ----------------------------------------- */
@@ -437,46 +244,6 @@ fieldset legend {
 
 .gs-table tbody tr:hover { background: var(--gs-bg-elevated); }
 
-/* --- Bootstrap table dark override ------------------------- */
-.table {
-    color:        var(--gs-text-primary) !important;
-    border-color: var(--gs-divider) !important;
-}
-
-.table-striped > tbody > tr:nth-of-type(odd) > * {
-    background-color: var(--gs-bg-elevated);
-    color:            var(--gs-text-primary);
-}
-
-/* --- Alerts ------------------------------------------------ */
-.alert-success {
-    background: rgba(102,187,106,0.15);
-    color:      var(--gs-success);
-    border:     1px solid rgba(102,187,106,0.3);
-}
-
-.alert-danger {
-    background: rgba(244,67,54,0.15);
-    color:      #ef9a9a;
-    border:     1px solid rgba(244,67,54,0.3);
-}
-
-.alert-warning {
-    background: rgba(255,167,38,0.15);
-    color:      var(--gs-warning);
-    border:     1px solid rgba(255,167,38,0.3);
-}
-
-.alert-info {
-    background: rgba(66,165,245,0.15);
-    color:      var(--gs-info);
-    border:     1px solid rgba(66,165,245,0.3);
-}
-
-.btn-close {
-    filter: invert(1) grayscale(100%) brightness(2);
-}
-
 /* --- Validation -------------------------------------------- */
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid var(--gs-success);
@@ -503,11 +270,7 @@ fieldset legend {
     color:     var(--gs-success);
 }
 
-/* --- Misc Bootstrap overrides ------------------------------ */
-.text-muted {
-    color: var(--gs-text-secondary) !important;
-}
-
+/* --- Code -------------------------------------------------- */
 code {
     background-color: var(--gs-bg-elevated);
     color:            var(--gs-accent-300);
