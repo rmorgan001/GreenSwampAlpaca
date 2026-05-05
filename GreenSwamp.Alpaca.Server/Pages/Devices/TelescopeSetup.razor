@@ -22,7 +22,7 @@
                         <CardHeaderContent>
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                 <MudIcon Icon="@Icons.Material.Filled.Info" Color="Color.Primary" />
-                                <MudText Typo="Typo.body2">Device Information</MudText>
+                                <MudText Typo="Typo.body1">Device Information</MudText>
                             </MudStack>
                         </CardHeaderContent>
                     </MudCardHeader>
@@ -45,14 +45,14 @@
                 </MudCard>
             </MudItem>
 
-            @* ── Location Settings ────────────────────────────────────── *@
+            @* ── Observatory Settings ─────────────────────────────────── *@
             <MudItem xs="12" md="6">
                 <MudCard>
                     <MudCardHeader Style="padding:8px 16px 2px 16px; margin-bottom:6px;">
                         <CardHeaderContent>
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                 <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Success" />
-                                <MudText Typo="Typo.body2">Location Settings</MudText>
+                                <MudText Typo="Typo.body1">Observatory Settings</MudText>
                             </MudStack>
                         </CardHeaderContent>
                     </MudCardHeader>
@@ -62,6 +62,19 @@
                                 <tr><th>Latitude</th><td>@settings.Latitude.ToString("F6")°</td></tr>
                                 <tr><th>Longitude</th><td>@settings.Longitude.ToString("F6")°</td></tr>
                                 <tr><th>Elevation</th><td>@settings.Elevation m</td></tr>
+                                <tr>
+                                    <th>Refraction</th>
+                                    <td>
+                                        @if (settings.Refraction)
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" />
+                                        }
+                                        else
+                                        {
+                                            <MudIcon Icon="@Icons.Material.Filled.Close" Color="Color.Default" />
+                                        }
+                                    </td>
+                                </tr>
                             </tbody>
                         </MudSimpleTable>
                     </MudCardContent>
@@ -75,7 +88,7 @@
                         <CardHeaderContent>
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                 <MudIcon Icon="@Icons.Material.Filled.SettingsInputHdmi" Color="Color.Warning" />
-                                <MudText Typo="Typo.body2">Serial Port Settings</MudText>
+                                <MudText Typo="Typo.body1">Serial Port Settings</MudText>
                             </MudStack>
                         </CardHeaderContent>
                     </MudCardHeader>
@@ -99,7 +112,7 @@
                         <CardHeaderContent>
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                 <MudIcon Icon="@Icons.Material.Filled.TrackChanges" Color="Color.Info" />
-                                <MudText Typo="Typo.body2">Tracking Settings</MudText>
+                                <MudText Typo="Typo.body1">Tracking Settings</MudText>
                             </MudStack>
                         </CardHeaderContent>
                     </MudCardHeader>
@@ -121,19 +134,7 @@
                                         </tr>
                                         <tr><th>Tracking Rate</th><td>@settings.TrackingRate</td></tr>
                                         <tr><th>Sidereal Rate</th><td>@settings.SiderealRate.ToString("F7")"/sec</td></tr>
-                                        <tr>
-                                            <th>Refraction</th>
-                                            <td>
-                                                @if (settings.Refraction)
-                                                {
-                                                    <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" />
-                                                }
-                                                else
-                                                {
-                                                    <MudIcon Icon="@Icons.Material.Filled.Close" Color="Color.Default" />
-                                                }
-                                            </td>
-                                        </tr>
+                                        @* Refraction moved to Observatory Settings *@
                                     </tbody>
                                 </MudSimpleTable>
                     </MudCardContent>
@@ -170,7 +171,7 @@
                         <CardHeaderContent>
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                 <MudIcon Icon="@Icons.Material.Filled.Visibility" />
-                                <MudText Typo="Typo.body2">Telescope Specifications</MudText>
+                                <MudText Typo="Typo.body1">Telescope Specifications</MudText>
                             </MudStack>
                         </CardHeaderContent>
                     </MudCardHeader>
