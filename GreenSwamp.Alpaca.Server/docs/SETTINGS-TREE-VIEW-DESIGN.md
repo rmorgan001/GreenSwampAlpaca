@@ -1,6 +1,6 @@
 ﻿# Settings Explorer — UI Design Document
 
-**2026-05-08 09:48**
+**2026-05-08 10:08**
 
 ---
 
@@ -81,6 +81,8 @@ Settings
 ```
 
 > **Note:** The **Meridian / Hour Angle Limit** group and **Pier Side** group leaf items will be hidden from the tree when the device's `AlignmentMode` is `AltAz` (Q5 — Option a). The **Horizontal Axis Limit** group leaf will be hidden when the mode is `GermanPolar` or `Polar`. Any tree section where **all** settings have `Display = No` is also hidden entirely (Q10 rule — this is how Capability Flags are excluded).
+
+> **Architectural scope rule (Q12):** The groups from **Serial Connection** through **Pier Side** — and all device-specific sub-groups — are **exclusively** children of `Device nn` branch nodes under **Telescope Devices**. They must never appear anywhere under the Observatory, Server Configuration, or Monitor / Logging sections of the tree. `DynamicGroupEditor` must only dispatch to device-group editor components when `Node.Source == SettingsNodeSource.Device`. No Razor routing, no editor instantiation, and no Razor component artifacts for these groups exist at any other tree level.
 
 ---
 
@@ -301,7 +303,8 @@ All questions were resolved by Andy on 2026-05-08. Implementation should treat t
 | Q9 | Page title / nav label | **"Settings Explorer"** |
 | Q10 | Capability flags | **Not shown.** The design rule is: any tree section where all settings have `Display = No` is hidden from the explorer. Capability flags are `Display = No` throughout, so they never appear. |
 | New | Tooltip / hover text on tree nodes | **Yes — required.** Every tree node (branch and leaf) must show a `MudTooltip` using the `Description` field from the Settings Reference. Field-level tooltips also required. `SettingsNode.Description` property added to the view-model. |
-| Q11 | Show hidden settings | **"Show hidden settings" toggle** — a `MudSwitch` in the page header. When off (default), all `Display = No` fields are hidden from their editors and `Display = No` leaf groups are removed from the tree entirely. When on, hidden fields reappear (visually distinguished) and hidden-leaf tree nodes are restored. See §13. |
+| Q11 | Show hidden settings | **"Show hidden settings" toggle** — a `MudSwitch` in the page header. When off (default), all `Display = No` fields are completely absent from their editors and `Display = No` leaf groups are completely absent from the tree. When on, hidden fields and hidden-group nodes appear normally. There is no intermediate greyed-out or muted state — hidden means invisible. See §13. |
+| Q12 | Device-group scope | **Device-specific groups (Serial Connection → Pier Side) are exclusively children of `Device nn` branch nodes.** They never appear under Observatory, Server Configuration, or Monitor / Logging at any level. `DynamicGroupEditor` only routes to device-group editors when `Node.Source == SettingsNodeSource.Device`. No Razor component artifacts for these groups exist outside of `Device nn` nodes. |
 
 ---
 
@@ -365,6 +368,8 @@ A full audit of every editor component against `SETTINGS-REFERENCE.md` reveals t
 
 A `MudSwitch` labelled **"Show hidden settings"** is added to the page header toolbar. Its state is held in a page-local `bool _showHidden` field (default `false`). When toggled it triggers `BuildTree()` (to add/remove whole-group nodes) and a `StateHasChanged()` call (to show/hide individual fields inside currently-open editors).
 
+**Visibility is strictly binary.** When `ShowHidden = false` a hidden group node or hidden field is **completely absent from the rendered output** — it is not rendered in a greyed-out, muted, disabled, or `display:none` state. There is no intermediate visual hint that a hidden item exists. When `ShowHidden = true` the item appears exactly as any other item, with a banner cue (see below) to remind Andy that the group contains settings that are normally hidden.
+
 #### Page header change
 
 Current header row:
@@ -423,21 +428,17 @@ Each editor sub-component receives a `bool ShowHidden` parameter:
 }
 ```
 
-When `ShowHidden = true` the hidden fields are rendered with a visual cue to distinguish them from always-visible fields:
-- A small `MudChip` label reading **"Hidden setting"** in `Color.Warning` / `Variant.Outlined` placed as a suffix adornment or as an adjacent inline chip.
-- Alternatively a `MudAlert Severity="Info" Dense="true"` banner at the top of the editor when `ShowHidden` is true, reading: *"Hidden settings are shown. These are advanced or read-only-like values not normally needed."*
+When `ShowHidden = false` the hidden fields are not rendered at all — no placeholder, no greyed-out row, no `display:none`. When `ShowHidden = true` the hidden fields appear as normal fields. The only visual cue is a single `MudAlert Severity="Info" Dense="true"` banner rendered **once at the top of the detail panel** (not per-field) reading: *"Hidden settings are shown. These are advanced values not normally needed."* The banner is rendered by the page, not by individual editor components.
 
-The recommended approach is the **banner** (single placement, low visual noise) plus the `@if (ShowHidden)` guard on each hidden field.
+#### `SettingsNode.IsAllHidden` — rejected
 
-#### `SettingsNode.IsAllHidden` property (optional, for styling)
-
-Optionally, `SettingsNode` can gain a computed or set property `IsAllHidden` that is set to `true` for the four all-hidden groups. When `ShowHidden = true` and a node has `IsAllHidden = true`, the tree item renders its label in `Color.Secondary` (muted) and adds a small `MudChip` suffix `"hidden"` to signal to Andy that this group is normally invisible.
+`SettingsNode` does **not** gain an `IsAllHidden` property. There is no muted-label, greyed-out, or `MudChip` suffix styling on tree nodes. Hidden groups are simply absent from the tree when `ShowHidden = false`. When `ShowHidden = true` the banner (see above) in the detail panel serves as the only cue.
 
 #### Summary of changes required
 
 | File | Change |
 |---|---|
-| `Pages/SettingsExplorer.razor` | Add `MudSwitch` to header; pass `ShowHidden` to `DynamicGroupEditor`; call `OnShowHiddenChanged` on toggle |
+| `Pages/SettingsExplorer.razor` | Add `MudSwitch` to header; pass `ShowHidden` to `DynamicGroupEditor`; call `OnShowHiddenChanged` on toggle; render the "hidden settings" banner in the detail panel when `ShowHidden = true` |
 | `Pages/SettingsExplorer.razor.cs` | Add `_showHidden` field; add `_allHiddenGroups` set; add `IsGroupVisible()` helper; guard four all-hidden groups in `BuildDeviceNodes()`; add `OnShowHiddenChanged()` method |
 | `Components/SettingsGroups/DynamicGroupEditor.razor` | Add `ShowHidden` parameter; forward to every leaf editor |
 | `Components/SettingsGroups/ObservatoryEditor.razor` | Guard `UTCOffset` with `@if (ShowHidden)` |
@@ -451,7 +452,9 @@ Optionally, `SettingsNode` can gain a computed or set property `IsAllHidden` tha
 | `Components/SettingsGroups/HandControllerEditor.razor` | Same as Optics |
 | `Components/SettingsGroups/GpsEditor.razor` | Same as Optics |
 
-> The all-hidden-group editors (Optics, PEC/PPEC, Hand Controller, GPS) do not need per-field `@if` guards because the entire group node is absent from the tree when `ShowHidden = false`. However adding the parameter is still required so they compile when `DynamicGroupEditor` always forwards it.
+> The all-hidden-group editors (Optics, PEC/PPEC, Hand Controller, GPS) do not need per-field `@if` guards because the entire group node is absent from the tree when `ShowHidden = false`. However adding the `ShowHidden` parameter is still required so they compile when `DynamicGroupEditor` always forwards it.
+
+> **Device-group scope (Q12):** The device-group editors (Serial Connection → Pier Side, plus Optics, PEC/PPEC, Hand Controller, GPS) are never reachable from any non-device tree path. `DynamicGroupEditor` guards all device-editor dispatch on `Node.Source == SettingsNodeSource.Device`. No Razor component or code path renders a device-group editor in response to a non-Device node.
 
 ---
 
