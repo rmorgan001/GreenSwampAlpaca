@@ -217,17 +217,6 @@ namespace GreenSwamp.Alpaca.Server
             // Register UnifiedDeviceRegistry as singleton for DI injection
             builder.Services.AddSingleton<GreenSwamp.Alpaca.Server.Services.UnifiedDeviceRegistry>();
 
-            // Register DeviceManagementService with HttpClient for device manager UI
-            // Uses typed client pattern - HttpClient is automatically injected and lifecycle-managed
-            builder.Services.AddHttpClient<GreenSwamp.Alpaca.Server.Services.DeviceManagementService>(client =>
-            {
-                // Configure base address to call the same server (for Blazor Server self-calls)
-                // The service will make HTTP calls to /setup endpoints on the same server
-                client.BaseAddress = new Uri($"http://localhost:{BootstrapConfig.ServerPort}");
-                client.Timeout = TimeSpan.FromSeconds(30);
-            });
-            Logger.LogInformation("DeviceManagementService registered with HttpClient for device manager UI");
-
             var app = builder.Build();
 
             // Replace bootstrap logger with the DI-resolved logger so the host's configured
