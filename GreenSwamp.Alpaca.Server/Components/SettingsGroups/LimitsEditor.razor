@@ -18,10 +18,6 @@
                 <MudNumericField T="double" @bind-Value="Device!.AxisLimitX" @bind-Value:after="NotifyChanged"
                                  Label="RA/Az Axis Limit (°)" Format="F2" Immediate="true" />
             </MudTooltip>
-            <MudTooltip Text="Maximum slew rate in degrees per second." Placement="Placement.Right" Arrow="true">
-                <MudNumericField T="double" @bind-Value="Device!.MaximumSlewRate" @bind-Value:after="NotifyChanged"
-                                 Label="Max Slew Rate (°/s)" Format="F2" Min="0" Immediate="true" />
-            </MudTooltip>
             <MudTooltip Text="Axis tracking limit in degrees for the RA/Az axis." Placement="Placement.Right" Arrow="true">
                 <MudNumericField T="double" @bind-Value="Device!.AxisTrackingLimit" @bind-Value:after="NotifyChanged"
                                  Label="Axis Tracking Limit (°)" Format="F2" Immediate="true" />

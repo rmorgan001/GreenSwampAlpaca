@@ -64,14 +64,8 @@
                 case "Environmental":
                     <EnvironmentalEditor Device="device" OnChanged="OnSettingChanged" />
                     break;
-                case "Coordinate System":
-                    <CoordinateSystemEditor Device="device" OnChanged="OnSettingChanged" />
-                    break;
-                case "Tracking":
-                    <TrackingEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
-                    break;
-                case "Pulse Guiding":
-                    <PulseGuidingEditor Device="device" OnChanged="OnSettingChanged" />
+                case "Tracking & Guiding":
+                    <TrackingAndGuidingEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
                     break;
                 case "PEC / PPEC":
                     <PecPpecEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />

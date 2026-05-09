@@ -103,9 +103,10 @@ public partial class SettingsExplorer : IDisposable
         // Device leaf groups
         ["Device Identity"]      = "Device number, name and enabled state.",
         ["Serial Connection"]    = "Serial port, baud rate, handshake and timeout settings.",
-        ["Mount Configuration"]  = "Device identity, serial connection, backlash, encoders and custom gearing.",
+        ["Mount Configuration"]  = "Device identity, serial connection, equatorial coordinates, backlash, encoders, motor settings and custom gearing.",
         ["Home and Park"]        = "Stored home and park axis positions.",
         ["Limits"]               = "Axis / slew limits, sync limits and horizontal axis limit (AltAz).",
+        ["Tracking & Guiding"]   = "Tracking rates and pulse guiding settings.",
         ["Location"]             = "Latitude, longitude, elevation and UTC offset for this device.",
         ["Optics"]               = "Aperture diameter, aperture area and focal length.",
         ["Environmental"]        = "Atmospheric refraction correction and temperature.",
@@ -119,7 +120,7 @@ public partial class SettingsExplorer : IDisposable
         ["Encoders"]             = "Enable or disable absolute encoder feedback.",
         ["Hand Controller"]      = "Hand controller speed, mode, flip and anti-backlash settings.",
         ["GPS"]                  = "GPS serial port and baud rate for time/location synchronisation.",
-        ["Performance & Display"]= "Display refresh interval, slew rate, GOTO precision and trace logging.",
+        ["Performance & Display"]= "Display refresh interval, GOTO precision and trace logging.",
         ["Home Position"]        = "Stored home axis positions (X/Y) and auto-home axis positions.",
         ["Park Positions"]       = "Named park position list and active park selection.",
         ["Axis / Slew Limits"]   = "Upper/lower axis limits and maximum slew rate.",
@@ -249,14 +250,11 @@ public partial class SettingsExplorer : IDisposable
 
             deviceLeaves.AddRange(new[]
             {
-                DeviceLeaf(deviceNumber, "Environmental",      Icons.Material.Filled.Air,              "Environmental"),
-                DeviceLeaf(deviceNumber, "Coordinate System",  Icons.Material.Filled.Explore,          "Coordinate System"),
-                DeviceLeaf(deviceNumber, "Tracking",           Icons.Material.Filled.Speed,            "Tracking"),
-                DeviceLeaf(deviceNumber, "Pulse Guiding",      Icons.Material.Filled.NearMe,           "Pulse Guiding"),
-                DeviceLeaf(deviceNumber, "Encoders",           Icons.Material.Filled.Numbers,          "Encoders"),
+                DeviceLeaf(deviceNumber, "Environmental",         Icons.Material.Filled.Air,              "Environmental"),
+                DeviceLeaf(deviceNumber, "Tracking & Guiding",   Icons.Material.Filled.Speed,            "Tracking & Guiding"),
                 DeviceLeaf(deviceNumber, "Performance & Display", Icons.Material.Filled.DisplaySettings, "Performance & Display"),
-                DeviceLeaf(deviceNumber, "Home and Park",      Icons.Material.Filled.Home,             "Home and Park"),
-                DeviceLeaf(deviceNumber, "Limits",             Icons.Material.Filled.Block,            "Limits"),
+                DeviceLeaf(deviceNumber, "Home and Park",        Icons.Material.Filled.Home,             "Home and Park"),
+                DeviceLeaf(deviceNumber, "Limits",               Icons.Material.Filled.Block,            "Limits"),
             });
 
             if (IsGroupVisible("PEC / PPEC"))
