@@ -2,12 +2,14 @@
 
 <MudStack Spacing="3">
     <MudTooltip Text="Equatorial coordinate type returned by the mount (J2000 or JNow)." Placement="Placement.Right" Arrow="true">
-        <MudTextField @bind-Value="Device!.EquatorialCoordinateType" @bind-Value:after="NotifyChanged"
-                      Label="Equatorial Coordinate Type" Immediate="true" />
-    </MudTooltip>
-    <MudTooltip Text="Start tracking automatically when the mount is connected." Placement="Placement.Right" Arrow="true">
-        <MudCheckBox @bind-Value="Device!.AutoTrack" @bind-Value:after="NotifyChanged"
-                     Label="Auto Track on Connect" Color="Color.Primary" />
+        <MudSelect @bind-Value="Device!.EquatorialCoordinateType" @bind-Value:after="NotifyChanged"
+                   Label="Equatorial Coordinate Type">
+            <MudSelectItem Value="@("Other")">Other</MudSelectItem>
+            <MudSelectItem Value="@("Topocentric")">Topocentric (JNow)</MudSelectItem>
+            <MudSelectItem Value="@("J2000")">J2000</MudSelectItem>
+            <MudSelectItem Value="@("J2050")">J2050</MudSelectItem>
+            <MudSelectItem Value="@("B1950")">B1950</MudSelectItem>
+        </MudSelect>
     </MudTooltip>
 </MudStack>
 

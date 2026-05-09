@@ -95,7 +95,7 @@
     <MudItem xs="12" md="8">
         @if (_selectedNode is null)
         {
-            <MudAlert Severity="Severity.Info">
+            <MudAlert Severity="Severity.Normal">
                 Select a settings group from the tree on the left to begin editing.
             </MudAlert>
         }
@@ -122,7 +122,7 @@
                 <MudCardContent>
                     @if (_showHidden)
                     {
-                        <MudAlert Severity="Severity.Info" Dense="true" Class="mb-3">
+                        <MudAlert Severity="Severity.Normal" Dense="true" Class="mb-3">
                             Hidden settings are shown. These are advanced values not normally needed.
                         </MudAlert>
                     }

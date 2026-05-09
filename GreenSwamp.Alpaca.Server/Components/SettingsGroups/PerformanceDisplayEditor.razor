@@ -13,7 +13,7 @@
         @if (ShowHidden)
         {
             <MudNumericField T="double" @bind-Value="Device!.GotoPrecision" @bind-Value:after="NotifyChanged"
-                             Label="GoTo Precision (arcsec)" Format="F2" Min="0" Immediate="true" />
+                             Label="GoTo Precision (arcsec)" Format="F5" Min="0" Immediate="true" />
         }
     </MudTooltip>
     <MudTooltip Text="Enable trace/debug logging to a file for this device." Placement="Placement.Right" Arrow="true">

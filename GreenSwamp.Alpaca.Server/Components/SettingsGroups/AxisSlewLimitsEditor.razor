@@ -1,17 +1,17 @@
 ﻿@using GreenSwamp.Alpaca.Settings.Models
 
 <MudStack Spacing="3">
-    <MudTooltip Text="Upper axis Y limit in degrees (prevents mount from going too far north/zenith)." Placement="Placement.Right" Arrow="true">
+    <MudTooltip Text="Upper Dec/Alt axis limit in degrees (prevents mount from going too far north/zenith)." Placement="Placement.Right" Arrow="true">
         <MudNumericField T="double" @bind-Value="Device!.AxisUpperLimitY" @bind-Value:after="NotifyChanged"
-                         Label="Upper Axis Y Limit (°)" Format="F2" Immediate="true" />
+                         Label="Upper Dec/Alt Axis Limit (°)" Format="F2" Immediate="true" />
     </MudTooltip>
-    <MudTooltip Text="Lower axis Y limit in degrees." Placement="Placement.Right" Arrow="true">
+    <MudTooltip Text="Lower Dec/Alt axis limit in degrees." Placement="Placement.Right" Arrow="true">
         <MudNumericField T="double" @bind-Value="Device!.AxisLowerLimitY" @bind-Value:after="NotifyChanged"
-                         Label="Lower Axis Y Limit (°)" Format="F2" Immediate="true" />
+                         Label="Lower Dec/Alt Axis Limit (°)" Format="F2" Immediate="true" />
     </MudTooltip>
-    <MudTooltip Text="Axis X (RA/Az) limit in degrees." Placement="Placement.Right" Arrow="true">
+    <MudTooltip Text="RA/Az axis limit in degrees." Placement="Placement.Right" Arrow="true">
         <MudNumericField T="double" @bind-Value="Device!.AxisLimitX" @bind-Value:after="NotifyChanged"
-                         Label="Axis X Limit (°)" Format="F2" Immediate="true" />
+                         Label="RA/Az Axis Limit (°)" Format="F2" Immediate="true" />
     </MudTooltip>
     <MudTooltip Text="Maximum slew rate in degrees per second." Placement="Placement.Right" Arrow="true">
         <MudNumericField T="double" @bind-Value="Device!.MaximumSlewRate" @bind-Value:after="NotifyChanged"

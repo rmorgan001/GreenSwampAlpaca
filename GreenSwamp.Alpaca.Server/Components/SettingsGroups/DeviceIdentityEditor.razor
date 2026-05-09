@@ -18,8 +18,12 @@
                       Label="Mount" Immediate="true" />
     </MudTooltip>
     <MudTooltip Text="Alignment mode: AltAz, GermanPolar, or Polar." Placement="Placement.Right" Arrow="true">
-        <MudTextField @bind-Value="Device!.AlignmentMode" @bind-Value:after="NotifyChanged"
-                      Label="Alignment Mode" Immediate="true" />
+        <MudSelect @bind-Value="Device!.AlignmentMode" @bind-Value:after="NotifyChanged"
+                   Label="Alignment Mode">
+            <MudSelectItem Value="@("GermanPolar")">German Equatorial (GEM)</MudSelectItem>
+            <MudSelectItem Value="@("Polar")">Polar / Fork</MudSelectItem>
+            <MudSelectItem Value="@("AltAz")">Alt-Az</MudSelectItem>
+        </MudSelect>
     </MudTooltip>
 </MudStack>
 
