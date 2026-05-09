@@ -445,16 +445,20 @@ public partial class SettingsExplorer : IDisposable
 
     /// <summary>
     /// Applies a monitor settings preset to the working copy.
-    /// Marks the Monitor group as dirty and refreshes the UI.
+    /// Marks only the Monitor section node as dirty and refreshes the UI.
     /// </summary>
     private async Task ApplyMonitorPresetAsync(GreenSwamp.Alpaca.Settings.Models.MonitorSettings preset)
     {
         _monitorWork = preset;
 
-        // Mark all Monitor group nodes as dirty
-        foreach (var node in Flatten(_treeItems).Where(n => n.Source == SettingsNodeSource.Monitor))
+        // Mark only the Monitor section node as dirty (not individual leaf nodes)
+        var monitorSectionNode = Flatten(_treeItems).FirstOrDefault(n => 
+            n.Source == SettingsNodeSource.Monitor && 
+            n.Level == SettingsNodeLevel.Section);
+
+        if (monitorSectionNode is not null)
         {
-            node.IsDirty = IsNodeDirty(node);
+            monitorSectionNode.IsDirty = IsNodeDirty(monitorSectionNode);
         }
 
         StateHasChanged();
@@ -515,10 +519,14 @@ public partial class SettingsExplorer : IDisposable
                 break;
         }
 
-        // Mark all Monitor group nodes as dirty
-        foreach (var node in Flatten(_treeItems).Where(n => n.Source == SettingsNodeSource.Monitor))
+        // Mark only the Monitor section node as dirty (not individual leaf nodes)
+        var monitorSectionNode = Flatten(_treeItems).FirstOrDefault(n => 
+            n.Source == SettingsNodeSource.Monitor && 
+            n.Level == SettingsNodeLevel.Section);
+
+        if (monitorSectionNode is not null)
         {
-            node.IsDirty = IsNodeDirty(node);
+            monitorSectionNode.IsDirty = IsNodeDirty(monitorSectionNode);
         }
 
         StateHasChanged();
@@ -533,6 +541,60 @@ public partial class SettingsExplorer : IDisposable
                                         => Serialize(dev) != _deviceOrigJson.GetValueOrDefault(node.DeviceNumber),
         _ => false
     };
+
+    /// <summary>
+    /// Saves the Monitor / Logging settings from the card's Save button.
+    /// </summary>
+    private async Task SaveMonitorSettingsAsync()
+    {
+        _saving = true;
+        try
+        {
+            await SettingsService.SaveMonitorSettingsAsync(_monitorWork);
+            _monitorOrigJson = Serialize(_monitorWork);
+
+            // Clear dirty flag on Monitor section
+            var monitorSectionNode = Flatten(_treeItems).FirstOrDefault(n => 
+                n.Source == SettingsNodeSource.Monitor && 
+                n.Level == SettingsNodeLevel.Section);
+
+            if (monitorSectionNode is not null)
+            {
+                monitorSectionNode.IsDirty = false;
+            }
+
+            ShowSuccess("Monitor / Logging settings saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Error saving Monitor / Logging settings: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    /// <summary>
+    /// Resets the Monitor / Logging settings from the card's Reset button.
+    /// </summary>
+    private async Task ResetMonitorSettingsAsync()
+    {
+        _monitorWork = DeserializeOrDefault<MonitorSettingsModel>(_monitorOrigJson);
+
+        // Clear dirty flag on Monitor section
+        var monitorSectionNode = Flatten(_treeItems).FirstOrDefault(n => 
+            n.Source == SettingsNodeSource.Monitor && 
+            n.Level == SettingsNodeLevel.Section);
+
+        if (monitorSectionNode is not null)
+        {
+            monitorSectionNode.IsDirty = false;
+        }
+
+        StateHasChanged();
+        ShowSuccess("Monitor / Logging settings reset to last saved state.");
+    }
 
     // ── Save ───────────────────────────────────────────────────────────────
     private async Task SaveSelectedGroupAsync()
@@ -551,7 +613,7 @@ public partial class SettingsExplorer : IDisposable
 
                 case SettingsNodeSource.ServerConfig:
                     await SettingsService.SaveServerConfigAsync(_serverConfigWork);
-                    _serverConfigOrigJson = Serialize(_serverConfigWork);
+
                     break;
 
                 case SettingsNodeSource.Monitor:

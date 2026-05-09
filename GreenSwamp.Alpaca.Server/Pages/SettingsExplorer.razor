@@ -108,7 +108,10 @@
         }
         else if (IsMonitorLoggingSectionNode(_selectedNode))
         {
-            <MonitorLoggingSettingsCard OnPresetSelected="ApplyMonitorPresetAsync" OnQuickActionTriggered="HandleMonitorQuickActionAsync" />
+            <MonitorLoggingSettingsCard OnPresetSelected="ApplyMonitorPresetAsync" 
+                                       OnQuickActionTriggered="HandleMonitorQuickActionAsync" 
+                                       OnSave="SaveMonitorSettingsAsync" 
+                                       OnReset="ResetMonitorSettingsAsync" />
         }
         else
         {

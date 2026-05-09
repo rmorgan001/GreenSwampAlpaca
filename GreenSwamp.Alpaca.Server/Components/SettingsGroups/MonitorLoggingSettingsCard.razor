@@ -84,6 +84,18 @@
             </MudStack>
         </MudStack>
     </MudCardContent>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   OnClick="@(() => OnSave.InvokeAsync())">
+            Save Changes
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                   StartIcon="@Icons.Material.Filled.RestartAlt"
+                   OnClick="@(() => OnReset.InvokeAsync())">
+            Reset
+        </MudButton>
+    </MudCardActions>
 </MudCard>
 
 @code {
@@ -100,4 +112,16 @@
     /// </summary>
     [Parameter]
     public EventCallback<string> OnQuickActionTriggered { get; set; }
+
+    /// <summary>
+    /// Callback invoked when the "Save Changes" button is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    /// <summary>
+    /// Callback invoked when the "Reset" button is clicked.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnReset { get; set; }
 }
