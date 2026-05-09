@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -300,7 +300,7 @@ namespace GreenSwamp.Alpaca.Settings.Models
         public int NumMoveAxis { get; set; }
         // Display Settings
         [CommonSetting]
-        public int DisplayInterval { get; set; }
+        public int CheckInterval { get; set; }
         [CommonSetting]
         public bool TraceLogger { get; set; }
         [CommonSetting]

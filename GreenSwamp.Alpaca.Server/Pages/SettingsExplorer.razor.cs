@@ -63,9 +63,9 @@ public partial class SettingsExplorer : IDisposable
     private static bool IsDeviceManagerNode(SettingsNode? node) =>
         node is { Level: SettingsNodeLevel.Section, Source: SettingsNodeSource.Device };
 
-    /// <summary>True when the selected node is the Configuration Presets group.</summary>
-    private static bool IsPresetsNode(SettingsNode? node) =>
-        node is { GroupKey: "Configuration Presets", Source: SettingsNodeSource.Monitor };
+    /// <summary>True when the selected node is the Monitor/Logging section (shows presets and quick actions card).</summary>
+    private static bool IsMonitorLoggingSectionNode(SettingsNode? node) =>
+        node is { Level: SettingsNodeLevel.Section, Source: SettingsNodeSource.Monitor, Label: "Monitor / Logging" };
 
     // ── Hidden-group definitions ────────────────────────────────────────────
     private static readonly HashSet<string> _allHiddenGroups = new(StringComparer.Ordinal)
@@ -212,7 +212,6 @@ public partial class SettingsExplorer : IDisposable
             Source   = SettingsNodeSource.Monitor,
             Children =
             [
-                Leaf("Configuration Presets",Icons.Material.Filled.Layers,          SettingsNodeSource.Monitor, "Configuration Presets"),
                 Leaf("Device Filters",       Icons.Material.Filled.Devices,         SettingsNodeSource.Monitor, "Device Filters"),
                 Leaf("Category Filters",     Icons.Material.Filled.Category,         SettingsNodeSource.Monitor, "Category Filters"),
                 Leaf("Message Type Filters", Icons.Material.Filled.FilterList,       SettingsNodeSource.Monitor, "Message Type Filters"),
@@ -462,6 +461,67 @@ public partial class SettingsExplorer : IDisposable
 
         // Show success feedback
         ShowSuccess("Preset applied. Review the changes and click Save when ready.");
+    }
+
+    /// <summary>
+    /// Handles quick action button clicks from the Monitor/Logging settings card.
+    /// </summary>
+    private async Task HandleMonitorQuickActionAsync(string actionName)
+    {
+        switch (actionName)
+        {
+            case "SelectAllDevices":
+                _monitorWork.ServerDevice = true;
+                _monitorWork.Telescope = true;
+                _monitorWork.Ui = true;
+                ShowSuccess("All devices selected");
+                break;
+
+            case "SelectAllCategories":
+                _monitorWork.Other = true;
+                _monitorWork.Driver = true;
+                _monitorWork.Interface = true;
+                _monitorWork.Server = true;
+                _monitorWork.Mount = true;
+                _monitorWork.Alignment = true;
+                ShowSuccess("All categories selected");
+                break;
+
+            case "SelectAllTypes":
+                _monitorWork.Information = true;
+                _monitorWork.Data = true;
+                _monitorWork.Warning = true;
+                _monitorWork.Error = true;
+                _monitorWork.Debug = true;
+                ShowSuccess("All types selected");
+                break;
+
+            case "ClearAllFilters":
+                _monitorWork.ServerDevice = false;
+                _monitorWork.Telescope = false;
+                _monitorWork.Ui = false;
+                _monitorWork.Other = false;
+                _monitorWork.Driver = false;
+                _monitorWork.Interface = false;
+                _monitorWork.Server = false;
+                _monitorWork.Mount = false;
+                _monitorWork.Alignment = false;
+                _monitorWork.Information = false;
+                _monitorWork.Data = false;
+                _monitorWork.Warning = false;
+                _monitorWork.Error = false;
+                _monitorWork.Debug = false;
+                ShowSuccess("All filters cleared");
+                break;
+        }
+
+        // Mark all Monitor group nodes as dirty
+        foreach (var node in Flatten(_treeItems).Where(n => n.Source == SettingsNodeSource.Monitor))
+        {
+            node.IsDirty = IsNodeDirty(node);
+        }
+
+        StateHasChanged();
     }
 
     private bool IsNodeDirty(SettingsNode node) => node.Source switch

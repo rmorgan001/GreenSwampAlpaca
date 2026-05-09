@@ -275,7 +275,7 @@ These settings apply equally to **GermanPolar (GEM)**, **Polar**, and **AltAz** 
 | `GotoPrecision` | double | `0.001` | No | Performance & Display | GoTo completion threshold in degrees. |
 | `FullCurrent` | bool | `false` | Yes | Performance & Display | Run motors at full current (higher torque, higher heat). |
 | `NumMoveAxis` | int | `2` | Yes | Performance & Display | Number of axes exposed by `MoveAxis`. |
-| `DisplayInterval` | int | `200` | Yes | Performance & Display | UI display refresh interval in milliseconds. |
+| `CheckInterval` | int | `2000` | Yes | Performance & Display | UI display refresh interval in milliseconds. |
 | `TraceLogger` | bool | `false` | Yes | Performance & Display | Enable ASCOM trace logging to file. |
 | `AllowAdvancedCommandSet` | bool | `true` | Yes | Performance & Display | Allow extended hardware command set beyond the standard Alpaca protocol. |
 

@@ -106,22 +106,9 @@
                                OnAdd="AddDeviceAsync"
                                OnDelete="DeleteDeviceAsync" />
         }
-        else if (IsPresetsNode(_selectedNode))
+        else if (IsMonitorLoggingSectionNode(_selectedNode))
         {
-            <MudCard Elevation="2">
-                <MudCardHeader>
-                    <CardHeaderAvatar>
-                        <MudIcon Icon="@_selectedNode.Icon" Color="Color.Primary" />
-                    </CardHeaderAvatar>
-                    <CardHeaderContent>
-                        <MudText Typo="Typo.h6">@_selectedNode.Label</MudText>
-                        <MudText Typo="Typo.caption" Color="Color.Secondary">@_selectedNode.Description</MudText>
-                    </CardHeaderContent>
-                </MudCardHeader>
-                <MudCardContent>
-                    <MonitorLoggingPresetsCard OnPresetSelected="ApplyMonitorPresetAsync" />
-                </MudCardContent>
-            </MudCard>
+            <MonitorLoggingSettingsCard OnPresetSelected="ApplyMonitorPresetAsync" OnQuickActionTriggered="HandleMonitorQuickActionAsync" />
         }
         else
         {

@@ -21,7 +21,7 @@
 	</MudAlert>
 }
 
-<MonitorLoggingPresetsCard OnPresetSelected="ApplyPreset" />
+<MonitorLoggingSettingsCard OnPresetSelected="ApplyPreset" OnQuickActionTriggered="HandleQuickAction" />
 
 <EditForm Model="_settings" OnValidSubmit="SaveSettings">
 	<DataAnnotationsValidator />
@@ -213,43 +213,13 @@
 								  HelperText="0 = default (%USERPROFILE%\Documents\GSServer)" Class="mb-3" />
 					<MudTextField @bind-Value="_settings.Version" Label="Version"
 								  HelperText="Settings version (read-only)" ReadOnly="true" />
-				</MudCardContent>
-			</MudCard>
+						</MudCardContent>
+						</MudCard>
 
-			<MudCard Class="mb-4">
-				<MudCardHeader>
-					<CardHeaderContent>
-						<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-							<MudIcon Icon="@Icons.Material.Filled.Bolt" />
-							<MudText Typo="Typo.h6">Quick Actions</MudText>
-						</MudStack>
-					</CardHeaderContent>
-				</MudCardHeader>
-				<MudCardContent>
-					<MudGrid Spacing="2">
-						<MudItem xs="6">
-							<MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-									   StartIcon="@Icons.Material.Filled.SelectAll" OnClick="SelectAllDevices">All Devices</MudButton>
-						</MudItem>
-						<MudItem xs="6">
-							<MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-									   StartIcon="@Icons.Material.Filled.SelectAll" OnClick="SelectAllCategories">All Categories</MudButton>
-						</MudItem>
-						<MudItem xs="6">
-							<MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-									   StartIcon="@Icons.Material.Filled.SelectAll" OnClick="SelectAllTypes">All Types</MudButton>
-						</MudItem>
-						<MudItem xs="6">
-							<MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
-									   StartIcon="@Icons.Material.Filled.Close" OnClick="ClearAllFilters">Clear All</MudButton>
-						</MudItem>
-					</MudGrid>
-				</MudCardContent>
-			</MudCard>
-		</MudItem>
-	</MudGrid>
+					</MudItem>
+				</MudGrid>
 
-	<MudDivider Class="my-3" />
+				<MudDivider Class="my-3" />
 	<MudStack Row="true" Spacing="2" Class="pb-4" AlignItems="AlignItems.Center">
 		<MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
 				   Disabled="_saving" StartIcon="@Icons.Material.Filled.Save">
@@ -377,7 +347,7 @@
         _isError = false;
     }
 
-    // Unified preset application from MonitorLoggingPresetsCard component
+    // Unified preset application from MonitorLoggingSettingsCard component
     private void ApplyPreset(GreenSwamp.Alpaca.Settings.Models.MonitorSettings preset)
     {
         _settings = preset;
@@ -398,6 +368,59 @@
         else
         {
             _message = "Profile Debug preset applied: Settings loading focused (not saved yet)";
+        }
+
+        _isError = false;
+    }
+
+    // Handle quick action buttons from MonitorLoggingSettingsCard component
+    private void HandleQuickAction(string actionName)
+    {
+        switch (actionName)
+        {
+            case "SelectAllDevices":
+                _settings.ServerDevice = true;
+                _settings.Telescope = true;
+                _settings.Ui = true;
+                _message = "All devices selected";
+                break;
+
+            case "SelectAllCategories":
+                _settings.Other = true;
+                _settings.Driver = true;
+                _settings.Interface = true;
+                _settings.Server = true;
+                _settings.Mount = true;
+                _settings.Alignment = true;
+                _message = "All categories selected";
+                break;
+
+            case "SelectAllTypes":
+                _settings.Information = true;
+                _settings.Data = true;
+                _settings.Warning = true;
+                _settings.Error = true;
+                _settings.Debug = true;
+                _message = "All types selected";
+                break;
+
+            case "ClearAllFilters":
+                _settings.ServerDevice = false;
+                _settings.Telescope = false;
+                _settings.Ui = false;
+                _settings.Other = false;
+                _settings.Driver = false;
+                _settings.Interface = false;
+                _settings.Server = false;
+                _settings.Mount = false;
+                _settings.Alignment = false;
+                _settings.Information = false;
+                _settings.Data = false;
+                _settings.Warning = false;
+                _settings.Error = false;
+                _settings.Debug = false;
+                _message = "All filters cleared";
+                break;
         }
 
         _isError = false;

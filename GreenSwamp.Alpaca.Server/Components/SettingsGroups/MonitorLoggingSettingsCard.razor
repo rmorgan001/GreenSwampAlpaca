@@ -1,0 +1,103 @@
+﻿@using GreenSwamp.Alpaca.Settings.Models
+
+<MudCard Class="mb-4">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudIcon Icon="@Icons.Material.Filled.Settings" />
+                <MudText Typo="Typo.h6">Monitor / Logging Settings</MudText>
+            </MudStack>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudStack Spacing="3">
+            @* ── Configuration Presets Section ──────────────────────────────── *@
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.subtitle2" Class="mt-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Layers" Size="Size.Small" /> Configuration Presets
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Quick-apply predefined logging configurations</MudText>
+
+                <MudGrid Spacing="2">
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Success"
+                                   StartIcon="@Icons.Material.Filled.Build" OnClick="@(() => OnPresetSelected.InvokeAsync(GreenSwamp.Alpaca.Shared.MonitorPresets.GetDevelopmentPreset()))">
+                            Development
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Check" OnClick="@(() => OnPresetSelected.InvokeAsync(GreenSwamp.Alpaca.Shared.MonitorPresets.GetProductionPreset()))">
+                            Production
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Warning"
+                                   StartIcon="@Icons.Material.Filled.BugReport" OnClick="@(() => OnPresetSelected.InvokeAsync(GreenSwamp.Alpaca.Shared.MonitorPresets.GetTroubleshootingPreset()))">
+                            Troubleshooting
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="12" sm="6" md="3">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Info"
+                                   StartIcon="@Icons.Material.Filled.Description" OnClick="@(() => OnPresetSelected.InvokeAsync(GreenSwamp.Alpaca.Shared.MonitorPresets.GetProfileDebugPreset()))">
+                            Profile Debug
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudStack>
+
+            <MudDivider />
+
+            @* ── Quick Actions Section ─────────────────────────────────────── *@
+            <MudStack Spacing="2">
+                <MudText Typo="Typo.subtitle2" Class="mt-2">
+                    <MudIcon Icon="@Icons.Material.Filled.Bolt" Size="Size.Small" /> Quick Actions
+                </MudText>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Bulk select or deselect filter categories</MudText>
+
+                <MudGrid Spacing="2">
+                    <MudItem xs="6" sm="3">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.SelectAll" OnClick="@(() => OnQuickActionTriggered.InvokeAsync("SelectAllDevices"))">
+                            All Devices
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.SelectAll" OnClick="@(() => OnQuickActionTriggered.InvokeAsync("SelectAllCategories"))">
+                            All Categories
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.SelectAll" OnClick="@(() => OnQuickActionTriggered.InvokeAsync("SelectAllTypes"))">
+                            All Types
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="6" sm="3">
+                        <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Close" OnClick="@(() => OnQuickActionTriggered.InvokeAsync("ClearAllFilters"))">
+                            Clear All
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudStack>
+        </MudStack>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    /// <summary>
+    /// Callback invoked when a preset button is clicked.
+    /// The callback receives the selected preset's MonitorSettings configuration.
+    /// </summary>
+    [Parameter]
+    public EventCallback<MonitorSettings> OnPresetSelected { get; set; }
+
+    /// <summary>
+    /// Callback invoked when a quick action button is clicked.
+    /// The callback receives the action name: "SelectAllDevices", "SelectAllCategories", "SelectAllTypes", or "ClearAllFilters".
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnQuickActionTriggered { get; set; }
+}

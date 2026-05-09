@@ -1428,7 +1428,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             {
                 Thread.Sleep(10);
             }
-            DelayInterval();
+            //DelayInterval();
         }
 
         public void SlewToAltAzAsync(double Azimuth, double Altitude)
@@ -1477,7 +1477,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             _mount.SlewRaDec(raDec.X, raDec.Y, true);
 
             // Brief delay for position updates
-            DelayInterval();
+            //DelayInterval();
         }
 
         public void SlewToCoordinatesAsync(double RightAscension, double Declination)
@@ -1543,7 +1543,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             _mount.SlewRaDec(xy.X, xy.Y, true);
 
             // Brief delay for position updates
-            DelayInterval();
+            //DelayInterval();
         }
 
         public void SlewToTargetAsync()
@@ -1927,11 +1927,11 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             switch (_mount.Settings.Mount)
             {
                 case MountType.Simulator:
-                    delay += _mount.Settings.DisplayInterval;
+                    delay += _mount.Settings.CheckInterval;
                     break;
                 case MountType.SkyWatcher:
                     delay += 20;  // some go tos have been off .10 to .70 seconds, not sure exactly why
-                    delay += _mount.Settings.DisplayInterval;
+                    delay += _mount.Settings.CheckInterval;
                     break;
             }
             //Thread.Sleep(delay);

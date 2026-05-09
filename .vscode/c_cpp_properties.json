@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Z-Uno2",
+            "includePath": [
+                "c:\\Users\\Andy\\ZunoPackages\\Z-Uno2\\hardware\\cores\\**",
+                "c:\\Users\\Andy\\ZunoPackages\\Z-Uno2\\hardware\\libraries\\**",
+                "c:\\Users\\Andy\\ZunoPackages\\Z-Uno2\\tools\\gcc\\lib\\gcc\\arm-none-eabi\\7.2.1\\include\\**",
+                "c:\\Users\\Andy\\ZunoPackages\\Z-Uno2\\tools\\inc\\**"
+            ],
+            "forcedInclude": [
+                "c:\\Users\\Andy\\ZunoPackages\\Z-Uno2\\hardware\\cores\\includes\\Arduino.h"
+            ],
+            "defines": [],
+            "intelliSenseMode": "gcc-arm",
+            "compilerPath": "c:\\Users\\Andy\\ZunoPackages\\Z-Uno2\\tools\\gcc\\bin\\arm-none-eabi-gcc.exe"
+        }
+    ],
+    "version": 4
+}

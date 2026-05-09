@@ -84,7 +84,7 @@ namespace GreenSwamp.Alpaca.MountControl
         private double _kingRate = 15.0369;
         private double _axisTrackingLimit = 180.0;
         private double _axisHzTrackingLimit = 180.0;
-        private int _displayInterval = 200;
+        private int _checkInterval = 2000;
         private int _altAzTrackingUpdateInterval = 2500;
 
         // Guiding (8 fields)
@@ -672,14 +672,14 @@ namespace GreenSwamp.Alpaca.MountControl
             }
         }
 
-        public int DisplayInterval
+        public int CheckInterval
         {
-            get => _displayInterval;
+            get => _checkInterval;
             set
             {
-                if (_displayInterval != value)
+                if (_checkInterval != value)
                 {
-                    _displayInterval = value;
+                    _checkInterval = value;
                     OnPropertyChanged();
                 }
             }
@@ -1699,7 +1699,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 _kingRate = settings.KingRate;
                 _axisTrackingLimit = settings.AxisTrackingLimit;
                 _axisHzTrackingLimit = settings.AxisHzTrackingLimit;
-                _displayInterval = settings.DisplayInterval;
+                _checkInterval = settings.CheckInterval;
                 _altAzTrackingUpdateInterval = settings.AltAzTrackingUpdateInterval;
 
                 // Batch 4: Guiding
@@ -1912,7 +1912,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 settings.KingRate = _kingRate;
                 settings.AxisTrackingLimit = _axisTrackingLimit;
                 settings.AxisHzTrackingLimit = _axisHzTrackingLimit;
-                settings.DisplayInterval = _displayInterval;
+                settings.CheckInterval = _checkInterval;
                 settings.AltAzTrackingUpdateInterval = _altAzTrackingUpdateInterval;
 
                 settings.MinPulseRa = _minPulseRa;

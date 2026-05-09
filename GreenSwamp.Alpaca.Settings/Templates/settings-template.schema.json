@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://greenswampalpaca.com/schemas/settings-template.schema.json",
   "title": "Settings Template",
@@ -138,10 +138,10 @@
           "type": "boolean",
           "description": "Enable Data Terminal Ready signal"
         },
-        "DisplayInterval": {
+        "CheckInterval": {
           "type": "number",
           "minimum": 100,
-          "maximum": 1000,
+          "maximum": 5000,
           "description": "Display update interval in milliseconds"
         },
         "EncodersOn": {

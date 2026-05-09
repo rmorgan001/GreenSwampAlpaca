@@ -1,4 +1,4 @@
-# Implementation Guide: Profile Loading with ApplySettings Method
+﻿# Implementation Guide: Profile Loading with ApplySettings Method
 
 ## Overview
 
@@ -347,7 +347,7 @@ private void ApplySettings(Settings.Models.SkySettings settings)
         _kingRate = settings.KingRate;
         _axisTrackingLimit = settings.AxisTrackingLimit;
         _axisHzTrackingLimit = settings.AxisHzTrackingLimit;
-        _displayInterval = settings.DisplayInterval;
+        _checkInterval = settings.CheckInterval;
         _altAzTrackingUpdateInterval = settings.AltAzTrackingUpdateInterval;
 
         // Batch 4: Guiding (8 fields)
