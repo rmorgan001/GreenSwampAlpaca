@@ -322,7 +322,7 @@ public partial class SettingsExplorer : IDisposable
         if (node is null)
             return;
 
-        var selectable = node.Level == SettingsNodeLevel.Group || IsDeviceManagerNode(node);
+        var selectable = node.Level == SettingsNodeLevel.Group || IsDeviceManagerNode(node) || IsMonitorLoggingSectionNode(node);
         if (!selectable)
             return;
 
