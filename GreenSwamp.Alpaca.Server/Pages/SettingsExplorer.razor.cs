@@ -1,5 +1,6 @@
 ﻿using GreenSwamp.Alpaca.Server.Components;
 using GreenSwamp.Alpaca.Server.Models;
+using GreenSwamp.Alpaca.Settings.Models;
 using GreenSwamp.Alpaca.Settings.Services;
 using MudBlazor;
 using System.Text.Json;
@@ -52,10 +53,15 @@ public partial class SettingsExplorer : IDisposable
 
     // ── UI state ────────────────────────────────────────────────────────────
     private bool    _saving;
+    private bool    _deviceManagerBusy = false;
     private bool    _showHidden      = false;
     private string  _feedback        = string.Empty;
     private Severity _feedbackSeverity = Severity.Info;
     private bool    _anyDirty        => Flatten(_treeItems).Any(n => n.IsDirty);
+
+    /// <summary>True when the selected node is the Telescope Devices section (device manager card).</summary>
+    private static bool IsDeviceManagerNode(SettingsNode? node) =>
+        node is { Level: SettingsNodeLevel.Section, Source: SettingsNodeSource.Device };
 
     // ── Hidden-group definitions ────────────────────────────────────────────
     private static readonly HashSet<string> _allHiddenGroups = new(StringComparer.Ordinal)
@@ -308,7 +314,11 @@ public partial class SettingsExplorer : IDisposable
     // ── Node selection with unsaved-changes guard (Q4) ─────────────────────
     private async Task OnTreeNodeSelected(SettingsNode? node)
     {
-        if (node is null || node.Level != SettingsNodeLevel.Group)
+        if (node is null)
+            return;
+
+        var selectable = node.Level == SettingsNodeLevel.Group || IsDeviceManagerNode(node);
+        if (!selectable)
             return;
 
         if (_selectedNode is not null && _selectedNode.IsDirty && _selectedNode != node)
@@ -325,6 +335,98 @@ public partial class SettingsExplorer : IDisposable
         }
 
         _selectedNode = node;
+        StateHasChanged();
+    }
+
+    private async Task AddDeviceAsync()
+    {
+        var dialog = await DialogService.ShowAsync<AddDeviceDialog>(
+            "Add Telescope Device",
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result.Canceled || result.Data is not ValueTuple<string, AlignmentMode> add)
+            return;
+
+        _deviceManagerBusy = true;
+        try
+        {
+            var (deviceName, alignmentMode) = add;
+            var nextDeviceNumber = _deviceWork.Keys.DefaultIfEmpty(-1).Max() + 1;
+
+            await SettingsService.CreateDeviceForModeAsync(nextDeviceNumber, deviceName, alignmentMode);
+            await SettingsService.AddAlpacaDeviceAsync(new AlpacaDevice
+            {
+                DeviceNumber = nextDeviceNumber,
+                DeviceName = deviceName,
+                DeviceType = "Telescope"
+            });
+
+            await LoadSettingsAsync();
+            SelectDeviceManagerNode();
+            ShowSuccess($"Added device {nextDeviceNumber}: {deviceName}.");
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Error adding device: {ex.Message}");
+        }
+        finally
+        {
+            _deviceManagerBusy = false;
+        }
+    }
+
+    private async Task DeleteDeviceAsync(int deviceNumber)
+    {
+        if (!_deviceWork.TryGetValue(deviceNumber, out var device))
+        {
+            ShowError($"Device {deviceNumber} was not found.");
+            return;
+        }
+
+        var parameters = new DialogParameters<DeleteDeviceDialog>
+        {
+            { d => d.DeviceNumber, deviceNumber },
+            { d => d.DeviceName, device.DeviceName }
+        };
+
+        var dialog = await DialogService.ShowAsync<DeleteDeviceDialog>(
+            "Delete Telescope Device",
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result.Canceled)
+            return;
+
+        _deviceManagerBusy = true;
+        try
+        {
+            await SettingsService.RemoveAlpacaDeviceAsync(deviceNumber);
+            await SettingsService.DeleteDeviceSettingsAsync(deviceNumber);
+
+            await LoadSettingsAsync();
+            SelectDeviceManagerNode();
+            ShowSuccess($"Deleted device {deviceNumber}: {device.DeviceName}.");
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Error deleting device {deviceNumber}: {ex.Message}");
+        }
+        finally
+        {
+            _deviceManagerBusy = false;
+        }
+    }
+
+    private void SelectDeviceManagerNode()
+    {
+        var managerNode = Flatten(_treeItems).FirstOrDefault(IsDeviceManagerNode);
+        if (managerNode is null)
+            return;
+
+        _selectedNode = managerNode;
+        _treeSelectedValue = managerNode;
         StateHasChanged();
     }
 

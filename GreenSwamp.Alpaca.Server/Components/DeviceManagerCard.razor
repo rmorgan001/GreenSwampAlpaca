@@ -1,0 +1,111 @@
+﻿@using GreenSwamp.Alpaca.Settings.Models
+@using MudBlazor
+
+@* Displayed in the right panel when "Telescope Devices" section is selected in the tree. *@
+
+<MudCard Elevation="2">
+    <MudCardHeader>
+        <CardHeaderAvatar>
+            <MudIcon Icon="@Icons.Material.Filled.TravelExplore" Color="Color.Primary" />
+        </CardHeaderAvatar>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Telescope Devices</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                Manage connected telescope mount devices
+            </MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (Devices is null || Devices.Count == 0)
+        {
+            <MudAlert Severity="Severity.Normal" Icon="@Icons.Material.Filled.Info">
+                No telescope devices are configured. Add a device to get started.
+            </MudAlert>
+        }
+        else
+        {
+            <MudStack Spacing="2">
+                @foreach (var (deviceNumber, device) in Devices.OrderBy(kv => kv.Key))
+                {
+                    <MudPaper Elevation="1" Class="pa-3">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.DeviceHub"
+                                     Color="Color.Primary" Size="Size.Medium" />
+                            <MudStack Spacing="0" Style="flex:1; min-width:0;">
+                                <MudText Typo="Typo.body1" Style="font-weight:500;">
+                                    Device @deviceNumber — @device.DeviceName
+                                </MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @FriendlyAlignment(device.AlignmentMode) &nbsp;·&nbsp; @device.Mount
+                                </MudText>
+                            </MudStack>
+                            <MudTooltip Text="Permanently delete this device and all its settings"
+                                        Placement="Placement.Left" Arrow="true">
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteForever"
+                                               Color="Color.Error"
+                                               Size="Size.Small"
+                                               Disabled="IsBusy"
+                                               OnClick="() => RequestDelete(deviceNumber, device.DeviceName)" />
+                            </MudTooltip>
+                        </MudStack>
+                    </MudPaper>
+                }
+            </MudStack>
+        }
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3"
+                      ShowCloseIcon="true" CloseIconClicked="() => _errorMessage = string.Empty">
+                @_errorMessage
+            </MudAlert>
+        }
+    </MudCardContent>
+
+    <MudCardActions>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Disabled="IsBusy"
+                   OnClick="RequestAdd">
+            Add Device
+        </MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    /// <summary>Current device working copies keyed by device number.</summary>
+    [Parameter] public Dictionary<int, SkySettings>? Devices { get; set; }
+
+    /// <summary>Called when the user clicks Add Device.</summary>
+    [Parameter] public EventCallback OnAdd { get; set; }
+
+    /// <summary>Called when the user confirms deleting a device.</summary>
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    /// <summary>When true, action buttons are disabled (parent is executing an operation).</summary>
+    [Parameter] public bool IsBusy { get; set; }
+
+    private string _errorMessage = string.Empty;
+
+    private async Task RequestAdd()
+    {
+        if (OnAdd.HasDelegate)
+            await OnAdd.InvokeAsync();
+    }
+
+    private async Task RequestDelete(int deviceNumber, string deviceName)
+    {
+        if (OnDelete.HasDelegate)
+            await OnDelete.InvokeAsync(deviceNumber);
+    }
+
+    private static string FriendlyAlignment(string? mode) => mode?.ToLowerInvariant() switch
+    {
+        "germanpolar" => "German Equatorial (GEM)",
+        "polar"       => "Polar / Fork",
+        "altaz"       => "Alt-Azimuth",
+        _             => mode ?? "Unknown"
+    };
+}

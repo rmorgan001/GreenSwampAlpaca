@@ -99,6 +99,13 @@
                 Select a settings group from the tree on the left to begin editing.
             </MudAlert>
         }
+        else if (IsDeviceManagerNode(_selectedNode))
+        {
+            <DeviceManagerCard Devices="_deviceWork"
+                               IsBusy="_deviceManagerBusy"
+                               OnAdd="AddDeviceAsync"
+                               OnDelete="DeleteDeviceAsync" />
+        }
         else
         {
             <MudCard Elevation="2">
