@@ -63,6 +63,10 @@ public partial class SettingsExplorer : IDisposable
     private static bool IsDeviceManagerNode(SettingsNode? node) =>
         node is { Level: SettingsNodeLevel.Section, Source: SettingsNodeSource.Device };
 
+    /// <summary>True when the selected node is the Configuration Presets group.</summary>
+    private static bool IsPresetsNode(SettingsNode? node) =>
+        node is { GroupKey: "Configuration Presets", Source: SettingsNodeSource.Monitor };
+
     // ── Hidden-group definitions ────────────────────────────────────────────
     private static readonly HashSet<string> _allHiddenGroups = new(StringComparer.Ordinal)
     {
@@ -100,6 +104,7 @@ public partial class SettingsExplorer : IDisposable
         ["Observatory Settings"] = "Latitude, longitude, elevation and UTC offset for the observatory site.",
 
         // Monitor groups
+        ["Configuration Presets"] = "Apply preset configurations for different logging scenarios (Development, Production, Troubleshooting, Profile Debug).",
         ["Device Filters"]       = "Enable or disable log entries by device type (server, telescope, UI).",
         ["Category Filters"]     = "Enable or disable log entries by category (driver, interface, mount, etc.).",
         ["Message Type Filters"] = "Enable or disable log entries by message type (info, warning, error, debug).",
@@ -207,6 +212,7 @@ public partial class SettingsExplorer : IDisposable
             Source   = SettingsNodeSource.Monitor,
             Children =
             [
+                Leaf("Configuration Presets",Icons.Material.Filled.Layers,          SettingsNodeSource.Monitor, "Configuration Presets"),
                 Leaf("Device Filters",       Icons.Material.Filled.Devices,         SettingsNodeSource.Monitor, "Device Filters"),
                 Leaf("Category Filters",     Icons.Material.Filled.Category,         SettingsNodeSource.Monitor, "Category Filters"),
                 Leaf("Message Type Filters", Icons.Material.Filled.FilterList,       SettingsNodeSource.Monitor, "Message Type Filters"),
@@ -436,6 +442,26 @@ public partial class SettingsExplorer : IDisposable
         if (_selectedNode is null) return;
         _selectedNode.IsDirty = IsNodeDirty(_selectedNode);
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Applies a monitor settings preset to the working copy.
+    /// Marks the Monitor group as dirty and refreshes the UI.
+    /// </summary>
+    private async Task ApplyMonitorPresetAsync(GreenSwamp.Alpaca.Settings.Models.MonitorSettings preset)
+    {
+        _monitorWork = preset;
+
+        // Mark all Monitor group nodes as dirty
+        foreach (var node in Flatten(_treeItems).Where(n => n.Source == SettingsNodeSource.Monitor))
+        {
+            node.IsDirty = IsNodeDirty(node);
+        }
+
+        StateHasChanged();
+
+        // Show success feedback
+        ShowSuccess("Preset applied. Review the changes and click Save when ready.");
     }
 
     private bool IsNodeDirty(SettingsNode node) => node.Source switch
