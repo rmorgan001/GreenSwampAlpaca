@@ -112,7 +112,7 @@
                         <CardHeaderContent>
                                 <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                 <MudIcon Icon="@Icons.Material.Filled.TrackChanges" Color="Color.Info" />
-                                <MudText Typo="Typo.body1">Tracking Settings</MudText>
+                                <MudText Typo="Typo.body1">Tracking &amp; Guiding Settings</MudText>
                             </MudStack>
                         </CardHeaderContent>
                     </MudCardHeader>
@@ -135,6 +135,8 @@
                                         <tr><th>Tracking Rate</th><td>@settings.TrackingRate</td></tr>
                                         <tr><th>Sidereal Rate</th><td>@settings.SiderealRate.ToString("F7")"/sec</td></tr>
                                         @* Refraction moved to Observatory Settings *@
+                                        <tr><th>Min Pulse RA</th><td>@settings.MinPulseRa ms</td></tr>
+                                        <tr><th>Min Pulse Dec</th><td>@settings.MinPulseDec ms</td></tr>
                                     </tbody>
                                 </MudSimpleTable>
                     </MudCardContent>
@@ -148,7 +150,7 @@
                         <CardHeaderContent>
                             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
                                 <MudIcon Icon="@Icons.Material.Filled.Tune" />
-                                <MudText Typo="Typo.h6">Mount Motion Settings</MudText>
+                                <MudText Typo="Typo.h6">Mount Settings</MudText>
                             </MudStack>
                         </CardHeaderContent>
                     </MudCardHeader>
@@ -157,8 +159,7 @@
                             <tbody>
                                 <tr><th>RA Backlash</th><td>@settings.RaBacklash</td></tr>
                                 <tr><th>Dec Backlash</th><td>@settings.DecBacklash</td></tr>
-                                <tr><th>Min Pulse RA</th><td>@settings.MinPulseRa ms</td></tr>
-                                <tr><th>Min Pulse Dec</th><td>@settings.MinPulseDec ms</td></tr>
+                                <tr><th>Encoders</th><td>@if (settings.Encoders) { <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" /> } else { <MudIcon Icon="@Icons.Material.Filled.Close" Color="Color.Default" /> }</td></tr>
                             </tbody>
                         </MudSimpleTable>
                     </MudCardContent>

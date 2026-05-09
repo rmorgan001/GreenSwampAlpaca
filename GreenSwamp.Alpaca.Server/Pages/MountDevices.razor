@@ -16,7 +16,7 @@
 }
 else
 {
-    <MudTabs Rounded="true" Elevation="1">
+    <MudTabs Rounded="true" Elevation="1" Class="gs-tabs-no-transform">
     @foreach (var device in ASCOM.Alpaca.DeviceManager.Telescopes.Keys.OrderBy(k => k))
         {
             <MudTabPanel Text="@TabLabel(device)">

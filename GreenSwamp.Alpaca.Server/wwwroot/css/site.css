@@ -109,6 +109,11 @@ a:hover {
     color: inherit;
 }
 
+/* --- MudTabs: suppress uppercase on tab labels -------------- */
+.gs-tabs-no-transform .mud-tab {
+    text-transform: none;
+}
+
 /* --- Monospace / telemetry ---------------------------------- */
 .gs-monospace {
     font-family:    var(--gs-font-mono);
