@@ -124,8 +124,26 @@
 						<MudItem xs="6">
 							<MudCheckBox @bind-Value="_settings.StartMonitor" Label="Start Monitor" Color="Color.Error" />
 							<MudText Typo="Typo.caption" Color="Color.Secondary">Must be ON for file logging</MudText>
-							<MudCheckBox @bind-Value="_settings.LogMonitor" Label="Log Monitor" Color="Color.Primary" Class="mt-2" />
+							<MudCheckBox Value="_settings.LogMonitor"
+										 ValueChanged="@((bool v) => { _settings.LogMonitor = v; if (v) _settings.FastMonitor = false; })"
+										 Label="Log Monitor" Color="Color.Primary" Class="mt-2" />
 							<MudText Typo="Typo.caption" Color="Color.Secondary">GSMonitorLog*.txt</MudText>
+							<MudCheckBox Value="_settings.FastMonitor"
+										 ValueChanged="@((bool v) => { _settings.FastMonitor = v; if (v) _settings.LogMonitor = false; })"
+										 Label="Fast Monitor (Buffer)" Color="Color.Info" Class="mt-2" />
+							<MudText Typo="Typo.caption" Color="Color.Secondary">1000-record ring buffer. Mutually exclusive with Log Monitor.</MudText>
+							@if (_settings.FastMonitor)
+							{
+								<MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small"
+										   StartIcon="@Icons.Material.Filled.Save" Class="mt-2"
+										   OnClick="WriteBufferAsync" Disabled="_writingBuffer">
+									@if (_writingBuffer)
+									{
+										<MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-1" />
+									}
+									Write Buffer to File
+								</MudButton>
+							}
 						</MudItem>
 						<MudItem xs="6">
 							<MudCheckBox @bind-Value="_settings.LogSession" Label="Log Session" Color="Color.Primary" />
@@ -166,13 +184,21 @@
 								<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">GSSessionLog*.txt</MudListItem>
 							}
 							@if (_settings.LogMonitor && _settings.StartMonitor)
-							{
-								<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">GSMonitorLog*.txt</MudListItem>
-							}
-							else if (_settings.LogMonitor && !_settings.StartMonitor)
-							{
-								<MudListItem T="string" Icon="@Icons.Material.Filled.Cancel" IconColor="Color.Error">GSMonitorLog*.txt (StartMonitor OFF)</MudListItem>
-							}
+								{
+									<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">GSMonitorLog*.txt</MudListItem>
+								}
+								else if (_settings.LogMonitor && !_settings.StartMonitor)
+								{
+									<MudListItem T="string" Icon="@Icons.Material.Filled.Cancel" IconColor="Color.Error">GSMonitorLog*.txt (StartMonitor OFF)</MudListItem>
+								}
+								@if (_settings.FastMonitor && _settings.StartMonitor)
+								{
+									<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Info">GSFastMonitorLog*.txt (buffer, on WriteBuffer)</MudListItem>
+								}
+								else if (_settings.FastMonitor && !_settings.StartMonitor)
+								{
+									<MudListItem T="string" Icon="@Icons.Material.Filled.Cancel" IconColor="Color.Error">GSFastMonitorLog*.txt (StartMonitor OFF)</MudListItem>
+								}
 							@if (_settings.LogCharting)
 							{
 								<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">GSChartingLog*.txt</MudListItem>
@@ -240,6 +266,7 @@
 @code {
     private GreenSwamp.Alpaca.Settings.Models.MonitorSettings _settings = new();
     private bool _saving;
+    private bool _writingBuffer;
     private string? _message;
     private bool _isError;
 
@@ -265,6 +292,7 @@
 
             // Also update the MonitorLog settings immediately
             GreenSwamp.Alpaca.Shared.MonitorLog.Load_Settings();
+            GreenSwamp.Alpaca.Shared.Settings.Load();
 
             _message = "Monitor settings saved successfully! Changes applied immediately.";
             _isError = false;
@@ -277,6 +305,30 @@
         finally
         {
             _saving = false;
+        }
+    }
+
+    /// <summary>
+    /// Flushes the fast monitor ring buffer to a datetime-stamped file.
+    /// Runs on a background thread to avoid blocking the Blazor render thread.
+    /// </summary>
+    private async Task WriteBufferAsync()
+    {
+        _writingBuffer = true;
+        try
+        {
+            await Task.Run(() => GreenSwamp.Alpaca.Shared.MonitorQueue.WriteBuffer());
+            _message = $"Fast monitor buffer written to file at {DateTime.Now:HH:mm:ss}";
+            _isError = false;
+        }
+        catch (Exception ex)
+        {
+            _message = $"Error writing buffer: {ex.Message}";
+            _isError = true;
+        }
+        finally
+        {
+            _writingBuffer = false;
         }
     }
 

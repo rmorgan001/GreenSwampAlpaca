@@ -68,7 +68,12 @@ namespace GreenSwamp.Alpaca.MountControl
 
         private const double SiderealRate = 15.0410671786691;
 
-        internal void SetTracking()
+        /// <summary>
+        /// Updates tracking rates for mount axes. When changedAxis is specified, only that axis is updated.
+        /// When null, both axes are updated (full tracking update). This eliminates redundant hardware commands.
+        /// </summary>
+        /// <param name="changedAxis">The axis that changed (Primary=RA, Secondary=Dec). Null for full update.</param>
+        internal void SetTracking(TelescopeAxis? changedAxis = null)
         {
             if (!IsMountRunning) return;
 
@@ -112,9 +117,11 @@ namespace GreenSwamp.Alpaca.MountControl
                             {
                                 var mq = SimQueue;
                                 if (mq == null) return;
-                                if (_rateMoveAxes.X == 0.0)
+                                // Only queue Axis1 if: no specific axis requested OR the changed axis is Primary (RA)
+                                if (_rateMoveAxes.X == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Primary))
                                     _ = new CmdAxisTracking(mq.NewId, mq, Axis.Axis1, rate.X);
-                                if (_rateMoveAxes.Y == 0.0)
+                                // Only queue Axis2 if: no specific axis requested OR the changed axis is Secondary (Dec)
+                                if (_rateMoveAxes.Y == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Secondary))
                                     _ = new CmdAxisTracking(mq.NewId, mq, Axis.Axis2, rate.Y);
                             }
                             break;
@@ -122,12 +129,16 @@ namespace GreenSwamp.Alpaca.MountControl
                         case AlignmentMode.GermanPolar:
                             {
                                 var mq = SimQueue!;
-                                if (_rateMoveAxes.X == 0.0)
+                                // Only queue Axis1 for base tracking if: no specific axis requested OR the changed axis is Primary (RA)
+                                if (_rateMoveAxes.X == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Primary))
                                     _ = new CmdAxisTracking(mq.NewId, mq, Axis.Axis1, rateChange);
+                                
                                 var raRate = currentTrackingMode != TrackingMode.Off
                                     ? GetRaRateDirection(RateRa) : 0.0;
                                 _ = new CmdRaDecRate(mq.NewId, mq, Axis.Axis1, raRate);
-                                if (_rateMoveAxes.Y == 0.0)
+                                
+                                // Only queue Axis2 if: no specific axis requested OR the changed axis is Secondary (Dec)
+                                if (_rateMoveAxes.Y == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Secondary))
                                 {
                                     var decRate = currentTrackingMode != TrackingMode.Off
                                         ? GetDecRateDirection(RateDec) : 0.0;
@@ -166,9 +177,13 @@ namespace GreenSwamp.Alpaca.MountControl
                     {
                         var sq = SkyQueue;
                         if (sq == null) return;
-                        if (_rateMoveAxes.X == 0.0)
+                        
+                        // Only queue Axis1 if: no specific axis requested (full update) OR the changed axis is Primary (RA)
+                        if (_rateMoveAxes.X == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Primary))
                             _ = new SkyAxisSlew(sq.NewId, sq, Axis.Axis1, rate.X);
-                        if (_rateMoveAxes.Y == 0.0)
+                        
+                        // Only queue Axis2 if: no specific axis requested (full update) OR the changed axis is Secondary (Dec)
+                        if (_rateMoveAxes.Y == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Secondary))
                             _ = new SkyAxisSlew(sq.NewId, sq, Axis.Axis2, rate.Y);
                     }
                     break;

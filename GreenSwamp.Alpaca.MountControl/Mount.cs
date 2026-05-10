@@ -666,7 +666,7 @@ namespace GreenSwamp.Alpaca.MountControl
             }
             else
             {
-                ActionRateRaDec();
+                ActionRateRaDec(TelescopeAxis.Secondary);
             }
             LogMount($"SetRateDec|{degrees}|offset:{_skyTrackingOffset[1]}");
         }
@@ -682,7 +682,7 @@ namespace GreenSwamp.Alpaca.MountControl
             }
             else
             {
-                ActionRateRaDec();
+                ActionRateRaDec(TelescopeAxis.Primary);
             }
             LogMount($"SetRateRa|{degrees}|offset:{_skyTrackingOffset[0]}");
         }

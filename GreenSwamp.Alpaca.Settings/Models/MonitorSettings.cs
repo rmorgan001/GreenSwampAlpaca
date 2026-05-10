@@ -113,6 +113,14 @@ namespace GreenSwamp.Alpaca.Settings.Models
         public bool LogMonitor { get; set; } = false;
 
         /// <summary>
+        /// When true, monitor entries are written to an in-memory rotating buffer (200 records)
+        /// instead of being written to file on each entry. Mutually exclusive with LogMonitor.
+        /// Call MonitorQueue.WriteBuffer() to persist the buffer to a datetime-stamped file.
+        /// Default: false (standard async file logging).
+        /// </summary>
+        public bool FastMonitor { get; set; } = false;
+
+        /// <summary>
         /// Enable logging session entries to file (Information, Warning, Error types)
         /// Always written to GSSessionLog file
         /// </summary>

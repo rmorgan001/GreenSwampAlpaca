@@ -269,7 +269,8 @@ namespace GreenSwamp.Alpaca.MountControl
         ///Ra/Dec rate action — updates this device's predictor and applies hardware tracking rate.
         /// Mirrors SkyServer.ActionRateRaDec using this device's own fields.
         /// </summary>
-        private void ActionRateRaDec()
+        /// <param name="changedAxis">The axis that was changed. When specified, only that axis is updated (eliminating redundant commands).</param>
+        private void ActionRateRaDec(TelescopeAxis? changedAxis = null)
         {
             if (Tracking)
             {
@@ -278,7 +279,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     var raDec = SkyPredictor.GetRaDecAtTime(HiResDateTime.UtcNow);
                     SkyPredictor.Set(raDec[0], raDec[1], _rateRaDec.X, _rateRaDec.Y);
                 }
-                this.SetTracking();
+                this.SetTracking(changedAxis);
             }
             else
             {

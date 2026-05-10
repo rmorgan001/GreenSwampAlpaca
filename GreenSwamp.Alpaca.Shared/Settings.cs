@@ -256,6 +256,19 @@ namespace GreenSwamp.Alpaca.Shared
             }
         }
 
+        private static bool _fastMonitor;
+        public static bool FastMonitor
+        {
+            get => _fastMonitor;
+            set
+            {
+                if (_fastMonitor == value) return;
+                _fastMonitor = value;
+                LogSetting(MethodBase.GetCurrentMethod()?.Name, $"{value}");
+                OnStaticPropertyChanged();
+            }
+        }
+
         private static bool _logCharting;
         public static bool LogCharting
         {
@@ -374,6 +387,7 @@ namespace GreenSwamp.Alpaca.Shared
             
             // Logging Options
             LogMonitor = settings.LogMonitor;
+            FastMonitor = settings.FastMonitor;
             LogSession = settings.LogSession;
             LogCharting = settings.LogCharting;
             StartMonitor = settings.StartMonitor;
@@ -417,6 +431,7 @@ namespace GreenSwamp.Alpaca.Shared
                 
                 // Logging Options
                 LogMonitor = LogMonitor,
+                FastMonitor = FastMonitor,
                 LogSession = LogSession,
                 LogCharting = LogCharting,
                 StartMonitor = StartMonitor,

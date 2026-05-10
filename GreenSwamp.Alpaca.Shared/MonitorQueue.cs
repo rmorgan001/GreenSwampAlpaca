@@ -137,6 +137,7 @@ namespace GreenSwamp.Alpaca.Shared
             DeleteFiles("GSErrorLog", 7, GsFile.GetLogPath());
             DeleteFiles("GSChartingLog", 7, GsFile.GetLogPath());
             DeleteFiles("GSMonitorLog", 7, GsFile.GetLogPath());
+            DeleteFiles("GSFastMonitorLog", 7, GsFile.GetLogPath());
 
 
             MonitorBlockingCollection = new BlockingCollection<MonitorEntry>();
@@ -198,6 +199,16 @@ namespace GreenSwamp.Alpaca.Shared
         }
 
         /// <summary>
+        /// Flushes the fast monitor ring buffer to a new datetime-stamped file.
+        /// Only has effect when Settings.FastMonitor is true. Does not clear the buffer.
+        /// </summary>
+        public static void WriteBuffer()
+        {
+            if (!Settings.FastMonitor) return;
+            FastMonitorBuffer.WriteBuffer();
+        }
+
+        /// <summary>
         /// trigger the property event for the UI to pick up the property
         /// </summary>
         /// <param name="propertyName"></param>
@@ -248,7 +259,7 @@ namespace GreenSwamp.Alpaca.Shared
                 MonitorEntry = entry;
 
                 // Write out log if selected
-                if (Settings.LogMonitor) WriteOutMonitor(entry);
+                if (Settings.LogMonitor || Settings.FastMonitor) WriteOutMonitor(entry);
             }
         }
 
@@ -391,7 +402,16 @@ namespace GreenSwamp.Alpaca.Shared
         {
             try
             {
+                // FastMonitor takes priority — write to in-memory ring buffer instead of a file.
+                // Must be checked before the LogMonitor guard because the two are mutually exclusive.
+                if (Settings.FastMonitor)
+                {
+                    FastMonitorBuffer.Add(entry);
+                    return;
+                }
+
                 if (!Settings.LogMonitor) return;
+
                 FileWriteAsync(Path.Combine(GsFile.GetLogPath(), "GSMonitorLog") + FileName, $"{entry.Datetime.ToLocalTime():yyyy-MM-dd HH:mm:ss.fff}|{entry.Index.ToString(Fmt)}|{entry.Device}|{entry.Category}|{entry.Type}|{entry.Thread}|{entry.Method}|{entry.Message}"); //YYYY-MM-DD HH:MM:SS.fff
             }
             catch (Exception e)

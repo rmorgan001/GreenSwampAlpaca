@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -93,6 +93,11 @@ namespace GreenSwamp.Alpaca.MountControl
                 if (rawPositions == null || double.IsNaN(rawPositions[0]) || double.IsNaN(rawPositions[1])) { break; }
                 deltaDegree[0] = Range.Range180((skyTarget[0] - rawPositions[0]));
                 deltaDegree[1] = Range.Range180(skyTarget[1] - rawPositions[1]);
+                if (Math.Abs(deltaDegree[0]) > 5.0 || Math.Abs(deltaDegree[1]) > 5.0)
+                {
+                    // Snapshot log file for large error
+                    MonitorQueue.WriteBuffer();
+                }
 
                 axis1AtTarget = Math.Abs(deltaDegree[0]) < gotoPrecision[0] || axis1AtTarget;
                 axis2AtTarget = Math.Abs(deltaDegree[1]) < gotoPrecision[1] || axis2AtTarget;
