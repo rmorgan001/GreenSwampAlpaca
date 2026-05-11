@@ -466,7 +466,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
         {
             get
             {
-                var r = (TrackingRate == DriveRate.Sidereal) ? _mount.RateDecOrg : 0.0;
+                var r = (TrackingRate == DriveRate.Sidereal) ? _mount.RateDecCurrent : 0.0;
 
                 var monitorItem = new MonitorEntry
                 { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"{r}" };
@@ -486,8 +486,17 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
                 {
                     throw new ASCOM.InvalidOperationException(" DeclinationRate - cannot set rate because TrackingRate is not Sidereal");
                 }
-                _mount.RateDecOrg = value;
+                const double rateEpsilon = 0.000000001;
+                if (Math.Abs(_mount.RateDecCurrent - value) < rateEpsilon)
+                {
+                    monitorItem = new MonitorEntry
+                    { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = "No Change Needed" };
+                    MonitorLog.LogToMonitor(monitorItem);
+                    return;
+                }
+                _mount.RateDecCurrent = value;
                 _mount.SetRateDec(Conversions.ArcSec2Deg(value));
+                MonitorQueue.WriteBuffer();
             }
         }
 
@@ -765,7 +774,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
         {
             get
             {
-                var r = (TrackingRate == DriveRate.Sidereal) ? _mount.RateRaOrg : 0.0;
+                var r = (TrackingRate == DriveRate.Sidereal) ? _mount.RateRaCurrent : 0.0;
 
                 var monitorItem = new MonitorEntry
                 { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"{r}" };
@@ -786,8 +795,17 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
                 {
                     throw new InvalidOperationException(" RightAscensionRate - cannot set rate because TrackingRate is not Sidereal");
                 }
-                _mount.RateRaOrg = value;
+                const double rateEpsilon = 0.000000001;
+                if (Math.Abs(_mount.RateRaCurrent - value) < rateEpsilon)
+                {
+                    monitorItem = new MonitorEntry
+                    { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = "No Change Needed" };
+                    MonitorLog.LogToMonitor(monitorItem);
+                    return;
+                }
+                _mount.RateRaCurrent = value;
                 _mount.SetRateRa(Conversions.ArcSec2Deg(Conversions.SideSec2ArcSec(value)));
+                MonitorQueue.WriteBuffer();
             }
         }
 

@@ -254,9 +254,9 @@ namespace GreenSwamp.Alpaca.MountControl
             set => _rateRaDec.Y = value;
         }
 
-        public double RateRaOrg { get; set; }
+        public double RateRaCurrent { get; set; }
 
-        public double RateDecOrg { get; set; }
+        public double RateDecCurrent { get; set; }
 
         public double GuideRateRa
         {
@@ -658,6 +658,13 @@ namespace GreenSwamp.Alpaca.MountControl
         /// <summary>Set RateDec with ActionRateRaDec side effect</summary>
         public void SetRateDec(double degrees)
         {
+            const double rateEpsilon = 0.0000000001;
+            if (Math.Abs(RateDec - degrees) < rateEpsilon)
+            {
+                LogMount($"SetRateDec|No Change Needed|{degrees}|offset:{_skyTrackingOffset[1]}");
+                return;
+            }
+
             RateDec = degrees;
             if (Settings.AlignmentMode == AlignmentMode.AltAz && _trackingProcessor != null)
             {
@@ -666,7 +673,6 @@ namespace GreenSwamp.Alpaca.MountControl
             }
             else
             {
-                ActionRateRaDec(TelescopeAxis.Secondary);
                 ActionRateRaDec(TelescopeAxis.Secondary, waitForQueueCompletion: true);
             }
             LogMount($"SetRateDec|{degrees}|offset:{_skyTrackingOffset[1]}");
@@ -675,6 +681,13 @@ namespace GreenSwamp.Alpaca.MountControl
         /// <summary>Set RateRa with ActionRateRaDec side effect</summary>
         public void SetRateRa(double degrees)
         {
+            const double rateEpsilon = 0.0000000001;
+            if (Math.Abs(RateRa - degrees) < rateEpsilon)
+            {
+                LogMount($"SetRateRa|No Change Needed|{degrees}|offset:{_skyTrackingOffset[0]}");
+                return;
+            }
+
             RateRa = degrees;
             if (Settings.AlignmentMode == AlignmentMode.AltAz && _trackingProcessor != null)
             {
@@ -1353,378 +1366,6 @@ namespace GreenSwamp.Alpaca.MountControl
                 _altAzTrackingTimer = null;
             }
         }
-
-        #endregion
-
-        #region Mount Operations
-
-        /// <summary>
-        /// Simulator GOTO slew operation
-        /// </summary>
-        internal int SimGoTo(double[] target, bool trackingState, SlewType slewType, CancellationToken token)
-        {
-            const int success = 0;
-            var monitorItem = new MonitorEntry
-            {
-                Datetime = HiResDateTime.UtcNow,
-                Device = MonitorDevice.Server,
-                Category = MonitorCategory.Server,
-                Type = MonitorType.Information,
-                Method = MethodBase.GetCurrentMethod()?.Name,
-                Thread = Environment.CurrentManagedThreadId,
-                Message = $"Mount:{_mountId}|from|{_actualAxisX}|{_actualAxisY}|to|{target[0]}|{target[1]}|tracking|{trackingState}"
-            };
-            MonitorLog.LogToMonitor(monitorItem);
-
-            token.ThrowIfCancellationRequested();
-            var simTarget = MapSlewTargetToAxes(target, slewType);
-            const int timer = 120;
-            var stopwatch = Stopwatch.StartNew();
-
-            SimTasks(MountTaskName.StopAxes);
-
-            #region First Slew
-            token.ThrowIfCancellationRequested();
-            _ = new CmdAxisGoToTarget(SimQueue!.NewId, SimQueue, Axis.Axis1, simTarget[0]);
-            _ = new CmdAxisGoToTarget(SimQueue!.NewId, SimQueue, Axis.Axis2, simTarget[1]);
-
-            while (stopwatch.Elapsed.TotalSeconds <= timer)
-            {
-                Thread.Sleep(50);
-                token.ThrowIfCancellationRequested();
-
-                var statusX = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
-                var axis1Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(statusX).Result;
-                var axis1Stopped = axis1Status.Stopped;
-
-                Thread.Sleep(50);
-                token.ThrowIfCancellationRequested();
-
-                var statusY = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
-                var axis2Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(statusY).Result;
-                var axis2Stopped = axis2Status.Stopped;
-
-                if (!axis1Stopped || !axis2Stopped) continue;
-                if (_slewSettleTime > 0)
-                    Tasks.DelayHandler(TimeSpan.FromSeconds(_slewSettleTime).Milliseconds);
-                break;
-            }
-            stopwatch.Stop();
-
-            AxesStopValidate();
-            monitorItem = new MonitorEntry
-            {
-                Datetime = HiResDateTime.UtcNow,
-                Device = MonitorDevice.Server,
-                Category = MonitorCategory.Server,
-                Type = MonitorType.Information,
-                Method = MethodBase.GetCurrentMethod()?.Name,
-                Thread = Environment.CurrentManagedThreadId,
-                Message = $"Mount:{_mountId}|GoToSeconds|{stopwatch.Elapsed.TotalSeconds}|Target|{simTarget[0]}|{simTarget[1]}"
-            };
-            MonitorLog.LogToMonitor(monitorItem);
-            #endregion
-
-            #region Final precision slew
-            token.ThrowIfCancellationRequested();
-            if (stopwatch.Elapsed.TotalSeconds <= timer)
-                SimPrecisionGoto(target, slewType, token);
-            #endregion
-
-            SimTasks(MountTaskName.StopAxes);
-            return success;
-        }
-
-        /// <summary>
-        /// Simulator precision GOTO operation
-        /// </summary>
-        private int SimPrecisionGoto(double[] target, SlewType slewType, CancellationToken token)
-        {
-            var monitorItem = new MonitorEntry
-            {
-                Datetime = HiResDateTime.UtcNow,
-                Device = MonitorDevice.Server,
-                Category = MonitorCategory.Server,
-                Type = MonitorType.Information,
-                Method = MethodBase.GetCurrentMethod()?.Name,
-                Thread = Environment.CurrentManagedThreadId,
-                Message = $"Mount:{_mountId}|from|({_actualAxisX},{_actualAxisY})|to|({target[0]},{target[1]})"
-            };
-            MonitorLog.LogToMonitor(monitorItem);
-
-            const int returnCode = 0;
-            // var gotoPrecision = SkySettings.GotoPrecision;
-            var maxTries = 0;
-            double[] deltaDegree = [ 0.0, 0.0 ];
-            double[] gotoPrecision = [ ConvertStepsToDegrees(2, 0), ConvertStepsToDegrees(2, 1) ];
-            const double milliSeconds = 0.001;
-            var deltaTime = 75 * milliSeconds; // 75mS for simulator slew
-
-            while (true)
-            {
-                token.ThrowIfCancellationRequested();
-                var loopTimer = Stopwatch.StartNew();
-
-                if (maxTries > 5) { break; }
-                maxTries++;
-
-                if (Settings.AlignmentMode == AlignmentMode.AltAz && slewType == SlewType.SlewRaDec)
-                {
-                    var nextTime = HiResDateTime.UtcNow.AddMilliseconds(deltaTime);
-                    // get predicted RA and Dec at update time
-                    var predictorRaDec = SkyPredictor.GetRaDecAtTime(nextTime);
-                    // convert to internal Ra and Dec
-                    var internalRaDec = Transforms.CoordTypeToInternal(predictorRaDec[0], predictorRaDec[1], settings: Settings);
-                    target = [internalRaDec.X, internalRaDec.Y];
-                }
-
-                var simTarget = MapSlewTargetToAxes(target, slewType);
-                var rawPositions = GetRawDegrees();
-
-                if (rawPositions == null || double.IsNaN(rawPositions[0]) || double.IsNaN(rawPositions[1]))
-                { break; }
-
-                deltaDegree[0] = Range.Range180(simTarget[0] - rawPositions[0]);
-                deltaDegree[1] = Range.Range180(simTarget[1] - rawPositions[1]);
-
-                var axis1AtTarget = Math.Abs(deltaDegree[0]) < gotoPrecision[0];
-                var axis2AtTarget = Math.Abs(deltaDegree[1]) < gotoPrecision[1];
-                if (axis1AtTarget && axis2AtTarget) { break; }
-
-                token.ThrowIfCancellationRequested();
-                if (!axis1AtTarget)
-                    _ = new CmdAxisGoToTarget(SimQueue!.NewId, SimQueue, Axis.Axis1, simTarget[0] + 0.125 * deltaDegree[0]);
-                token.ThrowIfCancellationRequested();
-                if (!axis2AtTarget)
-                    _ = new CmdAxisGoToTarget(SimQueue!.NewId, SimQueue, Axis.Axis2, simTarget[1] + 0.05 * deltaDegree[1]);
-
-                var axis1Stopped = false;
-                var axis2Stopped = false;
-
-                while (loopTimer.Elapsed.TotalMilliseconds < 3000)
-                {
-                    Thread.Sleep(20);
-                    token.ThrowIfCancellationRequested();
-
-                    if (!axis1Stopped)
-                    {
-                        var status1 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
-                        var axis1Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(status1).Result;
-                        axis1Stopped = axis1Status.Stopped;
-                    }
-
-                    Thread.Sleep(20);
-                    token.ThrowIfCancellationRequested();
-
-                    if (!axis2Stopped)
-                    {
-                        var status2 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
-                        var axis2Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(status2).Result;
-                        axis2Stopped = axis2Status.Stopped;
-                    }
-
-                    if (axis1Stopped && axis2Stopped) { break; }
-                }
-                loopTimer.Stop();
-                deltaTime = loopTimer.Elapsed.Milliseconds;
-
-                monitorItem = new MonitorEntry
-                {
-                    Datetime = HiResDateTime.UtcNow,
-                    Device = MonitorDevice.Server,
-                    Category = MonitorCategory.Server,
-                    Type = MonitorType.Information,
-                    Method = MethodBase.GetCurrentMethod()?.Name,
-                    Thread = Environment.CurrentManagedThreadId,
-                    Message = $"Mount:{_mountId}|Delta|({deltaDegree[0]},{deltaDegree[1]})|Seconds|{loopTimer.Elapsed.TotalSeconds}"
-                };
-                MonitorLog.LogToMonitor(monitorItem);
-            }
-            return returnCode;
-        }
-
-        /// <summary>
-        /// Simulator pulse GOTO operation for continuous tracking correction
-        /// </summary>
-        internal void SimPulseGoto(CancellationToken token)
-        {
-            var maxTries = 0;
-            double[] deltaDegree = [0.0, 0.0];
-            var axis1AtTarget = false;
-            var axis2AtTarget = false;
-            double[] gotoPrecision = [ConvertStepsToDegrees(2, 0), ConvertStepsToDegrees(2, 1)];
-            long deltaTime = 250; // 250mS for simulator slew
-
-            try
-            {
-                while (true)
-                {
-                    if (maxTries > 5) { break; }
-                    maxTries++;
-                    double[] simTargetNow = [0.0, 0.0];
-                    double[] simTargetAtTime = [0.0, 0.0];
-
-                    if (Settings.AlignmentMode == AlignmentMode.AltAz)
-                    {
-                        var now = HiResDateTime.UtcNow;
-                        var predictorRaDec = SkyPredictor.GetRaDecAtTime(now.AddMilliseconds(deltaTime));
-                        var internalRaDec = Transforms.CoordTypeToInternal(predictorRaDec[0], predictorRaDec[1], settings: Settings);
-                        simTargetAtTime = MapSlewTargetToAxes([internalRaDec.X, internalRaDec.Y], SlewType.SlewRaDec);
-                        predictorRaDec = SkyPredictor.GetRaDecAtTime(now);
-                        internalRaDec = Transforms.CoordTypeToInternal(predictorRaDec[0], predictorRaDec[1], settings: Settings);
-                        simTargetNow = MapSlewTargetToAxes([internalRaDec.X, internalRaDec.Y], SlewType.SlewRaDec);
-                    }
-
-                    var rawPositions = GetRawDegrees();
-                    if (rawPositions == null || double.IsNaN(rawPositions[0]) || double.IsNaN(rawPositions[1]))
-                    { break; }
-
-                    deltaDegree[0] = Range.Range180(simTargetNow[0] - rawPositions[0]);
-                    deltaDegree[1] = Range.Range180(simTargetNow[1] - rawPositions[1]);
-
-                    axis1AtTarget = Math.Abs(deltaDegree[0]) < gotoPrecision[0] || axis1AtTarget;
-                    axis2AtTarget = Math.Abs(deltaDegree[1]) < gotoPrecision[1] || axis2AtTarget;
-                    if (axis1AtTarget && axis2AtTarget) { break; }
-
-                    if (!axis1AtTarget)
-                    {
-                        token.ThrowIfCancellationRequested();
-                        _ = new CmdAxisGoToTarget(SimQueue!.NewId, SimQueue, Axis.Axis1, simTargetAtTime[0]);
-                    }
-                    if (!axis2AtTarget)
-                    {
-                        token.ThrowIfCancellationRequested();
-                        _ = new CmdAxisGoToTarget(SimQueue!.NewId, SimQueue, Axis.Axis2, simTargetAtTime[1]);
-                    }
-
-                    var stopwatch1 = Stopwatch.StartNew();
-                    var axis1Stopped = false;
-                    var axis2Stopped = false;
-
-                    while (stopwatch1.Elapsed.TotalMilliseconds < 500)
-                    {
-                        token.ThrowIfCancellationRequested();
-                        Thread.Sleep(100);
-
-                        if (!axis1Stopped)
-                        {
-                                var status1 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
-                                var axis1Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(status1).Result;
-                                axis1Stopped = axis1Status.Stopped;
-                        }
-
-                        Thread.Sleep(100);
-
-                        if (!axis2Stopped)
-                        {
-                            var status2 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
-                            var axis2Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(status2).Result;
-                            axis2Stopped = axis2Status.Stopped;
-                        }
-
-                        if (axis1Stopped && axis2Stopped) { break; }
-                    }
-                    stopwatch1.Stop();
-                    deltaTime = stopwatch1.Elapsed.Milliseconds;
-                    deltaTime += deltaTime / 10; // add 10% feed forward
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected when operation is cancelled
-            }
-        }
-
-        /// <summary>
-        /// SkyWatcher GOTO slew operation
-        /// </summary>
-        internal int SkyGoTo(double[] target, bool trackingState, SlewType slewType, CancellationToken token)
-        {
-            const int success = 0;
-            var monitorItem = new MonitorEntry
-            {
-                Datetime = HiResDateTime.UtcNow,
-                Device = MonitorDevice.Server,
-                Category = MonitorCategory.Server,
-                Type = MonitorType.Information,
-                Method = MethodBase.GetCurrentMethod()?.Name,
-                Thread = Environment.CurrentManagedThreadId,
-                Message = $"Mount:{_mountId}|from|{_actualAxisX}|{_actualAxisY}|to|{target[0]}|{target[1]}|tracking|{trackingState}|slewing|{slewType}"
-            };
-            MonitorLog.LogToMonitor(monitorItem);
-            token.ThrowIfCancellationRequested();
-
-            var skyTarget = MapSlewTargetToAxes(target, slewType);
-            const int timer = 240;
-            var stopwatch = Stopwatch.StartNew();
-
-            SkyTasks(MountTaskName.StopAxes);
-
-            #region First Slew
-            token.ThrowIfCancellationRequested();
-            _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1, skyTarget[0]);
-            _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis2, skyTarget[1]);
-            var axis1Stopped = false;
-            var axis2Stopped = false;
-            while (stopwatch.Elapsed.TotalSeconds <= timer)
-            {
-                if (!axis1Stopped)
-                {
-                    token.WaitHandle.WaitOne(250);
-                    token.ThrowIfCancellationRequested();
-
-                    var statusX = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis1);
-                    var x = SkyQueue.GetCommandResult(statusX);
-                    axis1Stopped = Convert.ToBoolean(x.Result);
-                }
-
-                if (!axis2Stopped)
-                {
-                    token.WaitHandle.WaitOne(250);
-                    token.ThrowIfCancellationRequested();
-
-                    var statusY = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis2);
-                    var y = SkyQueue.GetCommandResult(statusY);
-                    axis2Stopped = Convert.ToBoolean(y.Result);
-                }
-
-                if (!axis1Stopped || !axis2Stopped) { continue; }
-
-                if (_slewSettleTime > 0)
-                    Tasks.DelayHandler(TimeSpan.FromSeconds(_slewSettleTime).Milliseconds);
-                break;
-            }
-            stopwatch.Stop();
-
-            AxesStopValidate();
-            monitorItem = new MonitorEntry
-            {
-                Datetime = HiResDateTime.UtcNow,
-                Device = MonitorDevice.Server,
-                Category = MonitorCategory.Server,
-                Type = MonitorType.Information,
-                Method = MethodBase.GetCurrentMethod()?.Name,
-                Thread = Environment.CurrentManagedThreadId,
-                Message = $"Mount:{_mountId}|Seconds|{stopwatch.Elapsed.TotalSeconds}|Target|{target[0]}|{target[1]}"
-            };
-            MonitorLog.LogToMonitor(monitorItem);
-            #endregion
-
-            #region Final precision slew
-            token.ThrowIfCancellationRequested();
-            if (stopwatch.Elapsed.TotalSeconds <= timer)
-                SkyPrecisionGoto(target, slewType, token);
-            #endregion
-
-            SkyTasks(MountTaskName.StopAxes);
-            return success;
-        }
-
-        /// <summary>
-        /// SkyWatcher pulse GOTO operation for continuous tracking correction
-        /// </summary>
-        #endregion
-        #region SlewController
 
         #endregion
 
