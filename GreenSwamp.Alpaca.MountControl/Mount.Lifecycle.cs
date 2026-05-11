@@ -175,6 +175,19 @@ namespace GreenSwamp.Alpaca.MountControl
         /// </summary>
         public void ApplyTracking(bool tracking)
         {
+            ApplyTrackingCore(tracking, waitForQueueCompletion: false);
+        }
+
+        /// <summary>
+        /// Blocking variant of ApplyTracking that waits for queued tracking commands to complete.
+        /// </summary>
+        public void ApplyTrackingAndWait(bool tracking)
+        {
+            ApplyTrackingCore(tracking, waitForQueueCompletion: true);
+        }
+
+        private void ApplyTrackingCore(bool tracking, bool waitForQueueCompletion)
+        {
             if (tracking == Tracking) return;
             Tracking = tracking;
             if (tracking)
@@ -196,7 +209,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 _isPulseGuidingDec = false;
                 TrackingMode = TrackingMode.Off;
             }
-            this.SetTracking();
+            this.SetTracking(waitForQueueCompletion: waitForQueueCompletion);
         }
 
         /// <summary>
@@ -270,7 +283,7 @@ namespace GreenSwamp.Alpaca.MountControl
         /// Mirrors SkyServer.ActionRateRaDec using this device's own fields.
         /// </summary>
         /// <param name="changedAxis">The axis that was changed. When specified, only that axis is updated (eliminating redundant commands).</param>
-        private void ActionRateRaDec(TelescopeAxis? changedAxis = null)
+        private void ActionRateRaDec(TelescopeAxis? changedAxis = null, bool waitForQueueCompletion = false)
         {
             if (Tracking)
             {
@@ -279,7 +292,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     var raDec = SkyPredictor.GetRaDecAtTime(HiResDateTime.UtcNow);
                     SkyPredictor.Set(raDec[0], raDec[1], _rateRaDec.X, _rateRaDec.Y);
                 }
-                this.SetTracking(changedAxis);
+                this.SetTracking(changedAxis, waitForQueueCompletion);
             }
             else
             {

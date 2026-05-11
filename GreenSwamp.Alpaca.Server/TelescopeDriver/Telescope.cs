@@ -1026,7 +1026,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
                 { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Information, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"{value}" };
                 MonitorLog.LogToMonitor(monitorItem);
 
-                _mount.ApplyTracking(value);
+                _mount.ApplyTrackingAndWait(value);
             }
         }
 

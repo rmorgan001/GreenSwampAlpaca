@@ -73,7 +73,8 @@ namespace GreenSwamp.Alpaca.MountControl
         /// When null, both axes are updated (full tracking update). This eliminates redundant hardware commands.
         /// </summary>
         /// <param name="changedAxis">The axis that changed (Primary=RA, Secondary=Dec). Null for full update.</param>
-        internal void SetTracking(TelescopeAxis? changedAxis = null)
+        /// <param name="waitForQueueCompletion">When true, waits until queued tracking commands complete.</param>
+        internal void SetTracking(TelescopeAxis? changedAxis = null, bool waitForQueueCompletion = false)
         {
             if (!IsMountRunning) return;
 
@@ -100,6 +101,7 @@ namespace GreenSwamp.Alpaca.MountControl
             switch (Settings.Mount)
             {
                 case MountType.Simulator:
+                    var simCommands = new List<ICommand<Actions>>();
                     switch (Settings.AlignmentMode)
                     {
                         case AlignmentMode.AltAz:
@@ -119,10 +121,16 @@ namespace GreenSwamp.Alpaca.MountControl
                                 if (mq == null) return;
                                 // Only queue Axis1 if: no specific axis requested OR the changed axis is Primary (RA)
                                 if (_rateMoveAxes.X == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Primary))
-                                    _ = new CmdAxisTracking(mq.NewId, mq, Axis.Axis1, rate.X);
+                                {
+                                    var command = new CmdAxisTracking(mq.NewId, mq, Axis.Axis1, rate.X);
+                                    if (waitForQueueCompletion) simCommands.Add(command);
+                                }
                                 // Only queue Axis2 if: no specific axis requested OR the changed axis is Secondary (Dec)
                                 if (_rateMoveAxes.Y == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Secondary))
-                                    _ = new CmdAxisTracking(mq.NewId, mq, Axis.Axis2, rate.Y);
+                                {
+                                    var command = new CmdAxisTracking(mq.NewId, mq, Axis.Axis2, rate.Y);
+                                    if (waitForQueueCompletion) simCommands.Add(command);
+                                }
                             }
                             break;
                         case AlignmentMode.Polar:
@@ -131,27 +139,45 @@ namespace GreenSwamp.Alpaca.MountControl
                                 var mq = SimQueue!;
                                 // Only queue Axis1 for base tracking if: no specific axis requested OR the changed axis is Primary (RA)
                                 if (_rateMoveAxes.X == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Primary))
-                                    _ = new CmdAxisTracking(mq.NewId, mq, Axis.Axis1, rateChange);
+                                {
+                                    var command = new CmdAxisTracking(mq.NewId, mq, Axis.Axis1, rateChange);
+                                    if (waitForQueueCompletion) simCommands.Add(command);
+                                }
                                 
                                 var raRate = currentTrackingMode != TrackingMode.Off
                                     ? GetRaRateDirection(RateRa) : 0.0;
-                                _ = new CmdRaDecRate(mq.NewId, mq, Axis.Axis1, raRate);
+                                {
+                                    var command = new CmdRaDecRate(mq.NewId, mq, Axis.Axis1, raRate);
+                                    if (waitForQueueCompletion) simCommands.Add(command);
+                                }
                                 
                                 // Only queue Axis2 if: no specific axis requested OR the changed axis is Secondary (Dec)
                                 if (_rateMoveAxes.Y == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Secondary))
                                 {
                                     var decRate = currentTrackingMode != TrackingMode.Off
                                         ? GetDecRateDirection(RateDec) : 0.0;
-                                    _ = new CmdRaDecRate(mq.NewId, mq, Axis.Axis2, decRate);
+                                    var command = new CmdRaDecRate(mq.NewId, mq, Axis.Axis2, decRate);
+                                    if (waitForQueueCompletion) simCommands.Add(command);
                                 }
                             }
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
+
+                    if (waitForQueueCompletion && SimQueue != null)
+                    {
+                        foreach (var command in simCommands)
+                        {
+                            var result = SimQueue.GetCommandResult(command);
+                            if (!result.Successful)
+                                throw result.Exception ?? new InvalidOperationException($"Tracking command {result.Id} failed.");
+                        }
+                    }
                     break;
 
                 case MountType.SkyWatcher:
+                    var skyCommands = new List<ICommand<SkyWatcher>>();
                     switch (Settings.AlignmentMode)
                     {
                         case AlignmentMode.AltAz:
@@ -180,11 +206,27 @@ namespace GreenSwamp.Alpaca.MountControl
                         
                         // Only queue Axis1 if: no specific axis requested (full update) OR the changed axis is Primary (RA)
                         if (_rateMoveAxes.X == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Primary))
-                            _ = new SkyAxisSlew(sq.NewId, sq, Axis.Axis1, rate.X);
+                        {
+                            var command = new SkyAxisSlew(sq.NewId, sq, Axis.Axis1, rate.X);
+                            if (waitForQueueCompletion) skyCommands.Add(command);
+                        }
                         
                         // Only queue Axis2 if: no specific axis requested (full update) OR the changed axis is Secondary (Dec)
                         if (_rateMoveAxes.Y == 0.0 && (!changedAxis.HasValue || changedAxis.Value == TelescopeAxis.Secondary))
-                            _ = new SkyAxisSlew(sq.NewId, sq, Axis.Axis2, rate.Y);
+                        {
+                            var command = new SkyAxisSlew(sq.NewId, sq, Axis.Axis2, rate.Y);
+                            if (waitForQueueCompletion) skyCommands.Add(command);
+                        }
+
+                        if (waitForQueueCompletion)
+                        {
+                            foreach (var command in skyCommands)
+                            {
+                                var result = sq.GetCommandResult(command);
+                                if (!result.Successful)
+                                    throw result.Exception ?? new InvalidOperationException($"Tracking command {result.Id} failed.");
+                            }
+                        }
                     }
                     break;
 

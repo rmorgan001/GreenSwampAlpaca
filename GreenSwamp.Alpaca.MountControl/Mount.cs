@@ -655,34 +655,35 @@ namespace GreenSwamp.Alpaca.MountControl
             }
         }
 
-        /// <summary>Set RateDec with ActionRateRaDec side effect — L: uses this device's fields.</summary>
+        /// <summary>Set RateDec with ActionRateRaDec side effect</summary>
         public void SetRateDec(double degrees)
         {
             RateDec = degrees;
             if (Settings.AlignmentMode == AlignmentMode.AltAz && _trackingProcessor != null)
             {
-                // Writer-side merge: carry current RateRa so the consumer applies both axes atomically (D2).
+                // Writer-side merge: carry current RateRa so the consumer applies both axes atomically
                 _trackingProcessor.Post(new RateChangeCommand(RateRa, degrees));
             }
             else
             {
                 ActionRateRaDec(TelescopeAxis.Secondary);
+                ActionRateRaDec(TelescopeAxis.Secondary, waitForQueueCompletion: true);
             }
             LogMount($"SetRateDec|{degrees}|offset:{_skyTrackingOffset[1]}");
         }
 
-        /// <summary>Set RateRa with ActionRateRaDec side effect — L: uses this device's fields.</summary>
+        /// <summary>Set RateRa with ActionRateRaDec side effect</summary>
         public void SetRateRa(double degrees)
         {
             RateRa = degrees;
             if (Settings.AlignmentMode == AlignmentMode.AltAz && _trackingProcessor != null)
             {
-                // Writer-side merge: carry current RateDec so the consumer applies both axes atomically (D2).
+                // Writer-side merge: carry current RateDec so the consumer applies both axes atomically
                 _trackingProcessor.Post(new RateChangeCommand(degrees, RateDec));
             }
             else
             {
-                ActionRateRaDec(TelescopeAxis.Primary);
+                ActionRateRaDec(TelescopeAxis.Primary, waitForQueueCompletion: true);
             }
             LogMount($"SetRateRa|{degrees}|offset:{_skyTrackingOffset[0]}");
         }
