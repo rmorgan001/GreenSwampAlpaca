@@ -1,20 +1,19 @@
 ﻿@using GreenSwamp.Alpaca.Settings.Models
 
 <MudStack Spacing="3">
-    <MudTooltip Text="Must be ON for any log files to be written." Placement="Placement.Right" Arrow="true">
+    <MudTooltip Text="Must be ON for any log files to be written." Placement="Placement.Right" Arrow="true" Inline="false">
         <MudCheckBox @bind-Value="Settings!.StartMonitor" @bind-Value:after="NotifyChanged" Label="Auto-start Monitor" Color="Color.Primary" />
     </MudTooltip>
-    <MudTooltip Text="Writes monitor output to GSMonitorLog*.txt. Mutually exclusive with Fast Monitor." Placement="Placement.Right" Arrow="true">
-        <MudCheckBox @bind-Value="Settings!.LogMonitor" @bind-Value:after="NotifyChanged"
-                     Label="Log Monitor Messages" Color="Color.Primary" />
+    <MudTooltip Text="Writes monitor output to GSMonitorLog*.txt. Mutually exclusive with Fast Monitor." Placement="Placement.Right" Arrow="true" Inline="false">
+        <MudCheckBox @bind-Value="Settings!.LogMonitor" @bind-Value:after="NotifyChanged" Label="Log Monitor Messages" Color="Color.Primary" />
     </MudTooltip>
-    <MudTooltip Text="1000-record ring buffer — lower overhead than Log Monitor. Mutually exclusive with Log Monitor. Use 'Write Buffer to File' to persist." Placement="Placement.Right" Arrow="true">
+    <MudTooltip Text="1000-record ring buffer — lower overhead than Log Monitor. Mutually exclusive with Log Monitor. Use 'Write Buffer to File' to persist." Placement="Placement.Right" Arrow="true" Inline="false">
         <MudCheckBox @bind-Value="Settings!.FastMonitor" @bind-Value:after="NotifyChanged" Label="Fast Monitor (Buffer)" Color="Color.Primary" />
     </MudTooltip>
-    <MudTooltip Text="Writes session data to GSSessionLog*.txt." Placement="Placement.Right" Arrow="true">
+    <MudTooltip Text="Writes session data to GSSessionLog*.txt." Placement="Placement.Right" Arrow="true" Inline="false">
         <MudCheckBox @bind-Value="Settings!.LogSession" @bind-Value:after="NotifyChanged" Label="Log Session" Color="Color.Primary" />
     </MudTooltip>
-    <MudTooltip Text="Writes charting data to GSChartingLog*.txt." Placement="Placement.Right" Arrow="true">
+    <MudTooltip Text="Writes charting data to GSChartingLog*.txt." Placement="Placement.Right" Arrow="true" Inline="false">
         <MudCheckBox @bind-Value="Settings!.LogCharting" @bind-Value:after="NotifyChanged" Label="Log Charting" Color="Color.Primary" />
     </MudTooltip>
     @if (ShowHidden)
