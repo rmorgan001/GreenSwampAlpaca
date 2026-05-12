@@ -27,7 +27,7 @@
 
     // ── Observatory ────────────────────────────────────────────────────────
     case "Observatory Settings":
-        <ObservatoryEditor Settings="Observatory" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
+        <ObservatoryEditor Settings="Observatory" ShowHidden="ShowHidden" DeviceSettings="DeviceSettings" OnChanged="OnSettingChanged" />
         break;
 
     // ── Monitor / Logging ──────────────────────────────────────────────────
@@ -41,7 +41,7 @@
         <MessageTypeFiltersEditor Settings="Monitor" OnChanged="OnSettingChanged" />
         break;
     case "Logging Options":
-        <LoggingOptionsEditor Settings="Monitor" OnChanged="OnSettingChanged" />
+        <LoggingOptionsEditor Settings="Monitor" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
         break;
 
     // ── Telescope Device groups ────────────────────────────────────────────
@@ -56,7 +56,7 @@
                     <MountConfigurationEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
                     break;
                 case "Observatory Configuration":
-                    <ObservatoryConfigurationEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
+                    <ObservatoryConfigurationEditor Device="device" ShowHidden="ShowHidden" Observatory="Observatory" OnChanged="OnSettingChanged" />
                     break;
                 case "Optics":
                     <OpticsEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />

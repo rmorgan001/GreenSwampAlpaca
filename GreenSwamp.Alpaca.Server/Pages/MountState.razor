@@ -15,7 +15,7 @@
 
 <MudText Typo="Typo.h5" GutterBottom="true">Mount State</MudText>
 
-<MudTabs Rounded="true" Elevation="1" @bind-ActivePanelIndex="ActiveTabIndex" Class="mb-4">
+<MudTabs Rounded="true" Elevation="1" @bind-ActivePanelIndex="ActiveTabIndex" Class="mb-4 gs-tabs-no-transform">
     @foreach (var dn in MountRegistry.GetAllInstances().Select(kvp => kvp.Key).OrderBy(k => k))
     {
         <MudTabPanel Text="@TabLabel(dn)">
@@ -129,6 +129,29 @@
                     </MudPaper>
                 </MudItem>
 
+                @* -- Row 2d: Mount ---------------------------------------- *@
+
+                @{
+                    var mountSettings = _deviceSettings.GetValueOrDefault(dn);
+                }
+                <MudItem xs="12" md="6">
+                    <MudPaper Elevation="0" Class="pa-3">
+                        <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Mount</MudText>
+                        <MudSimpleTable Dense="true" Elevation="0">
+                            <tbody>
+                                <tr>
+                                    <td style="width:80px"><MudText Typo="Typo.caption" Color="Color.Primary">Type</MudText></td>
+                                    <td><MudText Typo="Typo.body2">@(mountSettings?.Mount ?? "—")</MudText></td>
+                                </tr>
+                                <tr>
+                                    <td><MudText Typo="Typo.caption" Color="Color.Primary">Mode</MudText></td>
+                                    <td><MudText Typo="Typo.body2">@(mountSettings?.AlignmentMode ?? "—")</MudText></td>
+                                </tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudPaper>
+                </MudItem>
+
                 @* -- Row 2c: Date / Time -------------------------------- *@
 
                 <MudItem xs="12" md="4">
@@ -155,10 +178,13 @@
 
     private int ActiveTabIndex { get; set; }
     private List<AlpacaDevice> _alpacaDevices = [];
+    private Dictionary<int, GreenSwamp.Alpaca.Settings.Models.SkySettings> _deviceSettings = new();
 
     protected override void OnInitialized()
     {
         _alpacaDevices = SettingsService.GetAlpacaDevices();
+        _deviceSettings = SettingsService.GetAllDeviceSettings()
+            .ToDictionary(d => d.DeviceNumber);
         StateService.StateChanged += OnStateChanged;
     }
 

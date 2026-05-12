@@ -1,4 +1,5 @@
 ﻿@using GreenSwamp.Alpaca.Settings.Models
+@inject MudBlazor.ISnackbar Snackbar
 
 @* Combined editor: Location + Environmental + GPS *@
 
@@ -6,6 +7,16 @@
 
     <MudExpansionPanel Text="Location" Icon="@Icons.Material.Filled.MyLocation" IsInitiallyExpanded="true">
         <MudStack Spacing="3">
+            @if (Observatory is not null)
+            {
+                <MudTooltip Text="Copy Latitude, Longitude and Elevation from Observatory Settings to this device." Placement="Placement.Right" Arrow="true">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.CopyAll"
+                               OnClick="CopyFromObservatory">
+                        Copy from Observatory Settings
+                    </MudButton>
+                </MudTooltip>
+            }
             <MudTooltip Text="Geographic latitude of the device site in decimal degrees (-90 to +90)." Placement="Placement.Right" Arrow="true">
                 <MudNumericField T="double" @bind-Value="Device!.Latitude" @bind-Value:after="NotifyChanged"
                                  Label="Latitude (°)" Format="F6" Min="-90" Max="90" Immediate="true" />
@@ -62,7 +73,18 @@
 @code {
     [Parameter] public SkySettings? Device { get; set; }
     [Parameter] public bool ShowHidden { get; set; }
+    [Parameter] public ObservatorySettings? Observatory { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
+
+    private async Task CopyFromObservatory()
+    {
+        if (Device is null || Observatory is null) return;
+        Device.Latitude  = Observatory.Latitude;
+        Device.Longitude = Observatory.Longitude;
+        Device.Elevation = Observatory.Elevation;
+        Snackbar.Add("Lat/Long/Elevation copied from Observatory Settings.", MudBlazor.Severity.Success);
+        await NotifyChanged();
+    }
 
     private double _utcHours;
 
