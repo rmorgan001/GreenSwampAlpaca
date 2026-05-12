@@ -9,8 +9,7 @@
                      Label="Log Monitor Messages" Color="Color.Primary" />
     </MudTooltip>
     <MudTooltip Text="1000-record ring buffer — lower overhead than Log Monitor. Mutually exclusive with Log Monitor. Use 'Write Buffer to File' to persist." Placement="Placement.Right" Arrow="true">
-        <MudCheckBox @bind-Value="Settings!.FastMonitor" @bind-Value:after="NotifyChanged"
-                     Label="Fast Monitor (Buffer)" Color="Color.Info" />
+        <MudCheckBox @bind-Value="Settings!.FastMonitor" @bind-Value:after="NotifyChanged" Label="Fast Monitor (Buffer)" Color="Color.Primary" />
     </MudTooltip>
     <MudTooltip Text="Writes session data to GSSessionLog*.txt." Placement="Placement.Right" Arrow="true">
         <MudCheckBox @bind-Value="Settings!.LogSession" @bind-Value:after="NotifyChanged" Label="Log Session" Color="Color.Primary" />
