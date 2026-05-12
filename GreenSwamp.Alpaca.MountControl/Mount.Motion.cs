@@ -488,7 +488,10 @@ namespace GreenSwamp.Alpaca.MountControl
                 token.ThrowIfCancellationRequested();
                 if (!axis1AtTarget)
                 {
-                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1, skyTarget[0] + 0.25 * deltaDegree[0]);
+                    var predictor = (slewType != SlewType.SlewRaDec)
+                        ? 0
+                        : 0.25;
+                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1, skyTarget[0] + predictor * deltaDegree[0]);
                 }
                 var axis1Done = axis1AtTarget;
                 while (loopTimer.Elapsed.TotalMilliseconds < 3000)
