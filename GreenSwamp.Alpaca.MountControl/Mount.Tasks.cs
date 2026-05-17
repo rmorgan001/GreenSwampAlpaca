@@ -496,9 +496,15 @@ namespace GreenSwamp.Alpaca.MountControl
                     while (stopwatch.Elapsed.TotalMilliseconds <= 5000)
                     {
                         Thread.Sleep(100);
-                        var status = new CmdAxisStatus(mq.NewId, mq, axis);
-                        var axisStatus = (Alpaca.Mount.Simulator.AxisStatus)mq.GetCommandResult(status).Result;
-                        if (axisStatus.Stopped) return true;
+                        try
+                        {
+                            var status = new CmdAxisStatus(mq.NewId, mq, axis);
+                            var result = mq.GetCommandResult(status);
+                            if (!result.Successful) return false;
+                            if (((Alpaca.Mount.Simulator.AxisStatus)result.Result).Stopped) return true;
+                        }
+                        catch (InvalidOperationException) { return false; }
+                        catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { return false; }
                     }
                     return false;
                 case MountType.SkyWatcher:
@@ -506,8 +512,14 @@ namespace GreenSwamp.Alpaca.MountControl
                     while (stopwatch.Elapsed.TotalMilliseconds <= 5000)
                     {
                         Thread.Sleep(100);
-                        var statusCmd = new SkyIsAxisFullStop(sq.NewId, sq, axis);
-                        if (Convert.ToBoolean(sq.GetCommandResult(statusCmd).Result)) return true;
+                        try
+                        {
+                            var statusCmd = new SkyIsAxisFullStop(sq.NewId, sq, axis);
+                            var result = sq.GetCommandResult(statusCmd);
+                            if (!result.Successful) return false;
+                            if (Convert.ToBoolean(result.Result)) return true;
+                        }
+                        catch (InvalidOperationException) { return false; }
                     }
                     return false;
                 default:
@@ -533,13 +545,20 @@ namespace GreenSwamp.Alpaca.MountControl
                     {
                         SimTasks(MountTaskName.StopAxes);
                         Thread.Sleep(100);
-                        var statusX = new CmdAxisStatus(mq.NewId, mq, Axis.Axis1);
-                        var axis1Status = (Alpaca.Mount.Simulator.AxisStatus)mq.GetCommandResult(statusX).Result;
-                        axis1Stopped = axis1Status.Stopped;
+                        try
+                        {
+                            var statusX = new CmdAxisStatus(mq.NewId, mq, Axis.Axis1);
+                            var resultX = mq.GetCommandResult(statusX);
+                            if (!resultX.Successful) return false;
+                            axis1Stopped = ((Alpaca.Mount.Simulator.AxisStatus)resultX.Result).Stopped;
 
-                        var statusY = new CmdAxisStatus(mq.NewId, mq, Axis.Axis2);
-                        var axis2Status = (Alpaca.Mount.Simulator.AxisStatus)mq.GetCommandResult(statusY).Result;
-                        axis2Stopped = axis2Status.Stopped;
+                            var statusY = new CmdAxisStatus(mq.NewId, mq, Axis.Axis2);
+                            var resultY = mq.GetCommandResult(statusY);
+                            if (!resultY.Successful) return false;
+                            axis2Stopped = ((Alpaca.Mount.Simulator.AxisStatus)resultY.Result).Stopped;
+                        }
+                        catch (InvalidOperationException) { return false; }
+                        catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { return false; }
 
                         if (!axis1Stopped || !axis2Stopped) { continue; }
                         return true;
@@ -554,13 +573,25 @@ namespace GreenSwamp.Alpaca.MountControl
                         Thread.Sleep(100);
                         if (!axis1Stopped)
                         {
-                            var statusX = new SkyIsAxisFullStop(sq.NewId, sq, Axis.Axis1);
-                            axis1Stopped = Convert.ToBoolean(sq.GetCommandResult(statusX).Result);
+                            try
+                            {
+                                var statusX = new SkyIsAxisFullStop(sq.NewId, sq, Axis.Axis1);
+                                var resultX = sq.GetCommandResult(statusX);
+                                if (!resultX.Successful) return false;
+                                axis1Stopped = Convert.ToBoolean(resultX.Result);
+                            }
+                            catch (InvalidOperationException) { return false; }
                         }
                         if (!axis2Stopped)
                         {
-                            var statusY = new SkyIsAxisFullStop(sq.NewId, sq, Axis.Axis2);
-                            axis2Stopped = Convert.ToBoolean(sq.GetCommandResult(statusY).Result);
+                            try
+                            {
+                                var statusY = new SkyIsAxisFullStop(sq.NewId, sq, Axis.Axis2);
+                                var resultY = sq.GetCommandResult(statusY);
+                                if (!resultY.Successful) return false;
+                                axis2Stopped = Convert.ToBoolean(resultY.Result);
+                            }
+                            catch (InvalidOperationException) { return false; }
                         }
                         if (!axis1Stopped || !axis2Stopped) { continue; }
                         return true;

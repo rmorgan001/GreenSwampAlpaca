@@ -1,5 +1,6 @@
 ﻿@using GreenSwamp.Alpaca.Settings.Models
 @using MudBlazor
+@inject ISnackbar Snackbar
 
 @* Displayed in the right panel when "Telescope Devices" section is selected in the tree. *@
 
@@ -54,14 +55,7 @@
             </MudStack>
         }
 
-        @if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            <MudAlert Severity="Severity.Error" Dense="true" Class="mt-3"
-                      ShowCloseIcon="true" CloseIconClicked="() => _errorMessage = string.Empty">
-                @_errorMessage
-            </MudAlert>
-        }
-    </MudCardContent>
+        </MudCardContent>
 
     <MudCardActions>
         <MudSpacer />
@@ -86,8 +80,6 @@
 
     /// <summary>When true, action buttons are disabled (parent is executing an operation).</summary>
     [Parameter] public bool IsBusy { get; set; }
-
-    private string _errorMessage = string.Empty;
 
     private async Task RequestAdd()
     {

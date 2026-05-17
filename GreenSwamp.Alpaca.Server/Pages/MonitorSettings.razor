@@ -1,622 +1,268 @@
 ﻿@page "/monitorsettings"
 
 @inject NavigationManager NavManager
+@inject GreenSwamp.Alpaca.Server.Services.MonitorDisplayService MonitorDisplay
+@inject MudBlazor.ISnackbar Snackbar
 
 @using GreenSwamp.Alpaca.Settings.Models
 @using GreenSwamp.Alpaca.Settings.Services
+@using GreenSwamp.Alpaca.Server.Components.SettingsGroups
 @inject IVersionedSettingsService SettingsService
 
 <PageTitle>Monitor Settings</PageTitle>
 
-<MudText Typo="Typo.h5" GutterBottom="true">Monitor Settings Configuration</MudText>
+<MudText Typo="Typo.h5" GutterBottom="true">Monitor</MudText>
 <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-	Configure logging filters and behaviour. Settings are saved to: <code>@SettingsService.MonitorSettingsPath</code>
+	Live monitor output. Filter settings saved to: <code>@SettingsService.MonitorSettingsPath</code>
 </MudText>
 
-@if (_message != null)
-{
-	<MudAlert Severity="@(_isError ? Severity.Error : Severity.Success)" ShowCloseIcon="true"
-			  CloseIconClicked="@(() => _message = null)" Class="mb-3">
-		@_message
-	</MudAlert>
-}
-
-<MonitorLoggingSettingsCard OnPresetSelected="ApplyPreset" OnQuickActionTriggered="HandleQuickAction" />
-
-<EditForm Model="_settings" OnValidSubmit="SaveSettings">
-	<DataAnnotationsValidator />
-
-	<MudGrid Spacing="3">
-		<MudItem xs="12" md="6">
-
-			<MudCard Class="mb-4">
-				<MudCardHeader>
-					<CardHeaderContent>
-						<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-							<MudIcon Icon="@Icons.Material.Filled.Storage" Color="Color.Primary" />
-							<MudText Typo="Typo.h6">Device Filters</MudText>
-						</MudStack>
-					</CardHeaderContent>
-				</MudCardHeader>
-				<MudCardContent>
-					<MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">Select which devices to monitor</MudText>
-					<MudGrid>
-						<MudItem xs="4">
-							<MudCheckBox @bind-Value="_settings.ServerDevice" Label="Server" Color="Color.Primary" />
-						</MudItem>
-						<MudItem xs="4">
-							<MudCheckBox @bind-Value="_settings.Telescope" Label="Telescope" Color="Color.Primary" />
-						</MudItem>
-						<MudItem xs="4">
-							<MudCheckBox @bind-Value="_settings.Ui" Label="UI" Color="Color.Warning" />
-						</MudItem>
-					</MudGrid>
-				</MudCardContent>
-			</MudCard>
-
-			<MudCard Class="mb-4">
-				<MudCardHeader>
-					<CardHeaderContent>
-						<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-							<MudIcon Icon="@Icons.Material.Filled.Label" Color="Color.Info" />
-							<MudText Typo="Typo.h6">Category Filters</MudText>
-						</MudStack>
-					</CardHeaderContent>
-				</MudCardHeader>
-				<MudCardContent>
-					<MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">Select which categories to monitor</MudText>
-					<MudGrid>
-						<MudItem xs="4">
-							<MudCheckBox @bind-Value="_settings.Other" Label="Other" Color="Color.Primary" />
-							<MudCheckBox @bind-Value="_settings.Driver" Label="Driver" Color="Color.Primary" />
-						</MudItem>
-						<MudItem xs="4">
-							<MudCheckBox @bind-Value="_settings.Interface" Label="Interface" Color="Color.Primary" />
-							<MudCheckBox @bind-Value="_settings.Server" Label="Server" Color="Color.Primary" />
-						</MudItem>
-						<MudItem xs="4">
-							<MudCheckBox @bind-Value="_settings.Mount" Label="Mount" Color="Color.Primary" />
-							<MudCheckBox @bind-Value="_settings.Alignment" Label="Alignment" Color="Color.Primary" />
-						</MudItem>
-					</MudGrid>
-				</MudCardContent>
-			</MudCard>
-
-			<MudCard Class="mb-4">
-				<MudCardHeader>
-					<CardHeaderContent>
-						<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-							<MudIcon Icon="@Icons.Material.Filled.Task" Color="Color.Warning" />
-							<MudText Typo="Typo.h6">Type Filters (Log Levels)</MudText>
-						</MudStack>
-					</CardHeaderContent>
-				</MudCardHeader>
-				<MudCardContent>
-					<MudText Typo="Typo.caption" Color="Color.Secondary" Class="mb-2">Select which message types to monitor</MudText>
-					<MudGrid>
-						<MudItem xs="6">
-							<MudCheckBox @bind-Value="_settings.Information" Label="Information" Color="Color.Info" />
-							<MudCheckBox @bind-Value="_settings.Data" Label="Data" Color="Color.Warning" />
-							<MudCheckBox @bind-Value="_settings.Warning" Label="Warning" Color="Color.Warning" />
-						</MudItem>
-						<MudItem xs="6">
-							<MudCheckBox @bind-Value="_settings.Error" Label="Error" Color="Color.Error" />
-							<MudCheckBox @bind-Value="_settings.Debug" Label="Debug" Color="Color.Error" />
-						</MudItem>
-					</MudGrid>
-				</MudCardContent>
-			</MudCard>
-		</MudItem>
-
-		<MudItem xs="12" md="6">
-
-			<MudCard Class="mb-4">
-				<MudCardHeader>
-					<CardHeaderContent>
-						<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-							<MudIcon Icon="@Icons.Material.Filled.Description" Color="Color.Success" />
-							<MudText Typo="Typo.h6">Logging Control</MudText>
-						</MudStack>
-					</CardHeaderContent>
-				</MudCardHeader>
-				<MudCardContent>
-					<MudGrid>
-						<MudItem xs="6">
-							<MudCheckBox @bind-Value="_settings.StartMonitor" Label="Start Monitor" Color="Color.Error" />
-							<MudText Typo="Typo.caption" Color="Color.Secondary">Must be ON for file logging</MudText>
-							<MudCheckBox Value="_settings.LogMonitor"
-										 ValueChanged="@((bool v) => { _settings.LogMonitor = v; if (v) _settings.FastMonitor = false; })"
-										 Label="Log Monitor" Color="Color.Primary" Class="mt-2" />
-							<MudText Typo="Typo.caption" Color="Color.Secondary">GSMonitorLog*.txt</MudText>
-							<MudCheckBox Value="_settings.FastMonitor"
-										 ValueChanged="@((bool v) => { _settings.FastMonitor = v; if (v) _settings.LogMonitor = false; })"
-										 Label="Fast Monitor (Buffer)" Color="Color.Info" Class="mt-2" />
-							<MudText Typo="Typo.caption" Color="Color.Secondary">1000-record ring buffer. Mutually exclusive with Log Monitor.</MudText>
-							@if (_settings.FastMonitor)
-							{
-								<MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small"
-										   StartIcon="@Icons.Material.Filled.Save" Class="mt-2"
-										   OnClick="WriteBufferAsync" Disabled="_writingBuffer">
-									@if (_writingBuffer)
-									{
-										<MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-1" />
-									}
-									Write Buffer to File
-								</MudButton>
-							}
-						</MudItem>
-						<MudItem xs="6">
-							<MudCheckBox @bind-Value="_settings.LogSession" Label="Log Session" Color="Color.Primary" />
-							<MudText Typo="Typo.caption" Color="Color.Secondary">GSSessionLog*.txt</MudText>
-							<MudCheckBox @bind-Value="_settings.LogCharting" Label="Log Charting" Color="Color.Primary" Class="mt-2" />
-							<MudText Typo="Typo.caption" Color="Color.Secondary">GSChartingLog*.txt</MudText>
-						</MudItem>
-					</MudGrid>
-					@if (!_settings.StartMonitor)
-					{
-						<MudAlert Severity="Severity.Warning" Class="mt-3">
-							<strong>StartMonitor is OFF.</strong> No logs will be written to files.
-						</MudAlert>
-					}
-				</MudCardContent>
-			</MudCard>
-
-			<MudCard Class="mb-4">
-				<MudCardHeader>
-					<CardHeaderContent>
-						<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-							<MudIcon Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" />
-							<MudText Typo="Typo.h6">What Will Be Logged?</MudText>
-						</MudStack>
-					</CardHeaderContent>
-				</MudCardHeader>
-				<MudCardContent>
-					@if (GetEnabledCount() == 0)
-					{
-						<MudAlert Severity="Severity.Warning">All filters are disabled — nothing will be logged.</MudAlert>
-					}
-					else
-					{
-						<MudText Typo="Typo.subtitle2" Class="mb-1">Log Files</MudText>
-						<MudList T="string" Dense="true">
-							@if (_settings.LogSession)
-							{
-								<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">GSSessionLog*.txt</MudListItem>
-							}
-							@if (_settings.LogMonitor && _settings.StartMonitor)
-								{
-									<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">GSMonitorLog*.txt</MudListItem>
-								}
-								else if (_settings.LogMonitor && !_settings.StartMonitor)
-								{
-									<MudListItem T="string" Icon="@Icons.Material.Filled.Cancel" IconColor="Color.Error">GSMonitorLog*.txt (StartMonitor OFF)</MudListItem>
-								}
-								@if (_settings.FastMonitor && _settings.StartMonitor)
-								{
-									<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Info">GSFastMonitorLog*.txt (buffer, on WriteBuffer)</MudListItem>
-								}
-								else if (_settings.FastMonitor && !_settings.StartMonitor)
-								{
-									<MudListItem T="string" Icon="@Icons.Material.Filled.Cancel" IconColor="Color.Error">GSFastMonitorLog*.txt (StartMonitor OFF)</MudListItem>
-								}
-							@if (_settings.LogCharting)
-							{
-								<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">GSChartingLog*.txt</MudListItem>
-							}
-							<MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">GSErrorLog*.txt (always)</MudListItem>
-						</MudList>
-						<MudDivider Class="my-2" />
-						<MudStack Row="true" Spacing="1">
-							<MudChip T="string" Color="Color.Primary" Size="Size.Small">@GetDeviceCount() Devices</MudChip>
-							<MudChip T="string" Color="Color.Info" Size="Size.Small">@GetCategoryCount() Categories</MudChip>
-							<MudChip T="string" Color="Color.Warning" Size="Size.Small">@GetTypeCount() Types</MudChip>
-						</MudStack>
-						<MudAlert Severity="Severity.Info" Class="mt-2" Dense="true">
-							Logged if <strong>Device AND Category AND Type</strong> are all enabled.
-						</MudAlert>
-					}
-				</MudCardContent>
-			</MudCard>
-
-			<MudCard Class="mb-4">
-				<MudCardHeader>
-					<CardHeaderContent>
-						<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-							<MudIcon Icon="@Icons.Material.Filled.Build" />
-							<MudText Typo="Typo.h6">Miscellaneous</MudText>
-						</MudStack>
-					</CardHeaderContent>
-				</MudCardHeader>
-				<MudCardContent>
-					<MudSelect @bind-Value="_settings.Language" Label="Language" HelperText="UI language preference" Class="mb-3">
-						<MudSelectItem Value="@("en-US")">English (US)</MudSelectItem>
-						<MudSelectItem Value="@("en-GB")">English (GB)</MudSelectItem>
-						<MudSelectItem Value="@("de-DE")">German</MudSelectItem>
-						<MudSelectItem Value="@("fr-FR")">French</MudSelectItem>
-						<MudSelectItem Value="@("es-ES")">Spanish</MudSelectItem>
-					</MudSelect>
-					<MudTextField @bind-Value="_settings.LogPath" Label="Log Path"
-								  HelperText="0 = default (%USERPROFILE%\Documents\GSServer)" Class="mb-3" />
-					<MudTextField @bind-Value="_settings.Version" Label="Version"
-								  HelperText="Settings version (read-only)" ReadOnly="true" />
-						</MudCardContent>
-						</MudCard>
-
-					</MudItem>
-				</MudGrid>
-
-				<MudDivider Class="my-3" />
-	<MudStack Row="true" Spacing="2" Class="pb-4" AlignItems="AlignItems.Center">
-		<MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-				   Disabled="_saving" StartIcon="@Icons.Material.Filled.Save">
-			@if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" /> }
-			Save Changes
+<MudCard Class="mb-4">
+	<MudCardHeader>
+		<CardHeaderContent>
+			<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+				<MudIcon Icon="@Icons.Material.Filled.Terminal" Color="Color.Primary" />
+				<MudText Typo="Typo.h6">Monitor Records</MudText>
+				<MudSpacer />
+				<MudText Typo="Typo.caption" Color="Color.Secondary">@_lines.Count / @GreenSwamp.Alpaca.Server.Services.MonitorDisplayService.Capacity records</MudText>
+			</MudStack>
+		</CardHeaderContent>
+		<CardHeaderActions>
+			<MudTooltip Text="Clear display buffer" RootStyle="max-width:180px">
+				<MudIconButton Icon="@Icons.Material.Filled.DeleteSweep" Color="Color.Warning"
+							   Size="Size.Small" OnClick="ClearDisplay" />
+			</MudTooltip>
+		</CardHeaderActions>
+	</MudCardHeader>
+	<MudCardContent>
+		<MudPaper Outlined="true" Class="pa-2" Style="overflow-y: auto; overflow-x: auto; height: 420px;">
+			<pre style="margin: 0; font-family: monospace; font-size: 1.00rem; white-space: pre;">@_displayText</pre>
+		</MudPaper>
+	</MudCardContent>
+	<MudCardActions>
+		<MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+				   StartIcon="@Icons.Material.Filled.ContentCopy"
+				   OnClick="CopyToClipboard">
+			Copy to Clipboard
 		</MudButton>
-		<MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Large"
-				   StartIcon="@Icons.Material.Filled.RestartAlt" Disabled="_saving" OnClick="ResetToDefaults">
-			Reset to Defaults
+		<MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small"
+				   StartIcon="@Icons.Material.Filled.Sync" OnClick="ReloadSettings" Class="ml-2">
+			Reload Settings
 		</MudButton>
-		<MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Large"
-				   StartIcon="@Icons.Material.Filled.Sync" OnClick="ReloadSettings">
-			Reload from File
-		</MudButton>
-	</MudStack>
-</EditForm>
+		@if (_settings.FastMonitor)
+		{
+			<MudButton Variant="Variant.Outlined" Color="Color.Info" Size="Size.Small"
+					   StartIcon="@Icons.Material.Filled.Save" OnClick="WriteBufferAsync"
+					   Disabled="_writingBuffer" Class="ml-2">
+				@if (_writingBuffer)
+				{
+					<MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-1" />
+				}
+				Write Buffer to File
+			</MudButton>
+		}
+	</MudCardActions>
+</MudCard>
+
+<MonitorLoggingSettingsCard IsDirty="_isDirty" IsLoading="_saving"
+	OnPresetSelected="ApplyPreset"
+	OnQuickActionTriggered="HandleQuickAction"
+	OnSave="SaveSettings"
+	OnReset="ResetToDefaults" />
 
 @code {
-    private GreenSwamp.Alpaca.Settings.Models.MonitorSettings _settings = new();
-    private bool _saving;
-    private bool _writingBuffer;
-    private string? _message;
-    private bool _isError;
+	private GreenSwamp.Alpaca.Settings.Models.MonitorSettings _settings = new();
+	private bool _saving;
+	private bool _writingBuffer;
+	private bool _isDirty;
 
-    protected override void OnInitialized()
-    {
-        LoadSettings();
-        SettingsService.MonitorSettingsChanged += OnSettingsChanged;
-    }
+	private IReadOnlyList<string> _lines = Array.Empty<string>();
+	private string _displayText = string.Empty;
 
-    private void LoadSettings()
-    {
-        _settings = SettingsService.GetMonitorSettings();
-    }
+	[Inject] private IJSRuntime JS { get; set; } = default!;
 
-    private async Task SaveSettings()
-    {
-        _saving = true;
-        _message = null;
+	protected override void OnInitialized()
+	{
+		LoadSettings();
+		SettingsService.MonitorSettingsChanged += OnSettingsChanged;
+		MonitorDisplay.RecordsChanged += OnRecordsChanged;
+		RefreshDisplay();
+	}
 
-        try
-        {
-            await SettingsService.SaveMonitorSettingsAsync(_settings);
+	private void RefreshDisplay()
+	{
+		_lines = MonitorDisplay.GetSnapshot();
+		_displayText = string.Join('\n', _lines);
+	}
 
-            // Also update the MonitorLog settings immediately
-            GreenSwamp.Alpaca.Shared.MonitorLog.Load_Settings();
-            GreenSwamp.Alpaca.Shared.Settings.Load();
+	private void ClearDisplay()
+	{
+		MonitorDisplay.Clear();
+		RefreshDisplay();
+	}
 
-            _message = "Monitor settings saved successfully! Changes applied immediately.";
-            _isError = false;
-        }
-        catch (Exception ex)
-        {
-            _message = $"Error saving settings: {ex.Message}";
-            _isError = true;
-        }
-        finally
-        {
-            _saving = false;
-        }
-    }
+	private async Task CopyToClipboard()
+	{
+		try
+		{
+			await JS.InvokeVoidAsync("navigator.clipboard.writeText", _displayText);
+			Snackbar.Add("Monitor records copied to clipboard.", MudBlazor.Severity.Success);
+		}
+		catch
+		{
+			Snackbar.Add("Copy failed — clipboard access may be blocked.", MudBlazor.Severity.Error);
+		}
+	}
 
-    /// <summary>
-    /// Flushes the fast monitor ring buffer to a datetime-stamped file.
-    /// Runs on a background thread to avoid blocking the Blazor render thread.
-    /// </summary>
-    private async Task WriteBufferAsync()
-    {
-        _writingBuffer = true;
-        try
-        {
-            await Task.Run(() => GreenSwamp.Alpaca.Shared.MonitorQueue.WriteBuffer());
-            _message = $"Fast monitor buffer written to file at {DateTime.Now:HH:mm:ss}";
-            _isError = false;
-        }
-        catch (Exception ex)
-        {
-            _message = $"Error writing buffer: {ex.Message}";
-            _isError = true;
-        }
-        finally
-        {
-            _writingBuffer = false;
-        }
-    }
+	private void OnRecordsChanged(object? sender, EventArgs e)
+	{
+		InvokeAsync(() =>
+		{
+			RefreshDisplay();
+			StateHasChanged();
+		});
+	}
 
-    private void ResetToDefaults()
-    {
-        _settings = new GreenSwamp.Alpaca.Settings.Models.MonitorSettings();
-        _message = "Settings reset to defaults (not saved yet)";
-        _isError = false;
-    }
+	private void LoadSettings()
+	{
+		_settings = SettingsService.GetMonitorSettings();
+		_isDirty = false;
+	}
 
-    private void ReloadSettings()
-    {
-        LoadSettings();
-        _message = "Settings reloaded from file";
-        _isError = false;
-    }
+	private async Task SaveSettings()
+	{
+		_saving = true;
 
-    // Quick Actions
-    private void SelectAllDevices()
-    {
-        _settings.ServerDevice = true;
-        _settings.Telescope = true;
-        _settings.Ui = true;
-        _message = "All devices selected";
-        _isError = false;
-    }
+		try
+		{
+			await SettingsService.SaveMonitorSettingsAsync(_settings);
+			GreenSwamp.Alpaca.Shared.MonitorLog.Load_Settings();
+			GreenSwamp.Alpaca.Shared.Settings.Load();
+			Snackbar.Add("Monitor settings saved successfully! Changes applied immediately.", MudBlazor.Severity.Success);
+			_isDirty = false;
+		}
+		catch (Exception ex)
+		{
+			Snackbar.Add($"Error saving settings: {ex.Message}", MudBlazor.Severity.Error);
+		}
+		finally
+		{
+			_saving = false;
+		}
+	}
 
-    private void SelectAllCategories()
-    {
-        _settings.Other = true;
-        _settings.Driver = true;
-        _settings.Interface = true;
-        _settings.Server = true;
-        _settings.Mount = true;
-        _settings.Alignment = true;
-        _message = "All categories selected";
-        _isError = false;
-    }
+	/// <summary>
+	/// Flushes the fast monitor ring buffer to a datetime-stamped file.
+	/// </summary>
+	private async Task WriteBufferAsync()
+	{
+		_writingBuffer = true;
+		try
+		{
+			await Task.Run(() => GreenSwamp.Alpaca.Shared.MonitorQueue.WriteBuffer());
+			Snackbar.Add($"Fast monitor buffer written to file at {DateTime.Now:HH:mm:ss}", MudBlazor.Severity.Success);
+		}
+		catch (Exception ex)
+		{
+			Snackbar.Add($"Error writing buffer: {ex.Message}", MudBlazor.Severity.Error);
+		}
+		finally
+		{
+			_writingBuffer = false;
+		}
+	}
 
-    private void SelectAllTypes()
-    {
-        _settings.Information = true;
-        _settings.Data = true;
-        _settings.Warning = true;
-        _settings.Error = true;
-        _settings.Debug = true;
-        _message = "All types selected";
-        _isError = false;
-    }
+	private void ResetToDefaults()
+	{
+		_settings = new GreenSwamp.Alpaca.Settings.Models.MonitorSettings();
+		_isDirty = true;
+		Snackbar.Add("Settings reset to defaults (not saved yet)", MudBlazor.Severity.Warning);
+	}
 
-    private void ClearAllFilters()
-    {
-        _settings.ServerDevice = false;
-        _settings.Telescope = false;
-        _settings.Ui = false;
-        _settings.Other = false;
-        _settings.Driver = false;
-        _settings.Interface = false;
-        _settings.Server = false;
-        _settings.Mount = false;
-        _settings.Alignment = false;
-        _settings.Information = false;
-        _settings.Data = false;
-        _settings.Warning = false;
-        _settings.Error = false;
-        _settings.Debug = false;
-        _message = "All filters cleared";
-        _isError = false;
-    }
+	private void ReloadSettings()
+	{
+		LoadSettings();
+		Snackbar.Add("Settings reloaded from file", MudBlazor.Severity.Info);
+	}
 
-    // Unified preset application from MonitorLoggingSettingsCard component
-    private void ApplyPreset(GreenSwamp.Alpaca.Settings.Models.MonitorSettings preset)
-    {
-        _settings = preset;
+	private void ApplyPreset(GreenSwamp.Alpaca.Settings.Models.MonitorSettings preset)
+	{
+		_settings = preset;
+		_isDirty = true;
 
-        // Determine which preset was applied and set appropriate message
-        if (preset.Data && preset.Ui && preset.Other)
-        {
-            _message = "Development preset applied: Maximum logging (not saved yet)";
-        }
-        else if (!preset.LogMonitor && !preset.Ui && !preset.Other)
-        {
-            _message = "Production preset applied: Minimal logging (not saved yet)";
-        }
-        else if (preset.Driver && preset.Interface && preset.LogMonitor)
-        {
-            _message = "Troubleshooting preset applied: Mount operations + data (not saved yet)";
-        }
-        else
-        {
-            _message = "Profile Debug preset applied: Settings loading focused (not saved yet)";
-        }
+		string presetName;
+		if (preset.Data && preset.Ui && preset.Other)
+			presetName = "Development";
+		else if (!preset.LogMonitor && !preset.Ui && !preset.Other)
+			presetName = "Production";
+		else if (preset.Driver && preset.Interface && preset.LogMonitor)
+			presetName = "Troubleshooting";
+		else
+			presetName = "Profile Debug";
+		Snackbar.Add($"{presetName} preset applied (not saved yet)", MudBlazor.Severity.Info);
+	}
 
-        _isError = false;
-    }
+	private void HandleQuickAction(string actionName)
+	{
+		switch (actionName)
+		{
+			case "SelectAllDevices":
+				_settings.ServerDevice = true;
+				_settings.Telescope = true;
+				_settings.Ui = true;
+				Snackbar.Add("All devices selected", MudBlazor.Severity.Info);
+				break;
+			case "SelectAllCategories":
+				_settings.Other = true;
+				_settings.Driver = true;
+				_settings.Interface = true;
+				_settings.Server = true;
+				_settings.Mount = true;
+				_settings.Alignment = true;
+				Snackbar.Add("All categories selected", MudBlazor.Severity.Info);
+				break;
+			case "SelectAllTypes":
+				_settings.Information = true;
+				_settings.Data = true;
+				_settings.Warning = true;
+				_settings.Error = true;
+				_settings.Debug = true;
+				Snackbar.Add("All types selected", MudBlazor.Severity.Info);
+				break;
+			case "ClearAllFilters":
+				_settings.ServerDevice = false;
+				_settings.Telescope = false;
+				_settings.Ui = false;
+				_settings.Other = false;
+				_settings.Driver = false;
+				_settings.Interface = false;
+				_settings.Server = false;
+				_settings.Mount = false;
+				_settings.Alignment = false;
+				_settings.Information = false;
+				_settings.Data = false;
+				_settings.Warning = false;
+				_settings.Error = false;
+				_settings.Debug = false;
+				Snackbar.Add("All filters cleared", MudBlazor.Severity.Info);
+				break;
+		}
 
-    // Handle quick action buttons from MonitorLoggingSettingsCard component
-    private void HandleQuickAction(string actionName)
-    {
-        switch (actionName)
-        {
-            case "SelectAllDevices":
-                _settings.ServerDevice = true;
-                _settings.Telescope = true;
-                _settings.Ui = true;
-                _message = "All devices selected";
-                break;
+		_isDirty = true;
+	}
 
-            case "SelectAllCategories":
-                _settings.Other = true;
-                _settings.Driver = true;
-                _settings.Interface = true;
-                _settings.Server = true;
-                _settings.Mount = true;
-                _settings.Alignment = true;
-                _message = "All categories selected";
-                break;
+	private void OnSettingsChanged(object? sender, GreenSwamp.Alpaca.Settings.Models.MonitorSettings newSettings)
+	{
+		// Skip when we triggered the save ourselves — the working copy is already current.
+		// Replacing the reference would orphan the bound controls and break dirty detection.
+		if (_saving) return;
+		_settings = newSettings;
+		_isDirty = false;
+		InvokeAsync(StateHasChanged);
+	}
 
-            case "SelectAllTypes":
-                _settings.Information = true;
-                _settings.Data = true;
-                _settings.Warning = true;
-                _settings.Error = true;
-                _settings.Debug = true;
-                _message = "All types selected";
-                break;
-
-            case "ClearAllFilters":
-                _settings.ServerDevice = false;
-                _settings.Telescope = false;
-                _settings.Ui = false;
-                _settings.Other = false;
-                _settings.Driver = false;
-                _settings.Interface = false;
-                _settings.Server = false;
-                _settings.Mount = false;
-                _settings.Alignment = false;
-                _settings.Information = false;
-                _settings.Data = false;
-                _settings.Warning = false;
-                _settings.Error = false;
-                _settings.Debug = false;
-                _message = "All filters cleared";
-                break;
-        }
-
-        _isError = false;
-    }
-
-    // Preset Configurations
-    private void ApplyDevelopmentPreset()
-    {
-        _settings.ServerDevice = true;
-        _settings.Telescope = true;
-        _settings.Ui = true;
-        _settings.Other = true;
-        _settings.Driver = true;
-        _settings.Interface = true;
-        _settings.Server = true;
-        _settings.Mount = true;
-        _settings.Alignment = true;
-        _settings.Information = true;
-        _settings.Data = true;
-        _settings.Warning = true;
-        _settings.Error = true;
-        _settings.Debug = true;
-        _settings.LogMonitor = true;
-        _settings.LogSession = true;
-        _settings.StartMonitor = true;
-        _message = "Development preset applied: Maximum logging (not saved yet)";
-        _isError = false;
-    }
-
-    private void ApplyProductionPreset()
-    {
-        _settings.ServerDevice = true;
-        _settings.Telescope = true;
-        _settings.Ui = false;
-        _settings.Other = false;
-        _settings.Driver = false;
-        _settings.Interface = false;
-        _settings.Server = true;
-        _settings.Mount = true;
-        _settings.Alignment = false;
-        _settings.Information = true;
-        _settings.Data = false;
-        _settings.Warning = true;
-        _settings.Error = true;
-        _settings.Debug = false;
-        _settings.LogMonitor = false;
-        _settings.LogSession = true;
-        _settings.StartMonitor = true;
-        _message = "Production preset applied: Minimal logging (not saved yet)";
-        _isError = false;
-    }
-
-    private void ApplyTroubleshootingPreset()
-    {
-        _settings.ServerDevice = true;
-        _settings.Telescope = true;
-        _settings.Ui = false;
-        _settings.Other = false;
-        _settings.Driver = true;
-        _settings.Interface = true;
-        _settings.Server = true;
-        _settings.Mount = true;
-        _settings.Alignment = false;
-        _settings.Information = true;
-        _settings.Data = true;
-        _settings.Warning = true;
-        _settings.Error = true;
-        _settings.Debug = false;
-        _settings.LogMonitor = true;
-        _settings.LogSession = true;
-        _settings.StartMonitor = true;
-        _message = "Troubleshooting preset applied: Mount operations + data (not saved yet)";
-        _isError = false;
-    }
-
-    private void ApplyProfileDebugPreset()
-    {
-        _settings.ServerDevice = true;
-        _settings.Telescope = false;
-        _settings.Ui = false;
-        _settings.Other = false;
-        _settings.Driver = false;
-        _settings.Interface = false;
-        _settings.Server = true;
-        _settings.Mount = true;
-        _settings.Alignment = false;
-        _settings.Information = true;
-        _settings.Data = false;
-        _settings.Warning = true;
-        _settings.Error = true;
-        _settings.Debug = false;
-        _settings.LogMonitor = true;
-        _settings.LogSession = true;
-        _settings.StartMonitor = true;
-        _message = "Profile Debug preset applied: Settings loading focused (not saved yet)";
-        _isError = false;
-    }
-
-    // Preview helpers
-    private int GetDeviceCount()
-    {
-        int count = 0;
-        if (_settings.ServerDevice) count++;
-        if (_settings.Telescope) count++;
-        if (_settings.Ui) count++;
-        return count;
-    }
-
-    private int GetCategoryCount()
-    {
-        int count = 0;
-        if (_settings.Other) count++;
-        if (_settings.Driver) count++;
-        if (_settings.Interface) count++;
-        if (_settings.Server) count++;
-        if (_settings.Mount) count++;
-        if (_settings.Alignment) count++;
-        return count;
-    }
-
-    private int GetTypeCount()
-    {
-        int count = 0;
-        if (_settings.Information) count++;
-        if (_settings.Data) count++;
-        if (_settings.Warning) count++;
-        if (_settings.Error) count++;
-        if (_settings.Debug) count++;
-        return count;
-    }
-
-    private int GetEnabledCount()
-    {
-        return GetDeviceCount() + GetCategoryCount() + GetTypeCount();
-    }
-
-    private void OnSettingsChanged(object? sender, GreenSwamp.Alpaca.Settings.Models.MonitorSettings newSettings)
-    {
-        _settings = newSettings;
-        InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        SettingsService.MonitorSettingsChanged -= OnSettingsChanged;
-    }
+	public void Dispose()
+	{
+		SettingsService.MonitorSettingsChanged -= OnSettingsChanged;
+		MonitorDisplay.RecordsChanged -= OnRecordsChanged;
+	}
 }

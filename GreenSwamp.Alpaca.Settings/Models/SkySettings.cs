@@ -314,9 +314,7 @@ namespace GreenSwamp.Alpaca.Settings.Models
 
         // Instrument Info
         [CommonSetting]
-        public string InstrumentDescription { get; set; } = null!;
-        [CommonSetting]
-        public string InstrumentName { get; set; } = null!;
+        public string DeviceDescription { get; set; } = null!;
 
         // Alt-Az Tracking
         [CommonSetting]

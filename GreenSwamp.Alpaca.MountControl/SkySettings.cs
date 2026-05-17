@@ -152,8 +152,7 @@ namespace GreenSwamp.Alpaca.MountControl
 
         // Miscellaneous (5 fields)
         private double _temperature = 15.0;
-        private string _instrumentDescription = "GreenSwamp Alpaca Server";
-        private string _instrumentName = "GreenSwamp Mount";
+        private string _deviceDescription = "GreenSwamp Alpaca Server";
         private bool _autoTrack = false;
         private int _raTrackingOffset = 0;
 
@@ -1571,8 +1570,7 @@ namespace GreenSwamp.Alpaca.MountControl
             }
         }
 
-        public string InstrumentDescription => _instrumentDescription;
-        public string InstrumentName => _instrumentName;
+        public string DeviceDescription => _deviceDescription;
         public bool AutoTrack => _autoTrack;
         public int RaTrackingOffset => _raTrackingOffset;
 
@@ -1786,8 +1784,7 @@ namespace GreenSwamp.Alpaca.MountControl
 
                 // Batch 11: Miscellaneous
                 _temperature = settings.Temperature;
-                _instrumentDescription = settings.InstrumentDescription ?? "GreenSwamp Alpaca Server";
-                _instrumentName = settings.InstrumentName ?? "GreenSwamp Mount";
+                _deviceDescription = settings.DeviceDescription ?? "GreenSwamp Alpaca Server";
                 _autoTrack = settings.AutoTrack;
                 _raTrackingOffset = settings.RATrackingOffset;
 

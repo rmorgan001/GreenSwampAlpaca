@@ -2,6 +2,7 @@
 
 @inject NavigationManager NavManager
 @inject GreenSwamp.Alpaca.Settings.Services.IVersionedSettingsService SettingsService
+@inject MudBlazor.ISnackbar Snackbar
 
 @using ASCOM.Common.Interfaces
 @using ASCOM.Alpaca
@@ -10,13 +11,6 @@
 
 <MudText Typo="Typo.h5" GutterBottom="true">Server Settings</MudText>
 <MudText Typo="Typo.caption" Class="mb-3">Version: @Program.ServerVersion</MudText>
-
-@if (!string.IsNullOrEmpty(_feedback))
-{
-    <MudAlert Severity="_feedbackSeverity" Dense="true" Class="mb-3" ShowCloseIcon="true" CloseIconClicked="() => _feedback = string.Empty">
-        @_feedback
-    </MudAlert>
-}
 
 <MudGrid Spacing="3">
 
@@ -339,10 +333,7 @@
         }
     }
 
-    public void DisplayError(string message)   { _feedback = message; _feedbackSeverity = Severity.Error;   }
-    public void DisplayWarning(string message) { _feedback = message; _feedbackSeverity = Severity.Warning; }
-    public void DisplaySuccess(string message) { _feedback = message; _feedbackSeverity = Severity.Success; }
-
-    private string _feedback = string.Empty;
-    private Severity _feedbackSeverity = Severity.Normal;
+    public void DisplayError(string message)   => Snackbar.Add(message, MudBlazor.Severity.Error);
+    public void DisplayWarning(string message) => Snackbar.Add(message, MudBlazor.Severity.Warning);
+    public void DisplaySuccess(string message) => Snackbar.Add(message, MudBlazor.Severity.Success);
 }

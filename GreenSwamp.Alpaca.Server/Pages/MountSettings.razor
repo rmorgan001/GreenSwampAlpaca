@@ -2,6 +2,7 @@
 @page "/mountsettings/{DeviceNumber:int}"
 
 @inject NavigationManager NavManager
+@inject MudBlazor.ISnackbar Snackbar
 
 @using GreenSwamp.Alpaca.Settings.Models
 @using GreenSwamp.Alpaca.Settings.Services
@@ -14,14 +15,6 @@
 	Mount Settings — Device @DeviceNumber
 	<MudChip T="string" Size="Size.Small" Color="Color.Default" Class="ms-2">v@SettingsService.CurrentVersion</MudChip>
 </MudText>
-
-@if (_message != null)
-{
-	<MudAlert Severity="@(_isError ? Severity.Error : Severity.Success)" ShowCloseIcon="true"
-			  CloseIconClicked="@(() => _message = null)" Class="mb-3">
-		@_message
-	</MudAlert>
-}
 
 <EditForm Model="_settings" OnValidSubmit="SaveSettings">
 	<DataAnnotationsValidator />
@@ -271,9 +264,9 @@
 					<MudNumericField T="int" @bind-Value="_settings.CheckInterval" Label="Loop Update Interval (ms)" Class="mb-3" />
 				</MudItem>
 				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Instrument Info</MudText>
-					<MudTextField @bind-Value="_settings.InstrumentName" Label="Instrument Name" Class="mb-3" />
-					<MudTextField @bind-Value="_settings.InstrumentDescription" Label="Instrument Description" Class="mb-3" />
+					<MudText Typo="Typo.h6" Class="mb-3">Device Info</MudText>
+					<MudTextField @bind-Value="_settings.DeviceName" Label="Device Name" Class="mb-3" />
+					<MudTextField @bind-Value="_settings.DeviceDescription" Label="Device Description" Class="mb-3" />
 					<MudNumericField T="int" @bind-Value="_settings.AltAzTrackingUpdateInterval" Label="Alt-Az Update Interval (ms)" Class="mb-3" />
 					<MudNumericField T="int" @bind-Value="_settings.PolarLedLevel" Label="Polar LED Level"
 									 HelperText="-1 to disable, 0–255 for brightness" Class="mb-3" />
@@ -305,8 +298,6 @@
 
     private SkySettings _settings = new();
     private bool _saving;
-    private string? _message;
-    private bool _isError;
     private string _activeTab = "connection";
     private string _utcOffsetString = "00:00:00";
     private int _loadedDeviceNumber = -1;
@@ -344,7 +335,6 @@
     private async Task SaveSettings()
     {
         _saving = true;
-        _message = null;
 
         try
         {
@@ -356,8 +346,7 @@
             }
             catch (JsonException ex)
             {
-                _message = $"Invalid JSON for Park Axes: {ex.Message}";
-                _isError = true;
+                Snackbar.Add($"Invalid JSON for Park Axes: {ex.Message}", MudBlazor.Severity.Error);
                 _saving = false;
                 return;
             }
@@ -368,8 +357,7 @@
             }
             catch (JsonException ex)
             {
-                _message = $"Invalid JSON for Park Positions: {ex.Message}";
-                _isError = true;
+                Snackbar.Add($"Invalid JSON for Park Positions: {ex.Message}", MudBlazor.Severity.Error);
                 _saving = false;
                 return;
             }
@@ -380,20 +368,17 @@
             }
             catch (JsonException ex)
             {
-                _message = $"Invalid JSON for Hand Controller Pulse Guides: {ex.Message}";
-                _isError = true;
+                Snackbar.Add($"Invalid JSON for Hand Controller Pulse Guides: {ex.Message}", MudBlazor.Severity.Error);
                 _saving = false;
                 return;
             }
             
             await SettingsService.SaveDeviceSettingsAsync(DeviceNumber, _settings);
-            _message = "Settings saved successfully!";
-            _isError = false;
+            Snackbar.Add("Settings saved successfully!", MudBlazor.Severity.Success);
         }
         catch (Exception ex)
         {
-            _message = $"Error saving settings: {ex.Message}";
-            _isError = true;
+            Snackbar.Add($"Error saving settings: {ex.Message}", MudBlazor.Severity.Error);
         }
         finally
         {
@@ -404,8 +389,7 @@
     private void ReloadSettings()
     {
         LoadSettings();
-        _message = "Settings reloaded";
-        _isError = false;
+        Snackbar.Add("Settings reloaded", MudBlazor.Severity.Info);
     }
 
     private void ParseUtcOffset()
@@ -421,14 +405,18 @@
         if (newSettings.DeviceNumber != DeviceNumber)
             return;
 
+        // Skip when we triggered the save ourselves — the working copy is already current.
+        // Replacing the reference would orphan bound controls and break dirty detection.
+        if (_saving) return;
+
         _settings = newSettings;
         _utcOffsetString = _settings.UTCOffset.ToString(@"hh\:mm\:ss");
-        
+
         // Update JSON strings when settings change
         _parkAxesJson = JsonSerializer.Serialize(_settings.ParkAxes);
         _parkPositionsJson = JsonSerializer.Serialize(_settings.ParkPositions, new JsonSerializerOptions { WriteIndented = true });
         _hcPulseGuidesJson = JsonSerializer.Serialize(_settings.HcPulseGuides, new JsonSerializerOptions { WriteIndented = true });
-        
+
         InvokeAsync(StateHasChanged);
     }
 

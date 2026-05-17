@@ -6,12 +6,12 @@
 
     <MudExpansionPanel Text="Device Information" Icon="@Icons.Material.Filled.Badge" IsInitiallyExpanded="true">
         <MudStack Spacing="3">
-            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Human-readable name for this telescope device." Placement="Placement.Right" Arrow="true">
-                <MudTextField @bind-Value="Device!.InstrumentName" @bind-Value:after="NotifyChanged"
-                              Label="Name" Immediate="true" />
+            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Human-readable name for this telescope device, returned as the ASCOM Name property." Placement="Placement.Right" Arrow="true">
+                <MudTextField @bind-Value="Device!.DeviceName" @bind-Value:after="NotifyChanged"
+                              Label="Device Name" Immediate="true" />
             </MudTooltip>
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Description of the device shown in Alpaca setup." Placement="Placement.Right" Arrow="true">
-                <MudTextField @bind-Value="Device!.InstrumentDescription" @bind-Value:after="NotifyChanged"
+                <MudTextField @bind-Value="Device!.DeviceDescription" @bind-Value:after="NotifyChanged"
                               Label="Description" Immediate="true" />
             </MudTooltip>
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Mount driver to use for this device." Placement="Placement.Right" Arrow="true">

@@ -67,16 +67,25 @@ namespace GreenSwamp.Alpaca.MountControl
                 Thread.Sleep(50);
                 token.ThrowIfCancellationRequested();
 
-                var statusX = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
-                var axis1Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(statusX).Result;
-                var axis1Stopped = axis1Status.Stopped;
+                var axis1Stopped = false;
+                var axis2Stopped = false;
+                try
+                {
+                    var statusX = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
+                    var resultX = SimQueue.GetCommandResult(statusX);
+                    if (!resultX.Successful) break;
+                    axis1Stopped = ((Alpaca.Mount.Simulator.AxisStatus)resultX.Result).Stopped;
 
-                Thread.Sleep(50);
-                token.ThrowIfCancellationRequested();
+                    Thread.Sleep(50);
+                    token.ThrowIfCancellationRequested();
 
-                var statusY = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
-                var axis2Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(statusY).Result;
-                var axis2Stopped = axis2Status.Stopped;
+                    var statusY = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
+                    var resultY = SimQueue.GetCommandResult(statusY);
+                    if (!resultY.Successful) break;
+                    axis2Stopped = ((Alpaca.Mount.Simulator.AxisStatus)resultY.Result).Stopped;
+                }
+                catch (InvalidOperationException) { break; }
+                catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { break; }
 
                 if (!axis1Stopped || !axis2Stopped) continue;
                 if (_slewSettleTime > 0)
@@ -182,9 +191,15 @@ namespace GreenSwamp.Alpaca.MountControl
 
                     if (!axis1Stopped)
                     {
-                        var status1 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
-                        var axis1Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(status1).Result;
-                        axis1Stopped = axis1Status.Stopped;
+                        try
+                        {
+                            var status1 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
+                            var result1 = SimQueue.GetCommandResult(status1);
+                            if (!result1.Successful) break;
+                            axis1Stopped = ((Alpaca.Mount.Simulator.AxisStatus)result1.Result).Stopped;
+                        }
+                        catch (InvalidOperationException) { break; }
+                        catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { break; }
                     }
 
                     Thread.Sleep(20);
@@ -192,9 +207,15 @@ namespace GreenSwamp.Alpaca.MountControl
 
                     if (!axis2Stopped)
                     {
-                        var status2 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
-                        var axis2Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(status2).Result;
-                        axis2Stopped = axis2Status.Stopped;
+                        try
+                        {
+                            var status2 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
+                            var result2 = SimQueue.GetCommandResult(status2);
+                            if (!result2.Successful) break;
+                            axis2Stopped = ((Alpaca.Mount.Simulator.AxisStatus)result2.Result).Stopped;
+                        }
+                        catch (InvalidOperationException) { break; }
+                        catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { break; }
                     }
 
                     if (axis1Stopped && axis2Stopped) { break; }
@@ -282,18 +303,30 @@ namespace GreenSwamp.Alpaca.MountControl
 
                         if (!axis1Stopped)
                         {
-                            var status1 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
-                            var axis1Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(status1).Result;
-                            axis1Stopped = axis1Status.Stopped;
+                            try
+                            {
+                                var status1 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis1);
+                                var result1 = SimQueue.GetCommandResult(status1);
+                                if (!result1.Successful) break;
+                                axis1Stopped = ((Alpaca.Mount.Simulator.AxisStatus)result1.Result).Stopped;
+                            }
+                            catch (InvalidOperationException) { break; }
+                            catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { break; }
                         }
 
                         Thread.Sleep(100);
 
                         if (!axis2Stopped)
                         {
-                            var status2 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
-                            var axis2Status = (Alpaca.Mount.Simulator.AxisStatus)SimQueue.GetCommandResult(status2).Result;
-                            axis2Stopped = axis2Status.Stopped;
+                            try
+                            {
+                                var status2 = new CmdAxisStatus(SimQueue.NewId, SimQueue, Axis.Axis2);
+                                var result2 = SimQueue.GetCommandResult(status2);
+                                if (!result2.Successful) break;
+                                axis2Stopped = ((Alpaca.Mount.Simulator.AxisStatus)result2.Result).Stopped;
+                            }
+                            catch (InvalidOperationException) { break; }
+                            catch (Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { break; }
                         }
 
                         if (axis1Stopped && axis2Stopped) { break; }
@@ -347,9 +380,14 @@ namespace GreenSwamp.Alpaca.MountControl
                     token.WaitHandle.WaitOne(250);
                     token.ThrowIfCancellationRequested();
 
-                    var statusX = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis1);
-                    var x = SkyQueue.GetCommandResult(statusX);
-                    axis1Stopped = Convert.ToBoolean(x.Result);
+                    try
+                    {
+                        var statusX = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis1);
+                        var x = SkyQueue.GetCommandResult(statusX);
+                        if (!x.Successful) break;
+                        axis1Stopped = Convert.ToBoolean(x.Result);
+                    }
+                    catch (InvalidOperationException) { break; }
                 }
 
                 if (!axis2Stopped)
@@ -361,9 +399,14 @@ namespace GreenSwamp.Alpaca.MountControl
                     token.WaitHandle.WaitOne(250);
                     token.ThrowIfCancellationRequested();
 
-                    var statusY = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis2);
-                    var y = SkyQueue.GetCommandResult(statusY);
-                    axis2Stopped = Convert.ToBoolean(y.Result);
+                    try
+                    {
+                        var statusY = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis2);
+                        var y = SkyQueue.GetCommandResult(statusY);
+                        if (!y.Successful) break;
+                        axis2Stopped = Convert.ToBoolean(y.Result);
+                    }
+                    catch (InvalidOperationException) { break; }
                 }
 
                 if (!axis1Stopped || !axis2Stopped) { continue; }
@@ -501,8 +544,14 @@ namespace GreenSwamp.Alpaca.MountControl
 
                     if (!axis1Done)
                     {
-                        var status1 = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis1);
-                        axis1Done = Convert.ToBoolean(SkyQueue.GetCommandResult(status1).Result);
+                        try
+                        {
+                            var status1 = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis1);
+                            var result1 = SkyQueue.GetCommandResult(status1);
+                            if (!result1.Successful) break;
+                            axis1Done = Convert.ToBoolean(result1.Result);
+                        }
+                        catch (InvalidOperationException) { break; }
                     }
                     if (axis1Done) { break; }
                 }
@@ -524,8 +573,14 @@ namespace GreenSwamp.Alpaca.MountControl
 
                     if (!axis2Done)
                     {
-                        var status2 = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis2);
-                        axis2Done = Convert.ToBoolean(SkyQueue.GetCommandResult(status2).Result);
+                        try
+                        {
+                            var status2 = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis2);
+                            var result2 = SkyQueue.GetCommandResult(status2);
+                            if (!result2.Successful) break;
+                            axis2Done = Convert.ToBoolean(result2.Result);
+                        }
+                        catch (InvalidOperationException) { break; }
                     }
                     if (axis2Done) { break; }
                 }
@@ -621,8 +676,14 @@ namespace GreenSwamp.Alpaca.MountControl
 
                         if (!axis1Done)
                         {
-                            var status1 = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis1);
-                            axis1Done = Convert.ToBoolean(SkyQueue.GetCommandResult(status1).Result);
+                            try
+                            {
+                                var status1 = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis1);
+                                var result1 = SkyQueue.GetCommandResult(status1);
+                                if (!result1.Successful) break;
+                                axis1Done = Convert.ToBoolean(result1.Result);
+                            }
+                            catch (InvalidOperationException) { break; }
                         }
                         if (axis1Done) { break; }
                     }
@@ -641,8 +702,14 @@ namespace GreenSwamp.Alpaca.MountControl
 
                         if (!axis2Done)
                         {
-                            var status2 = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis2);
-                            axis2Done = Convert.ToBoolean(SkyQueue.GetCommandResult(status2).Result);
+                            try
+                            {
+                                var status2 = new SkyIsAxisFullStop(SkyQueue.NewId, SkyQueue, Axis.Axis2);
+                                var result2 = SkyQueue.GetCommandResult(status2);
+                                if (!result2.Successful) break;
+                                axis2Done = Convert.ToBoolean(result2.Result);
+                            }
+                            catch (InvalidOperationException) { break; }
                         }
                         if (axis2Done) { break; }
                     }

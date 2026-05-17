@@ -503,7 +503,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
         {
             get
             {
-                string r = _mount.Settings.InstrumentDescription;
+                string r = _mount.Settings.DeviceDescription;
 
                 var monitorItem = new MonitorEntry
                 { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Data, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"{r}" };
@@ -725,7 +725,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
         {
             get
             {
-                string r = _mount.Settings.InstrumentName;
+                string r = _mount.DeviceName;
 
                 var monitorItem = new MonitorEntry
                 { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Data, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = $"{r}" };

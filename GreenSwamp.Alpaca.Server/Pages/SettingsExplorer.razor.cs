@@ -68,8 +68,6 @@ public partial class SettingsExplorer : IDisposable
     private bool    _saving;
     private bool    _deviceManagerBusy = false;
     private bool    _showHidden      = false;
-    private string  _feedback        = string.Empty;
-    private Severity _feedbackSeverity = Severity.Info;
     private bool    _anyDirty        => Flatten(_treeItems).Any(n => n.IsDirty);
 
     /// <summary>True when the selected node is the Telescope Devices section (device manager card).</summary>
@@ -710,7 +708,7 @@ public partial class SettingsExplorer : IDisposable
 
                 case SettingsNodeSource.ServerConfig:
                     await SettingsService.SaveServerConfigAsync(_serverConfigWork);
-
+                    _serverConfigOrigJson = Serialize(_serverConfigWork);
                     break;
 
                 case SettingsNodeSource.Monitor:
@@ -852,6 +850,9 @@ public partial class SettingsExplorer : IDisposable
     // ── External settings-change callbacks ────────────────────────────────
     private void OnDeviceSettingsChanged(object? sender, SkySettings updated)
     {
+        // Skip when we triggered the save ourselves — the working copy is already current
+        // and replacing the reference would orphan child-editor components still holding the old one.
+        if (_saving) return;
         if (_deviceWork.ContainsKey(updated.DeviceNumber))
             _deviceWork[updated.DeviceNumber] = Clone(updated);
         InvokeAsync(StateHasChanged);
@@ -859,6 +860,8 @@ public partial class SettingsExplorer : IDisposable
 
     private void OnMonitorSettingsChanged(object? sender, MonitorSettingsModel updated)
     {
+        // Same guard as above.
+        if (_saving) return;
         _monitorWork = Clone(updated);
         InvokeAsync(StateHasChanged);
     }
@@ -880,8 +883,8 @@ public partial class SettingsExplorer : IDisposable
             return new[] { node }.Concat(Flatten(i.Children ?? []));
         });
 
-    private void ShowSuccess(string msg) { _feedback = msg; _feedbackSeverity = Severity.Success; }
-    private void ShowError(string msg)   { _feedback = msg; _feedbackSeverity = Severity.Error;   }
+    private void ShowSuccess(string msg) => Snackbar.Add(msg, Severity.Success);
+    private void ShowError(string msg)   => Snackbar.Add(msg, Severity.Error);
 
     public void Dispose()
     {

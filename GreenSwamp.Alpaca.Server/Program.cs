@@ -217,6 +217,9 @@ namespace GreenSwamp.Alpaca.Server
             // Register UnifiedDeviceRegistry as singleton for DI injection
             builder.Services.AddSingleton<GreenSwamp.Alpaca.Server.Services.UnifiedDeviceRegistry>();
 
+            // Register MonitorDisplayService for live monitor-record display
+            builder.Services.AddSingleton<GreenSwamp.Alpaca.Server.Services.MonitorDisplayService>();
+
             var app = builder.Build();
 
             // Replace bootstrap logger with the DI-resolved logger so the host's configured
@@ -237,6 +240,10 @@ namespace GreenSwamp.Alpaca.Server
                 // Force MonitorQueue initialization (creates BlockingCollections and background tasks)
                 GreenSwamp.Alpaca.Shared.MonitorQueue.EnsureInitialized();
                 Logger.LogInformation("MonitorQueue initialized");
+
+                // Eagerly resolve MonitorDisplayService so it starts capturing entries immediately
+                app.Services.GetRequiredService<GreenSwamp.Alpaca.Server.Services.MonitorDisplayService>();
+                Logger.LogInformation("MonitorDisplayService started");
 
                 // CRITICAL: Load settings BEFORE Load_Settings() to populate filter checklists
                 GreenSwamp.Alpaca.Shared.Settings.Load();

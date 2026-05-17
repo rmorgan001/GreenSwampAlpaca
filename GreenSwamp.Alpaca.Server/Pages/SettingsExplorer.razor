@@ -9,6 +9,7 @@
 @using SkySettings = GreenSwamp.Alpaca.Settings.Models.SkySettings
 @inject IVersionedSettingsService SettingsService
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 
 <PageTitle>Settings Explorer</PageTitle>
 
@@ -31,12 +32,7 @@
         </MudTooltip>
     </MudStack>
 
-    @if (!string.IsNullOrEmpty(_feedback))
-    {
-        <MudAlert Severity="_feedbackSeverity" Dense="true" ShowCloseIcon="true"
-                  CloseIconClicked="() => _feedback = string.Empty">@_feedback</MudAlert>
-    }
-</MudStack>
+    </MudStack>
 
 <MudGrid Spacing="3">
 
