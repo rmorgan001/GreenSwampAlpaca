@@ -2,6 +2,7 @@
 using GreenSwamp.Alpaca.Server.Models;
 using GreenSwamp.Alpaca.Settings.Models;
 using GreenSwamp.Alpaca.Settings.Services;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 using System.Text.Json;
 // Alias required: MonitorSettings page class exists in this namespace and shadows the model.
@@ -51,6 +52,18 @@ public partial class SettingsExplorer : IDisposable
     private SettingsNode? _treeSelectedValue;
     private string _searchText = string.Empty;
 
+    // ── Deep-link query parameters ──────────────────────────────────────────
+    /// <summary>Device number supplied via ?device=N query parameter.</summary>
+    [SupplyParameterFromQuery(Name = "device")]
+    public int? DeepLinkDevice { get; set; }
+
+    /// <summary>Group key supplied via ?group=... query parameter.</summary>
+    [SupplyParameterFromQuery(Name = "group")]
+    public string? DeepLinkGroup { get; set; }
+
+    /// <summary>Ensures deep-link selection fires only once per navigation.</summary>
+    private bool _deepLinkApplied;
+
     // ── UI state ────────────────────────────────────────────────────────────
     private bool    _saving;
     private bool    _deviceManagerBusy = false;
@@ -65,7 +78,7 @@ public partial class SettingsExplorer : IDisposable
 
     /// <summary>True when the selected node is the Monitor/Logging section (shows presets and quick actions card).</summary>
     private static bool IsMonitorLoggingSectionNode(SettingsNode? node) =>
-        node is { Level: SettingsNodeLevel.Section, Source: SettingsNodeSource.Monitor, Label: "Monitor / Logging" };
+        node is { Level: SettingsNodeLevel.Section, Source: SettingsNodeSource.Monitor, Label: "Logging" };
 
     // ── Hidden-group definitions ────────────────────────────────────────────
     private static readonly HashSet<string> _allHiddenGroups = new(StringComparer.Ordinal)
@@ -91,7 +104,7 @@ public partial class SettingsExplorer : IDisposable
         // Section descriptions
         ["Observatory"]       = "Physical observatory site properties — latitude, longitude, elevation and UTC offset.",
         ["Server Configuration"] = "Alpaca HTTP server behaviour, network binding, authentication and identity.",
-        ["Monitor / Logging"] = "Logging filter settings — device, category and message type filters.",
+        ["Logging"] = "Logging filter settings — device, category and message type filters.",
         ["Telescope Devices"] = "Per-device telescope mount settings.",
 
         // Server Config group descriptions
@@ -108,7 +121,7 @@ public partial class SettingsExplorer : IDisposable
         ["Device Filters"]       = "Enable or disable log entries by device type (server, telescope, UI).",
         ["Category Filters"]     = "Enable or disable log entries by category (driver, interface, mount, etc.).",
         ["Message Type Filters"] = "Enable or disable log entries by message type (info, warning, error, debug).",
-        ["Logging Options"]      = "File logging targets — monitor log, session log and charting data.",
+        ["Logging Control"]      = "File logging targets — monitor log, session log and charting data.",
 
         // Device leaf groups
         ["Device Identity"]      = "Device number, name and enabled state.",
@@ -147,6 +160,14 @@ public partial class SettingsExplorer : IDisposable
         await LoadSettingsAsync();
     }
 
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if (!_deepLinkApplied && (DeepLinkDevice.HasValue || !string.IsNullOrWhiteSpace(DeepLinkGroup)))
+            await ApplyDeepLinkAsync();
+    }
+
     private async Task LoadSettingsAsync()
     {
         var obs    = SettingsService.GetObservatorySettings();
@@ -168,6 +189,53 @@ public partial class SettingsExplorer : IDisposable
 
         BuildTree();
         await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Expands the target device branch and selects the requested group leaf
+    /// based on the <see cref="DeepLinkDevice"/> and <see cref="DeepLinkGroup"/> query parameters.
+    /// </summary>
+    private Task ApplyDeepLinkAsync()
+    {
+        _deepLinkApplied = true;
+
+        // Find the target leaf node.
+        var target = Flatten(_treeItems).FirstOrDefault(n =>
+            n.Level == SettingsNodeLevel.Group
+            && n.Source == SettingsNodeSource.Device
+            && (!DeepLinkDevice.HasValue || n.DeviceNumber == DeepLinkDevice.Value)
+            && (string.IsNullOrWhiteSpace(DeepLinkGroup)
+                || string.Equals(n.GroupKey, DeepLinkGroup, StringComparison.OrdinalIgnoreCase)));
+
+        if (target is null)
+            return Task.CompletedTask;
+
+        // The tree has three levels for device leaves:
+        //   Level 1 — "Telescope Devices" (top-level section)
+        //   Level 2 — "Device N — Name"   (device branch)
+        //   Level 3 — "Mount Configuration" etc. (leaf)
+        // Both levels 1 and 2 must be expanded so the leaf is visible and
+        // receives the primary-colour selection highlight from MudTreeView.
+        foreach (var topItem in _treeItems.OfType<SettingsTreeItemData>())
+        {
+            // Find the device branch ("Device N — Name") within this top-level item.
+            var deviceBranch = (topItem.Children ?? [])
+                .OfType<SettingsTreeItemData>()
+                .FirstOrDefault(b => b.Node.Source == SettingsNodeSource.Device
+                                     && b.Node.DeviceNumber == target.DeviceNumber);
+
+            if (deviceBranch is null)
+                continue;
+
+            topItem.Expanded    = true;   // expand "Telescope Devices"
+            deviceBranch.Expanded = true; // expand "Device N — Name"
+            break;
+        }
+
+        _selectedNode      = target;
+        _treeSelectedValue = target;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     // ── Tree construction ──────────────────────────────────────────────────
@@ -202,12 +270,12 @@ public partial class SettingsExplorer : IDisposable
             ]
         });
 
-        // Monitor / Logging
+        // Logging
         root.Add(new SettingsNode
         {
-            Label    = "Monitor / Logging",
+            Label    = "Logging",
             Icon     = Icons.Material.Filled.ListAlt,
-            Description = NodeDescriptions["Monitor / Logging"],
+            Description = NodeDescriptions["Logging"],
             Level    = SettingsNodeLevel.Section,
             Source   = SettingsNodeSource.Monitor,
             Children =
@@ -215,7 +283,7 @@ public partial class SettingsExplorer : IDisposable
                 Leaf("Device Filters",       Icons.Material.Filled.Devices,         SettingsNodeSource.Monitor, "Device Filters"),
                 Leaf("Category Filters",     Icons.Material.Filled.Category,         SettingsNodeSource.Monitor, "Category Filters"),
                 Leaf("Message Type Filters", Icons.Material.Filled.FilterList,       SettingsNodeSource.Monitor, "Message Type Filters"),
-                Leaf("Logging Options",      Icons.Material.Filled.FolderOpen,       SettingsNodeSource.Monitor, "Logging Options"),
+                Leaf("Logging Control",      Icons.Material.Filled.FolderOpen,       SettingsNodeSource.Monitor, "Logging Control"),
             ]
         });
 
@@ -452,7 +520,7 @@ public partial class SettingsExplorer : IDisposable
         _monitorWork = preset;
 
         // Mark all affected leaf nodes as dirty (presets affect all three filter categories + logging options)
-        var affectedGroupKeys = new[] { "Device Filters", "Category Filters", "Message Type Filters", "Logging Options" };
+        var affectedGroupKeys = new[] { "Device Filters", "Category Filters", "Message Type Filters", "Logging Control" };
         MarkMonitorLeafNodesDirty(affectedGroupKeys);
 
         // Also mark the section node as dirty
@@ -579,7 +647,7 @@ public partial class SettingsExplorer : IDisposable
     };
 
     /// <summary>
-    /// Saves the Monitor / Logging settings from the card's Save button.
+    /// Saves the Logging settings from the card's Save button.
     /// </summary>
     private async Task SaveMonitorSettingsAsync()
     {
@@ -595,11 +663,11 @@ public partial class SettingsExplorer : IDisposable
                 n.IsDirty = false;
             }
 
-            ShowSuccess("Monitor / Logging settings saved successfully.");
+            ShowSuccess("Logging settings saved successfully.");
         }
         catch (Exception ex)
         {
-            ShowError($"Error saving Monitor / Logging settings: {ex.Message}");
+            ShowError($"Error saving Logging settings: {ex.Message}");
         }
         finally
         {
@@ -608,7 +676,7 @@ public partial class SettingsExplorer : IDisposable
     }
 
     /// <summary>
-    /// Resets the Monitor / Logging settings from the card's Reset button.
+    /// Resets the Logging settings from the card's Reset button.
     /// Follows the same pattern as ResetGroup - clears dirty flags on all Monitor nodes.
     /// </summary>
     private async Task ResetMonitorSettingsAsync()
@@ -622,7 +690,7 @@ public partial class SettingsExplorer : IDisposable
         }
 
         StateHasChanged();
-        ShowSuccess("Monitor / Logging settings reset to last saved state.");
+        ShowSuccess("Logging settings reset to last saved state.");
     }
 
     // ── Save ───────────────────────────────────────────────────────────────

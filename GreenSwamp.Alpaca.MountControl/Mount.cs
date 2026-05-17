@@ -206,6 +206,11 @@ namespace GreenSwamp.Alpaca.MountControl
         public SkySettings Settings { get; }
 
         /// <summary>
+        /// Gets the number of Alpaca clients currently connected to this mount instance.
+        /// </summary>
+        public int ConnectedClientCount => _connectStates.Count;
+
+        /// <summary>
         /// Gets or sets the target RA/Dec position
         /// </summary>
         public Vector TargetRaDec

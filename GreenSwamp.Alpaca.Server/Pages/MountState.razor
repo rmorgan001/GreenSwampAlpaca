@@ -1,5 +1,6 @@
 ﻿@page "/mount-state"
 @page "/mount-state/{DeviceNumber:int}"
+@using GreenSwamp.Alpaca.Server.Components
 @using GreenSwamp.Alpaca.Server.Services
 @using GreenSwamp.Alpaca.Server.Models
 @using GreenSwamp.Alpaca.MountControl
@@ -65,17 +66,20 @@
                     <MudPaper Elevation="0" Class="pa-3">
                         <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Status</MudText>
                         <MudStack Spacing="1">
-                            @StatusRow("Mount Running", s.IsMountRunning, Color.Success)
-                            @StatusRow("Slewing",       s.Slewing,        Color.Warning)
-                            @StatusRow("Tracking",      s.Tracking,       Color.Success)
-                            @StatusRow("At Park",       s.AtPark,         Color.Info)
-                            @StatusRow("At Home",       s.AtHome,         Color.Info)
+                            @StatusRowWithDetail("Mount Connected", s.IsMountRunning, s.ComPort, Color.Success)
+                            @ActiveClientsRow(s.ConnectedClientCount)
+                            @StatusRow("Slewing",           s.Slewing,           Color.Warning)
                             @StatusRow("Pulse Guiding", s.IsPulseGuidingRa || s.IsPulseGuidingDec, Color.Warning)
+                            @StatusRow("Pulse Guide RA", s.IsPulseGuidingRa, Color.Warning)
+                            @StatusRow("Pulse Guide Dec",   s.IsPulseGuidingDec, Color.Warning)
+                            @StatusRowWithDetail("Tracking", s.Tracking, s.TrackingRate.ToString(), Color.Success)
+                            @StatusRow("At Park",           s.AtPark,            Color.Info)
+                            @StatusRow("At Home",           s.AtHome,            Color.Info)
                         </MudStack>
                     </MudPaper>
                 </MudItem>
 
-                @* -- Row 2: Axis Positions | Tracking & Guiding --------- *@
+                @* -- Row 2: Axis Positions | Mount ----------------------- *@
 
                 <MudItem xs="12" md="6">
                     <MudPaper Elevation="0" Class="pa-3">
@@ -111,26 +115,6 @@
                     </MudPaper>
                 </MudItem>
 
-                <MudItem xs="12" md="6">
-                    <MudPaper Elevation="0" Class="pa-3">
-                        <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Tracking &amp; Guiding</MudText>
-                        <MudSimpleTable Dense="true" Elevation="0">
-                            <tbody>
-                                <tr>
-                                    <td style="width:120px"><MudText Typo="Typo.caption" Color="Color.Primary">Tracking Rate</MudText></td>
-                                    <td><MudText Typo="Typo.body2">@s.TrackingRate</MudText></td>
-                                </tr>
-                            </tbody>
-                        </MudSimpleTable>
-                        <MudStack Spacing="1" Class="mt-2">
-                            @StatusRow("Pulse Guide RA",  s.IsPulseGuidingRa,  Color.Warning)
-                            @StatusRow("Pulse Guide Dec", s.IsPulseGuidingDec, Color.Warning)
-                        </MudStack>
-                    </MudPaper>
-                </MudItem>
-
-                @* -- Row 2d: Mount ---------------------------------------- *@
-
                 @{
                     var mountSettings = _deviceSettings.GetValueOrDefault(dn);
                 }
@@ -147,20 +131,8 @@
                                     <td><MudText Typo="Typo.caption" Color="Color.Primary">Mode</MudText></td>
                                     <td><MudText Typo="Typo.body2">@(mountSettings?.AlignmentMode ?? "—")</MudText></td>
                                 </tr>
-                            </tbody>
-                        </MudSimpleTable>
-                    </MudPaper>
-                </MudItem>
-
-                @* -- Row 2c: Date / Time -------------------------------- *@
-
-                <MudItem xs="12" md="4">
-                    <MudPaper Elevation="0" Class="pa-3">
-                        <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Date / Time</MudText>
-                        <MudSimpleTable Dense="true" Elevation="0">
-                            <tbody>
                                 <tr>
-                                    <td style="width:90px"><MudText Typo="Typo.caption" Color="Color.Primary">Local Date</MudText></td>
+                                    <td><MudText Typo="Typo.caption" Color="Color.Primary">Local Date</MudText></td>
                                     <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.LocalDate.ToString("dd MMM yyyy  HH:mm:ss.ff", CultureInfo.CurrentCulture)</MudText></td>
                                 </tr>
                             </tbody>
@@ -168,9 +140,24 @@
                     </MudPaper>
                 </MudItem>
 
-                    </MudGrid>
-                </MudTabPanel>
-    }
+                                @* -- Row 3: Axis Dials ---------------------------------- *@
+
+                                <MudItem xs="12">
+                                    <MudPaper Elevation="0" Class="pa-3">
+                                        <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Axis Dials</MudText>
+                                        <MudStack Row="true" Justify="Justify.FlexStart" Spacing="6" Class="mt-1">
+                                            <AxisDial Angle="@s.Azimuth" Label="Azimuth" Size="180" />
+                                            <AxisDial Angle="@s.Altitude" Label="Altitude" Size="180" />
+                                            <AxisDial Angle="@(s.RightAscension * 15)" Label="Right Ascension" 
+                                                      DisplayUnits="DialDisplayUnits.Hours" Size="180" />
+                                            <AxisDial Angle="@s.Declination" Label="Declination" Size="180" />
+                                        </MudStack>
+                                    </MudPaper>
+                                </MudItem>
+
+                                    </MudGrid>
+                                </MudTabPanel>
+                    }
 </MudTabs>
 
 @code {
@@ -222,6 +209,29 @@
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
             @BoolIcon(value, trueColor)
             <MudText Typo="Typo.body2">@label</MudText>
+        </MudStack>;
+    };
+
+    private RenderFragment StatusRowWithDetail(string label, bool value, string detail, Color trueColor) => __builder =>
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            @BoolIcon(value, trueColor)
+            <MudText Typo="Typo.body2">@label</MudText>
+            @if (!string.IsNullOrWhiteSpace(detail))
+            {
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Class="gs-font-mono">@detail</MudText>
+            }
+        </MudStack>;
+    };
+
+    private RenderFragment ActiveClientsRow(int count) => __builder =>
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudIcon Icon="@Icons.Material.Filled.People"
+                     Color="@(count > 0 ? Color.Success : Color.Default)"
+                     Size="Size.Small" />
+            <MudText Typo="Typo.body2">Active clients</MudText>
+            <MudText Typo="Typo.body2" Class="gs-font-mono">@count</MudText>
         </MudStack>;
     };
 

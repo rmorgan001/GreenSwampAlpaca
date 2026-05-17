@@ -41,7 +41,9 @@ Suggested verification text for Copilot assistant prompts
 
 Add mapping hints (for Copilot model / prompts)
 - Map `grep -r PATTERN PATH` -> `Get-ChildItem -Path PATH -Recurse | Select-String -Pattern 'PATTERN'`
-- Map `rg PATTERN PATH` -> `rg 'PATTERN' PATH` (only when author requests `rg` explicitly)## ?? CRITICAL: ALWAYS FOLLOW THIS WORKFLOW
+- Map `rg PATTERN PATH` -> `rg 'PATTERN' PATH` (only when author requests `rg` explicitly)
+
+## ?? CRITICAL: ALWAYS FOLLOW THIS WORKFLOW
 
 ### Before Making ANY Changes:
 
@@ -448,3 +450,7 @@ If you break the build:
 > **Build first. Edit small. Verify immediately. Own your mistakes.**
 
 This is a production astronomy mount control system. Breaking the build wastes telescope time and frustrates users. ALWAYS follow the verification workflow.
+
+## MudBlazor UI Behavior
+
+- When answering MudBlazor UI behavior questions in this workspace, consult the MudBlazor MCP docs before responding.

@@ -30,7 +30,7 @@
         <ObservatoryEditor Settings="Observatory" ShowHidden="ShowHidden" DeviceSettings="DeviceSettings" OnChanged="OnSettingChanged" />
         break;
 
-    // ── Monitor / Logging ──────────────────────────────────────────────────
+    // ── Logging ──────────────────────────────────────────────────
     case "Device Filters":
         <DeviceFiltersEditor Settings="Monitor" OnChanged="OnSettingChanged" />
         break;
@@ -40,8 +40,8 @@
     case "Message Type Filters":
         <MessageTypeFiltersEditor Settings="Monitor" OnChanged="OnSettingChanged" />
         break;
-    case "Logging Options":
-        <LoggingOptionsEditor Settings="Monitor" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
+    case "Logging Control":
+        <LoggingControlEditor Settings="Monitor" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
         break;
 
     // ── Telescope Device groups ────────────────────────────────────────────

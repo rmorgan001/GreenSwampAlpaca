@@ -1,0 +1,96 @@
+﻿@using System.Globalization
+
+@*
+    AxisDial — Inline SVG dial gauge for a single telescope axis angle.
+
+    ViewBox      : 0 0 240 260   (width 240, height 260 — extra height for text below dial)
+    Centre       : (120, 115)
+    Ring         : r = 92
+    Ticks        : 24 × 15°  — major at 0°/90°/180°/270°, minor elsewhere
+    Labels       : cardinal labels inside ring at r = 61
+                   Degrees mode → 0°, 90°, 180°, 270°
+                   Hours mode   → 0h, 6h, 12h, 18h
+    Needle       : tip at r = 76, tail at r = −18, primary colour
+    Angle param  : always in degrees; Hours mode divides by 15 for the readout
+    Angle 0°     : 12 o'clock (top), increases clockwise
+*@
+
+<svg viewBox="0 0 240 260" width="@Size" style="overflow:visible;display:block" aria-label="@Label dial showing @Angle.ToString("F1", CultureInfo.InvariantCulture) degrees">
+
+    @* ── Outer ring ─────────────────────────────────────────────────────── *@
+    <circle cx="120" cy="115" r="92"
+            fill="none"
+            stroke="var(--mud-palette-text-secondary)"
+            stroke-width="1.5" />
+
+    @* ── 24 tick marks at 15° intervals ─────────────────────────────────── *@
+    @for (int i = 0; i < 24; i++)
+    {
+        var tickDeg = i * 15.0;
+        var svgRad  = ToRad(tickDeg - 90);
+        var isMajor = i % 6 == 0;   // 0°, 90°, 180°, 270°
+        var outerR  = 92.0;
+        var innerR  = isMajor ? 75.0 : 85.0;
+        var sw      = isMajor ? "2" : "1";
+        var color   = isMajor
+            ? "var(--mud-palette-text-primary)"
+            : "var(--mud-palette-text-secondary)";
+
+        var x1 = 120 + outerR * Math.Cos(svgRad);
+        var y1 = 115 + outerR * Math.Sin(svgRad);
+        var x2 = 120 + innerR * Math.Cos(svgRad);
+        var y2 = 115 + innerR * Math.Sin(svgRad);
+
+        <line x1="@F(x1)" y1="@F(y1)" x2="@F(x2)" y2="@F(y2)"
+              stroke="@color" stroke-width="@sw" />
+    }
+
+    @* ── Cardinal degree labels inside the ring ──────────────────────────── *@
+    @foreach (var (deg, lbl) in CardinalLabels)
+    {
+        var svgRad = ToRad(deg - 90);
+        var lx = 120 + 61 * Math.Cos(svgRad);
+        var ly = 115 + 61 * Math.Sin(svgRad);
+
+        @SvgText(lx, ly, lbl, fontSize: "12", fill: "var(--mud-palette-text-secondary)")
+    }
+
+    @* ── Needle ──────────────────────────────────────────────────────────── *@
+    @{
+        var needleRad = ToRad(NeedleAngle - 90);
+        var nx = 120 + 76 * Math.Cos(needleRad);
+        var ny = 115 + 76 * Math.Sin(needleRad);
+        var tx = 120 - 18 * Math.Cos(needleRad);
+        var ty = 115 - 18 * Math.Sin(needleRad);
+    }
+    <line x1="@F(tx)" y1="@F(ty)" x2="@F(nx)" y2="@F(ny)"
+          stroke="var(--mud-palette-primary)" stroke-width="2.5"
+          stroke-linecap="round" />
+
+    @* ── Centre dot ──────────────────────────────────────────────────────── *@
+    <circle cx="120" cy="115" r="5"
+            fill="var(--mud-palette-primary)" />
+
+    @* ── Axis label beneath the dial ─────────────────────────────────────── *@
+    @SvgText(120, 228, Label, fontSize: "13", fontWeight: "600", fill: "var(--mud-palette-text-primary)")
+
+    @* ── Live numeric angle readout ───────────────────────────────────────── *@
+    @SvgText(120, 248, ReadoutText, fontSize: "13", fontFamily: "monospace", fill: "var(--mud-palette-primary)")
+
+</svg>
+
+@code {
+    /// <summary>Current axis angle in degrees. May be negative or greater than 360.</summary>
+    [Parameter] public double Angle { get; set; }
+
+    /// <summary>Label displayed beneath the dial, e.g. "Axis X".</summary>
+    [Parameter] public string Label { get; set; } = string.Empty;
+
+    /// <summary>Rendered pixel width. Height scales proportionally via the viewBox.</summary>
+    [Parameter] public int Size { get; set; } = 180;
+
+    // Normalise the raw angle to [0, 360) so the needle always falls within the ring.
+    private double NeedleAngle => ((Angle % 360) + 360) % 360;
+
+    private static double ToRad(double deg) => deg * Math.PI / 180.0;
+}

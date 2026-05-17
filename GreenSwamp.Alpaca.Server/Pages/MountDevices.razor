@@ -28,8 +28,9 @@ else
                                 <TelescopeSetup InstanceID="@device" />
                             </MudCardContent>
                             <MudCardActions>
-                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => EditDevice(device)">
-                                    Edit Settings
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => EditDevice(device)"
+                                           StartIcon="@Icons.Material.Filled.AccountTree">
+                                    Edit in Settings Explorer
                                 </MudButton>
                             </MudCardActions>
                         </MudCard>
@@ -58,8 +59,7 @@ else
 
     void EditDevice(int deviceNumber)
     {
-        // Navigate to the mountsettings page for this device
-        NavManager.NavigateTo($"/mountsettings/{deviceNumber}");
+        NavManager.NavigateTo($"/settings-explorer?device={deviceNumber}&group=Mount%20Configuration");
     }
 
     [Inject]

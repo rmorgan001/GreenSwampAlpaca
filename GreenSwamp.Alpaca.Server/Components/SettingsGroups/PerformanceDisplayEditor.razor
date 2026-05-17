@@ -3,7 +3,7 @@
 <MudStack Spacing="3">
     <MudTooltip Inline="false" RootStyle="max-width:260px" Text="UI display refresh interval in milliseconds." Placement="Placement.Right" Arrow="true">
         <MudNumericField T="int" @bind-Value="Device!.CheckInterval" @bind-Value:after="NotifyChanged"
-                         Label="Display Interval (ms)" Min="100" Immediate="true" />
+                         Label="Loop Update Interval (ms)" Min="100" Immediate="true" />
     </MudTooltip>
     <MudTooltip Inline="false" RootStyle="max-width:260px" Text="GoTo precision in arcseconds." Placement="Placement.Right" Arrow="true">
         @if (ShowHidden)

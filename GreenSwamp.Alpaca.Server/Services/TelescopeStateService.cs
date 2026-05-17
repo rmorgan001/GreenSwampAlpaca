@@ -69,6 +69,8 @@ namespace GreenSwamp.Alpaca.Server.Services
                     AtPark = mount.AtPark,
                     AtHome = mount.AtHome,
                     IsMountRunning = mount.IsMountRunning,
+                    ComPort = mount.Settings.Port ?? string.Empty,
+                    ConnectedClientCount = mount.ConnectedClientCount,
                     TargetRightAscension = mount.TargetRa,
                     TargetDeclination = mount.TargetDec,
                     ActualAxisX = mount.ActualAxisX,
