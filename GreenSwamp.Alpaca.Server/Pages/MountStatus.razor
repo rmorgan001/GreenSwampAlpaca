@@ -1,5 +1,5 @@
-﻿@page "/mount-state"
-@page "/mount-state/{DeviceNumber:int}"
+﻿@page "/mount-status"
+@page "/mount-status/{DeviceNumber:int}"
 @using GreenSwamp.Alpaca.Server.Components
 @using GreenSwamp.Alpaca.Server.Services
 @using GreenSwamp.Alpaca.Server.Models
@@ -12,9 +12,9 @@
 @inject IVersionedSettingsService SettingsService
 @implements IDisposable
 
-<PageTitle>Mount State</PageTitle>
+<PageTitle>Mount Status</PageTitle>
 
-<MudText Typo="Typo.h5" GutterBottom="true">Mount State</MudText>
+<MudText Typo="Typo.h5" GutterBottom="true">Mount Status</MudText>
 
 <MudTabs Rounded="true" Elevation="1" @bind-ActivePanelIndex="ActiveTabIndex" Class="mb-4 gs-tabs-no-transform">
     @foreach (var dn in MountRegistry.GetAllInstances().Select(kvp => kvp.Key).OrderBy(k => k))

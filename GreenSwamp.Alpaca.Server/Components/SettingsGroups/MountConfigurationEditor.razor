@@ -6,6 +6,10 @@
 
     <MudExpansionPanel Text="Device Information" Icon="@Icons.Material.Filled.Badge" IsInitiallyExpanded="true">
         <MudStack Spacing="3">
+            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable this device so it is accessible via Alpaca." Placement="Placement.Right" Arrow="true">
+                <MudCheckBox @bind-Value="Device!.Enabled" @bind-Value:after="NotifyChanged"
+                             Label="Enabled for Alpaca" Color="Color.Primary" />
+            </MudTooltip>
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Human-readable name for this telescope device, returned as the ASCOM Name property." Placement="Placement.Right" Arrow="true">
                 <MudTextField @bind-Value="Device!.DeviceName" @bind-Value:after="NotifyChanged"
                               Label="Device Name" Immediate="true" />
@@ -26,6 +30,13 @@
                     <MudSelectItem Value="@("AltAz")">Alt-Az</MudSelectItem>
                 </MudSelect>
             </MudTooltip>
+            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="The primary side of the pier for polar-aligned GEM mounts." Placement="Placement.Right" Arrow="true">
+                <MudSelect @bind-Value="Device!.PolarMode" @bind-Value:after="NotifyChanged"
+                           Label="Polar Primary Side">
+                    <MudSelectItem Value="@("Left")">Left</MudSelectItem>
+                    <MudSelectItem Value="@("Right")">Right</MudSelectItem>
+                </MudSelect>
+            </MudTooltip>
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Equatorial coordinate type returned by the mount (J2000 or JNow)." Placement="Placement.Right" Arrow="true">
                 <MudSelect @bind-Value="Device!.EquatorialCoordinateType" @bind-Value:after="NotifyChanged"
                            Label="Equatorial Coordinate Type">
@@ -35,10 +46,6 @@
                     <MudSelectItem Value="@("J2050")">J2050</MudSelectItem>
                     <MudSelectItem Value="@("B1950")">B1950</MudSelectItem>
                 </MudSelect>
-            </MudTooltip>
-            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable this device so it is accessible via Alpaca." Placement="Placement.Right" Arrow="true">
-                <MudCheckBox @bind-Value="Device!.Enabled" @bind-Value:after="NotifyChanged"
-                             Label="Enabled" Color="Color.Primary" />
             </MudTooltip>
         </MudStack>
     </MudExpansionPanel>
@@ -77,6 +84,14 @@
 
     <MudExpansionPanel Text="Mount Hardware" Icon="@Icons.Material.Filled.Bolt">
         <MudStack Spacing="3">
+            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable advanced commands for mount control." Placement="Placement.Right" Arrow="true">
+                <MudCheckBox @bind-Value="Device!.AllowAdvancedCommandSet" @bind-Value:after="NotifyChanged"
+                             Label="Aloow Advanced Commands" Color="Color.Primary" />
+            </MudTooltip>
+            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable absolute encoder feedback for the mount axes." Placement="Placement.Right" Arrow="true">
+                <MudCheckBox @bind-Value="Device!.EncodersOn" @bind-Value:after="NotifyChanged"
+                             Label="Encoders Enabled" Color="Color.Primary" />
+            </MudTooltip>
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Maximum slew rate in degrees per second." Placement="Placement.Right" Arrow="true">
                 <MudNumericField T="double" @bind-Value="Device!.MaximumSlewRate" @bind-Value:after="NotifyChanged"
                                  Label="Max Slew Rate (°/s)" Format="F2" Min="0" Immediate="true" />
@@ -96,10 +111,6 @@
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable full current mode on the motor drivers." Placement="Placement.Right" Arrow="true">
                 <MudCheckBox @bind-Value="Device!.FullCurrent" @bind-Value:after="NotifyChanged"
                              Label="Full Current" Color="Color.Primary" />
-            </MudTooltip>
-            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable absolute encoder feedback for the mount axes." Placement="Placement.Right" Arrow="true">
-                <MudCheckBox @bind-Value="Device!.EncodersOn" @bind-Value:after="NotifyChanged"
-                             Label="Encoders Enabled" Color="Color.Primary" />
             </MudTooltip>
         </MudStack>
     </MudExpansionPanel>

@@ -1,5 +1,4 @@
-﻿@page "/setup/v1/Telescope/{InstanceID:int}/setup"
-@using GreenSwamp.Alpaca.MountControl
+﻿@using GreenSwamp.Alpaca.MountControl
 @using GreenSwamp.Alpaca.Shared
 
 <PageTitle>Telescope Setup - Device @InstanceID</PageTitle>
@@ -160,6 +159,7 @@
                                 <tr><th>RA Backlash</th><td>@settings.RaBacklash</td></tr>
                                 <tr><th>Dec Backlash</th><td>@settings.DecBacklash</td></tr>
                                 <tr><th>Encoders</th><td>@if (settings.Encoders) { <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" /> } else { <MudIcon Icon="@Icons.Material.Filled.Close" Color="Color.Default" /> }</td></tr>
+                                <tr><th>Allow Advanced Commands</th><td>@if (settings.AllowAdvancedCommandSet) { <MudIcon Icon="@Icons.Material.Filled.Check" Color="Color.Success" /> } else { <MudIcon Icon="@Icons.Material.Filled.Close" Color="Color.Default" /> }</td></tr>
                             </tbody>
                         </MudSimpleTable>
                     </MudCardContent>

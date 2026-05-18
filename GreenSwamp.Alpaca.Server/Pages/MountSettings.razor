@@ -1,427 +1,87 @@
-﻿@page "/mountsettings"
-@page "/mountsettings/{DeviceNumber:int}"
-
-@inject NavigationManager NavManager
-@inject MudBlazor.ISnackbar Snackbar
-
+﻿@page "/mount-settings"
+@page "/mount-settings/{DeviceNumber:int}"
+@using System.Linq
+@using GreenSwamp.Alpaca.MountControl
+@using GreenSwamp.Alpaca.Server.Pages.Devices
 @using GreenSwamp.Alpaca.Settings.Models
 @using GreenSwamp.Alpaca.Settings.Services
-@using System.Text.Json
 @inject IVersionedSettingsService SettingsService
 
 <PageTitle>Mount Settings</PageTitle>
 
-<MudText Typo="Typo.h5" GutterBottom="true">
-	Mount Settings — Device @DeviceNumber
-	<MudChip T="string" Size="Size.Small" Color="Color.Default" Class="ms-2">v@SettingsService.CurrentVersion</MudChip>
-</MudText>
+<MudText Typo="Typo.h5" GutterBottom="true">Mount Settings</MudText>
 
-<EditForm Model="_settings" OnValidSubmit="SaveSettings">
-	<DataAnnotationsValidator />
-
-	<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Class="mb-4">
-
-		@* ── Connection ───────────────────────────────────────────────────── *@
-		<MudTabPanel Text="Connection" Icon="@Icons.Material.Filled.Cable">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Connection Settings</MudText>
-					<MudSelect @bind-Value="_settings.Mount" Label="Mount Type" Class="mb-3">
-						<MudSelectItem Value="@("Simulator")">Simulator</MudSelectItem>
-						<MudSelectItem Value="@("SkyWatcher")">SkyWatcher</MudSelectItem>
-					</MudSelect>
-					<MudTextField @bind-Value="_settings.Port" Label="Serial Port" Class="mb-3" />
-					<MudSelect T="int" @bind-Value="_settings.BaudRate" Label="Baud Rate" Class="mb-3">
-						<MudSelectItem Value="4800">4800</MudSelectItem>
-						<MudSelectItem Value="9600">9600</MudSelectItem>
-						<MudSelectItem Value="19200">19200</MudSelectItem>
-						<MudSelectItem Value="38400">38400</MudSelectItem>
-						<MudSelectItem Value="57600">57600</MudSelectItem>
-						<MudSelectItem Value="115200">115200</MudSelectItem>
-					</MudSelect>
-					<MudSelect T="int" @bind-Value="_settings.DataBits" Label="Data Bits" Class="mb-3">
-						<MudSelectItem Value="7">7</MudSelectItem>
-						<MudSelectItem Value="8">8</MudSelectItem>
-					</MudSelect>
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Serial Settings</MudText>
-					<MudSelect @bind-Value="_settings.Handshake" Label="Handshake" Class="mb-3">
-						<MudSelectItem Value="@("None")">None</MudSelectItem>
-						<MudSelectItem Value="@("XOnXOff")">XOn/XOff</MudSelectItem>
-						<MudSelectItem Value="@("RequestToSend")">RTS</MudSelectItem>
-						<MudSelectItem Value="@("RequestToSendXOnXOff")">RTS + XOn/XOff</MudSelectItem>
-					</MudSelect>
-					<MudNumericField T="int" @bind-Value="_settings.ReadTimeout" Label="Read Timeout (ms)" Class="mb-3" />
-					<MudCheckBox @bind-Value="_settings.DTREnable" Label="Enable DTR" Color="Color.Primary" Class="mb-2" />
-					<MudCheckBox @bind-Value="_settings.RTSEnable" Label="Enable RTS" Color="Color.Primary" />
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-		@* ── Location ─────────────────────────────────────────────────────── *@
-		<MudTabPanel Text="Location" Icon="@Icons.Material.Filled.LocationOn">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Observer Location</MudText>
-					<MudNumericField T="double" @bind-Value="_settings.Latitude" Label="Latitude (°)"
-									 HelperText="Range: -90 to 90 (North positive)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.Longitude" Label="Longitude (°)"
-									 HelperText="Range: -180 to 180 (East positive)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.Elevation" Label="Elevation (m)"
-									 HelperText="Metres above sea level" Class="mb-3" />
-					<MudTextField @bind-Value="_utcOffsetString" Label="UTC Offset (hh:mm:ss)"
-							  HelperText="e.g. -05:00:00 for EST" Class="mb-3"
-							  OnBlur="@((FocusEventArgs _) => ParseUtcOffset())" />
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Environmental</MudText>
-					<MudCheckBox @bind-Value="_settings.Refraction" Label="Apply Refraction Correction"
-								 Color="Color.Primary" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.Temperature" Label="Temperature (°C)"
-									 HelperText="For refraction calculation" Class="mb-3" />
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-		@* ── Mount Config ─────────────────────────────────────────────────── *@
-		<MudTabPanel Text="Mount Config" Icon="@Icons.Material.Filled.Tune">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Mount Motion Settings</MudText>
-					<MudSelect @bind-Value="_settings.AlignmentMode" Label="Alignment Mode" Class="mb-3">
-						<MudSelectItem Value="@("")">Not Set</MudSelectItem>
-						<MudSelectItem Value="@("AltAz")">Alt-Az</MudSelectItem>
-						<MudSelectItem Value="@("Polar")">Polar</MudSelectItem>
-						<MudSelectItem Value="@("GermanPolar")">German Equatorial</MudSelectItem>
-					</MudSelect>
-					<MudSelect @bind-Value="_settings.EquatorialCoordinateType" Label="Coordinate Type" Class="mb-3">
-						<MudSelectItem Value="@("Other")">Other</MudSelectItem>
-						<MudSelectItem Value="@("Topocentric")">Topocentric</MudSelectItem>
-						<MudSelectItem Value="@("J2000")">J2000</MudSelectItem>
-						<MudSelectItem Value="@("J2050")">J2050</MudSelectItem>
-						<MudSelectItem Value="@("B1950")">B1950</MudSelectItem>
-					</MudSelect>
-					<MudCheckBox @bind-Value="_settings.AutoTrack" Label="Auto Track on Connect"
-								 Color="Color.Primary" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.HomeAxisX" Label="Home Position X (RA/Az)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.HomeAxisY" Label="Home Position Y (Dec/Alt)" Class="mb-3" />
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Model Settings</MudText>
-					<MudSelect @bind-Value="_settings.PolarMode" Label="Polar Mode" Class="mb-3">
-						<MudSelectItem Value="@("")">Not Set</MudSelectItem>
-						<MudSelectItem Value="@("Left")">Left</MudSelectItem>
-						<MudSelectItem Value="@("Right")">Right</MudSelectItem>
-					</MudSelect>
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-		@* ── Park & Positions ─────────────────────────────────────────────── *@
-		<MudTabPanel Text="Park &amp; Positions" Icon="@Icons.Material.Filled.FlagCircle">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Park Settings</MudText>
-					<MudTextField @bind-Value="_settings.ParkName" Label="Park Name" Class="mb-3" />
-					<MudTextField @bind-Value="_settings.ParkLimitName" Label="Park Limit Name" Class="mb-3" />
-					<MudTextField @bind-Value="_settings.ParkHzLimitName" Label="Park Horizon Limit Name" Class="mb-3" />
-					<MudTextField @bind-Value="_parkAxesJson" Label="Park Axes (JSON)"
-								  HelperText="JSON format: [90, 90]" Lines="2" Class="mb-3" />
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Park Positions &amp; HC Guides (JSON)</MudText>
-					<MudTextField @bind-Value="_parkPositionsJson" Label="Park Positions"
-								  HelperText='JSON array: [{"Name":"Default","X":90.0,"Y":90.0}]'
-								  Lines="6" Class="mb-3" />
-					<MudTextField @bind-Value="_hcPulseGuidesJson" Label="Hand Controller Pulse Guides"
-								  HelperText="JSON array of objects with Speed, Duration, Interval, Rate"
-								  Lines="6" Class="mb-3" />
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-		@* ── Optics ───────────────────────────────────────────────────────── *@
-		<MudTabPanel Text="Optics" Icon="@Icons.Material.Filled.Visibility">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Telescope Optics</MudText>
-					<MudNumericField T="double" @bind-Value="_settings.ApertureDiameter" Label="Aperture Diameter (m)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.ApertureArea" Label="Aperture Area (m²)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.FocalLength" Label="Focal Length (m)" Class="mb-3" />
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Imaging</MudText>
-					<MudNumericField T="double" @bind-Value="_settings.EyepieceFS" Label="Eyepiece Field Stop (mm)" Class="mb-3" />
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-		@* ── Tracking ─────────────────────────────────────────────────────── *@
-		<MudTabPanel Text="Tracking" Icon="@Icons.Material.Filled.TrackChanges">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Tracking Settings</MudText>
-					<MudSelect @bind-Value="_settings.TrackingRate" Label="Tracking Rate" Class="mb-3">
-						<MudSelectItem Value="@("Sidereal")">Sidereal</MudSelectItem>
-						<MudSelectItem Value="@("Lunar")">Lunar</MudSelectItem>
-						<MudSelectItem Value="@("Solar")">Solar</MudSelectItem>
-						<MudSelectItem Value="@("King")">King</MudSelectItem>
-					</MudSelect>
-					<MudNumericField T="double" @bind-Value="_settings.SiderealRate" Label="Sidereal Rate (arcsec/sec)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.LunarRate" Label="Lunar Rate (arcsec/sec)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.SolarRate" Label="Solar Rate (arcsec/sec)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.KingRate" Label="King Rate (arcsec/sec)" Class="mb-3" />
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Custom Gearing</MudText>
-					<MudCheckBox @bind-Value="_settings.CustomGearing" Label="Use Custom Gearing"
-								 Color="Color.Primary" Class="mb-3" />
-					<MudNumericField T="int" @bind-Value="_settings.CustomRa360Steps" Label="RA 360° Steps"
-									 Disabled="@(!_settings.CustomGearing)" Class="mb-3" />
-					<MudNumericField T="int" @bind-Value="_settings.CustomRaWormTeeth" Label="RA Worm Teeth"
-									 Disabled="@(!_settings.CustomGearing)" Class="mb-3" />
-					<MudNumericField T="int" @bind-Value="_settings.CustomDec360Steps" Label="Dec 360° Steps"
-									 Disabled="@(!_settings.CustomGearing)" Class="mb-3" />
-					<MudNumericField T="int" @bind-Value="_settings.CustomDecWormTeeth" Label="Dec Worm Teeth"
-									 Disabled="@(!_settings.CustomGearing)" Class="mb-3" />
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-		@* ── Guiding ──────────────────────────────────────────────────────── *@
-		<MudTabPanel Text="Guiding" Icon="@Icons.Material.Filled.MyLocation">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Pulse Guiding</MudText>
-					<MudNumericField T="int" @bind-Value="_settings.MinPulseRa" Label="Min Pulse Duration RA (ms)" Class="mb-3" />
-					<MudNumericField T="int" @bind-Value="_settings.MinPulseDec" Label="Min Pulse Duration Dec (ms)" Class="mb-3" />
-					<MudCheckBox @bind-Value="_settings.DecPulseToGoTo" Label="Dec Pulse uses GOTO"
-								 Color="Color.Primary" Class="mb-3" />
-					<MudSelect T="int" @bind-Value="_settings.St4Guiderate" Label="ST4 Guide Rate" Class="mb-3">
-						<MudSelectItem Value="1">1 — Slowest</MudSelectItem>
-						<MudSelectItem Value="2">2</MudSelectItem>
-						<MudSelectItem Value="3">3</MudSelectItem>
-						<MudSelectItem Value="4">4</MudSelectItem>
-						<MudSelectItem Value="5">5</MudSelectItem>
-						<MudSelectItem Value="6">6</MudSelectItem>
-						<MudSelectItem Value="7">7</MudSelectItem>
-						<MudSelectItem Value="8">8 — Fastest</MudSelectItem>
-					</MudSelect>
-					<MudNumericField T="double" @bind-Value="_settings.GuideRateOffsetX" Label="Guide Rate Offset X" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.GuideRateOffsetY" Label="Guide Rate Offset Y" Class="mb-3" />
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Backlash &amp; PEC</MudText>
-					<MudNumericField T="int" @bind-Value="_settings.RaBacklash" Label="RA Backlash (steps)" Class="mb-3" />
-					<MudNumericField T="int" @bind-Value="_settings.DecBacklash" Label="Dec Backlash (steps)" Class="mb-3" />
-					<MudCheckBox @bind-Value="_settings.PecOn" Label="Enable PEC" Color="Color.Primary" Class="mb-2" />
-					<MudCheckBox @bind-Value="_settings.PpecOn" Label="Enable PPEC" Color="Color.Primary" Class="mb-2" />
-					<MudCheckBox @bind-Value="_settings.AlternatingPPEC" Label="Alternating PPEC" Color="Color.Primary" Class="mb-3" />
-					<MudSelect @bind-Value="_settings.PecMode" Label="PEC Mode" Class="mb-3">
-						<MudSelectItem Value="@("PecWorm")">PEC Worm</MudSelectItem>
-						<MudSelectItem Value="@("Pec360")">PEC 360</MudSelectItem>
-					</MudSelect>
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-		@* ── Limits ───────────────────────────────────────────────────────── *@
-		<MudTabPanel Text="Limits" Icon="@Icons.Material.Filled.Block">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Axis Limits</MudText>
-					<MudCheckBox @bind-Value="_settings.LimitTracking" Label="Enable Tracking Limits"
-								 Color="Color.Primary" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.HourAngleLimit" Label="Hour Angle Limit (hours)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.AxisLimitX" Label="Axis Limit X (degrees)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.AxisUpperLimitY" Label="Axis Upper Limit Y (degrees)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.AxisLowerLimitY" Label="Axis Lower Limit Y (degrees)" Class="mb-3" />
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Sync &amp; Safety</MudText>
-					<MudCheckBox @bind-Value="_settings.SyncLimitOn" Label="Enable Sync Limit" Color="Color.Primary" Class="mb-2" />
-					<MudNumericField T="int" @bind-Value="_settings.SyncLimit" Label="Sync Limit (degrees)" Class="mb-3" />
-					<MudCheckBox @bind-Value="_settings.NoSyncPastMeridian" Label="No Sync Past Meridian" Color="Color.Primary" Class="mb-2" />
-					<MudCheckBox @bind-Value="_settings.LimitPark" Label="Enable Park Limit" Color="Color.Primary" Class="mb-2" />
-					<MudCheckBox @bind-Value="_settings.HzLimitTracking" Label="Enable Horizon Limit Tracking" Color="Color.Primary" Class="mb-2" />
-					<MudCheckBox @bind-Value="_settings.EncodersOn" Label="Enable Encoders" Color="Color.Primary" Class="mb-2" />
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-		@* ── Advanced ─────────────────────────────────────────────────────── *@
-		<MudTabPanel Text="Advanced" Icon="@Icons.Material.Filled.Settings">
-			<MudGrid Spacing="3" Class="pa-4">
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Advanced Settings</MudText>
-					<MudCheckBox @bind-Value="_settings.AllowAdvancedCommandSet" Label="Allow Advanced Commands"
-								 Color="Color.Primary" Class="mb-2" />
-					<MudNumericField T="double" @bind-Value="_settings.MaximumSlewRate" Label="Maximum Slew Rate (°/sec)" Class="mb-3" />
-					<MudNumericField T="double" @bind-Value="_settings.GotoPrecision" Label="GOTO Precision (degrees)" Class="mb-3" />
-					<MudCheckBox @bind-Value="_settings.FullCurrent" Label="Full Current Mode" Color="Color.Primary" Class="mb-2" />
-					<MudCheckBox @bind-Value="_settings.TraceLogger" Label="Enable Trace Logging" Color="Color.Primary" Class="mb-2" />
-					<MudNumericField T="int" @bind-Value="_settings.CheckInterval" Label="Loop Update Interval (ms)" Class="mb-3" />
-				</MudItem>
-				<MudItem xs="12" md="6">
-					<MudText Typo="Typo.h6" Class="mb-3">Device Info</MudText>
-					<MudTextField @bind-Value="_settings.DeviceName" Label="Device Name" Class="mb-3" />
-					<MudTextField @bind-Value="_settings.DeviceDescription" Label="Device Description" Class="mb-3" />
-					<MudNumericField T="int" @bind-Value="_settings.AltAzTrackingUpdateInterval" Label="Alt-Az Update Interval (ms)" Class="mb-3" />
-					<MudNumericField T="int" @bind-Value="_settings.PolarLedLevel" Label="Polar LED Level"
-									 HelperText="-1 to disable, 0–255 for brightness" Class="mb-3" />
-				</MudItem>
-			</MudGrid>
-		</MudTabPanel>
-
-	</MudTabs>
-
-	<MudDivider Class="my-3" />
-	<MudStack Row="true" Spacing="2" Class="pb-3" AlignItems="AlignItems.Center">
-		<MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
-				   Disabled="_saving" StartIcon="@Icons.Material.Filled.Save">
-			@if (_saving) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" /> }
-			Save Settings
-		</MudButton>
-		<MudButton Variant="Variant.Filled" Color="Color.Info" StartIcon="@Icons.Material.Filled.Sync"
-				   OnClick="ReloadSettings">
-			Reload
-		</MudButton>
-		<MudText Typo="Typo.caption" Color="Color.Secondary" Class="ms-auto">
-			@SettingsService.GetDeviceSettingsPath(DeviceNumber)
-		</MudText>
-	</MudStack>
-</EditForm>
+@if (ASCOM.Alpaca.DeviceManager.Telescopes.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">No mount devices registered.</MudAlert>
+}
+else
+{
+    <MudTabs Rounded="true" Elevation="1" Class="gs-tabs-no-transform"
+             ActivePanelIndex="@_activeDeviceTabIndex"
+             ActivePanelIndexChanged="OnDeviceTabChanged">
+    @foreach (var device in ASCOM.Alpaca.DeviceManager.Telescopes.Keys.OrderBy(k => k))
+        {
+            <MudTabPanel Text="@TabLabel(device)">
+                @* Inline: reuse TelescopeSetup component/page UI for read-only view *@
+                <MudGrid>
+                    <MudItem xs="12">
+                        <MudCard Class="mb-2">
+                            <MudCardContent>
+                                <TelescopeSetup InstanceID="@device" />
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="() => EditDevice(device)"
+                                           StartIcon="@Icons.Material.Filled.AccountTree">
+                                    Edit in Settings Explorer
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudTabPanel>
+        }
+    </MudTabs>
+}
 
 @code {
-    [Parameter] public int DeviceNumber { get; set; } = 0;
+    [Parameter] public int DeviceNumber { get; set; }
 
-    private SkySettings _settings = new();
-    private bool _saving;
-    private string _activeTab = "connection";
-    private string _utcOffsetString = "00:00:00";
-    private int _loadedDeviceNumber = -1;
-
-    // JSON string properties
-    private string _parkAxesJson = string.Empty;
-    private string _parkPositionsJson = string.Empty;
-    private string _hcPulseGuidesJson = string.Empty;
+    private int _activeDeviceTabIndex;
+    private List<AlpacaDevice> _alpacaDevices = [];
 
     protected override void OnInitialized()
     {
-        SettingsService.DeviceSettingsChanged += OnSettingsChanged;
+        _alpacaDevices = SettingsService.GetAlpacaDevices();
     }
 
     protected override void OnParametersSet()
     {
-        if (_loadedDeviceNumber != DeviceNumber)
-        {
-            LoadSettings();
-            _loadedDeviceNumber = DeviceNumber;
-        }
+        var keys = ASCOM.Alpaca.DeviceManager.Telescopes.Keys.OrderBy(k => k).ToList();
+        var idx = keys.IndexOf(DeviceNumber);
+        _activeDeviceTabIndex = idx >= 0 ? idx : 0;
     }
 
-    private void LoadSettings()
+    private void OnDeviceTabChanged(int index)
     {
-        _settings = SettingsService.GetDeviceSettings(DeviceNumber) ?? new SkySettings();
-        _utcOffsetString = _settings.UTCOffset.ToString(@"hh\:mm\:ss");
-        
-        // Serialize complex types to JSON strings
-        _parkAxesJson = JsonSerializer.Serialize(_settings.ParkAxes);
-        _parkPositionsJson = JsonSerializer.Serialize(_settings.ParkPositions, new JsonSerializerOptions { WriteIndented = true });
-        _hcPulseGuidesJson = JsonSerializer.Serialize(_settings.HcPulseGuides, new JsonSerializerOptions { WriteIndented = true });
+        var keys = ASCOM.Alpaca.DeviceManager.Telescopes.Keys.OrderBy(k => k).ToList();
+        if (index >= 0 && index < keys.Count)
+            NavManager.NavigateTo($"/mount-settings/{keys[index]}");
     }
 
-    private async Task SaveSettings()
+    private string TabLabel(int deviceNumber)
     {
-        _saving = true;
-
-        try
-        {
-            // Deserialize JSON strings back to complex types
-            
-            try
-            {
-                _settings.ParkAxes = JsonSerializer.Deserialize<double[]>(_parkAxesJson) ?? Array.Empty<double>();
-            }
-            catch (JsonException ex)
-            {
-                Snackbar.Add($"Invalid JSON for Park Axes: {ex.Message}", MudBlazor.Severity.Error);
-                _saving = false;
-                return;
-            }
-            
-            try
-            {
-                _settings.ParkPositions = JsonSerializer.Deserialize<List<SkySettings.ParkPosition>>(_parkPositionsJson) ?? new List<SkySettings.ParkPosition>();
-            }
-            catch (JsonException ex)
-            {
-                Snackbar.Add($"Invalid JSON for Park Positions: {ex.Message}", MudBlazor.Severity.Error);
-                _saving = false;
-                return;
-            }
-            
-            try
-            {
-                _settings.HcPulseGuides = JsonSerializer.Deserialize<List<SkySettings.HcPulseGuide>>(_hcPulseGuidesJson) ?? new List<SkySettings.HcPulseGuide>();
-            }
-            catch (JsonException ex)
-            {
-                Snackbar.Add($"Invalid JSON for Hand Controller Pulse Guides: {ex.Message}", MudBlazor.Severity.Error);
-                _saving = false;
-                return;
-            }
-            
-            await SettingsService.SaveDeviceSettingsAsync(DeviceNumber, _settings);
-            Snackbar.Add("Settings saved successfully!", MudBlazor.Severity.Success);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Error saving settings: {ex.Message}", MudBlazor.Severity.Error);
-        }
-        finally
-        {
-            _saving = false;
-        }
+        var device = _alpacaDevices.FirstOrDefault(d => d.DeviceNumber == deviceNumber);
+        return string.IsNullOrWhiteSpace(device?.DeviceName)
+            ? $"Device {deviceNumber}"
+            : device.DeviceName;
     }
 
-    private void ReloadSettings()
+    void EditDevice(int deviceNumber)
     {
-        LoadSettings();
-        Snackbar.Add("Settings reloaded", MudBlazor.Severity.Info);
+        NavManager.NavigateTo($"/settings-explorer?device={deviceNumber}&group=Mount%20Configuration");
     }
 
-    private void ParseUtcOffset()
-    {
-        if (TimeSpan.TryParse(_utcOffsetString, out var offset))
-        {
-            _settings.UTCOffset = offset;
-        }
-    }
-
-    private void OnSettingsChanged(object? sender, SkySettings newSettings)
-    {
-        if (newSettings.DeviceNumber != DeviceNumber)
-            return;
-
-        // Skip when we triggered the save ourselves — the working copy is already current.
-        // Replacing the reference would orphan bound controls and break dirty detection.
-        if (_saving) return;
-
-        _settings = newSettings;
-        _utcOffsetString = _settings.UTCOffset.ToString(@"hh\:mm\:ss");
-
-        // Update JSON strings when settings change
-        _parkAxesJson = JsonSerializer.Serialize(_settings.ParkAxes);
-        _parkPositionsJson = JsonSerializer.Serialize(_settings.ParkPositions, new JsonSerializerOptions { WriteIndented = true });
-        _hcPulseGuidesJson = JsonSerializer.Serialize(_settings.HcPulseGuides, new JsonSerializerOptions { WriteIndented = true });
-
-        InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose()
-    {
-        SettingsService.DeviceSettingsChanged -= OnSettingsChanged;
-    }
+    [Inject]
+    NavigationManager NavManager { get; set; } = default!;
 }

@@ -83,6 +83,7 @@ public partial class SettingsExplorer : IDisposable
     {
         "Optics",
         "PEC / PPEC",
+        "Performance & Tuning",
         "Hand Controller"
     };
 
@@ -126,7 +127,7 @@ public partial class SettingsExplorer : IDisposable
         ["Serial Connection"]    = "Serial port, baud rate, handshake and timeout settings.",
         ["Mount Configuration"]      = "Device identity, serial connection, equatorial coordinates, mount hardware (motor settings, encoders, backlash) and custom gearing.",
         ["Home and Park"]            = "Stored home and park axis positions.",
-        ["Limits"]                   = "Axis / slew limits, sync limits and horizontal axis limit (AltAz).",
+        ["Limits"]                   = "Axis / slew limits, sync limits, meridian / hour angle limit (GEM/Polar) and horizontal axis limit (AltAz).",
         ["Tracking & Guiding"]       = "Tracking rates and pulse guiding settings.",
         ["Observatory Configuration"] = "Latitude, longitude, elevation, UTC offset, environmental conditions and GPS.",
         ["Optics"]                   = "Aperture diameter, aperture area and focal length.",
@@ -140,13 +141,11 @@ public partial class SettingsExplorer : IDisposable
         ["Encoders"]             = "Enable or disable absolute encoder feedback.",
         ["Hand Controller"]      = "Hand controller speed, mode, flip and anti-backlash settings.",
         ["GPS"]                  = "GPS serial port and baud rate for time/location synchronisation.",
-        ["Performance & Display"]= "Display refresh interval, GOTO precision and trace logging.",
+        ["Performance & Tuning"] = "Loop update interval, GOTO precision and trace logging.",
         ["Home Position"]        = "Stored home axis positions (X/Y) and auto-home axis positions.",
         ["Park Positions"]       = "Named park position list and active park selection.",
         ["Axis / Slew Limits"]   = "Upper/lower axis limits and maximum slew rate.",
-        ["Meridian / Hour Angle Limit"] = "Hour angle tracking limit and no-sync-past-meridian for GEM/Polar mounts.",
         ["Horizontal Axis Limit"]= "Horizontal axis tracking limit for AltAz mounts.",
-        ["Pier Side"]            = "Pier-side flip settings (GEM mounts).",
         ["Alignment Mode"]       = "Mount alignment mode (AltAz, GermanPolar, Polar).",
     };
 
@@ -312,7 +311,6 @@ public partial class SettingsExplorer : IDisposable
         {
             var alignmentMode = device.AlignmentMode ?? "GermanPolar";
             var isAltAz       = alignmentMode.Equals("AltAz", StringComparison.OrdinalIgnoreCase);
-            var isGem         = !isAltAz;
 
             var deviceLeaves = new List<SettingsNode>
             {
@@ -326,24 +324,16 @@ public partial class SettingsExplorer : IDisposable
             deviceLeaves.AddRange(new[]
             {
                 DeviceLeaf(deviceNumber, "Tracking & Guiding",   Icons.Material.Filled.Speed,            "Tracking & Guiding"),
-                DeviceLeaf(deviceNumber, "Performance & Display", Icons.Material.Filled.DisplaySettings, "Performance & Display"),
                 DeviceLeaf(deviceNumber, "Home and Park",        Icons.Material.Filled.Home,             "Home and Park"),
                 DeviceLeaf(deviceNumber, "Limits",               Icons.Material.Filled.Block,            "Limits"),
             });
 
+            if (IsGroupVisible("Performance & Tuning"))
+                deviceLeaves.Add(DeviceLeaf(deviceNumber, "Performance & Tuning", Icons.Material.Filled.Loop, "Performance & Tuning"));
             if (IsGroupVisible("PEC / PPEC"))
                 deviceLeaves.Add(DeviceLeaf(deviceNumber, "PEC / PPEC", Icons.Material.Filled.Loop, "PEC / PPEC"));
             if (IsGroupVisible("Hand Controller"))
                 deviceLeaves.Add(DeviceLeaf(deviceNumber, "Hand Controller", Icons.Material.Filled.VideogameAsset, "Hand Controller"));
-
-            // Mount-type conditional leaves (Q5)
-            if (isGem)
-            {
-                deviceLeaves.Add(DeviceLeaf(deviceNumber, "Meridian / Hour Angle Limit",
-                    Icons.Material.Filled.Straighten, "Meridian / Hour Angle Limit"));
-                deviceLeaves.Add(DeviceLeaf(deviceNumber, "Pier Side",
-                    Icons.Material.Filled.SwapHoriz, "Pier Side"));
-            }
 
             nodes.Add(new SettingsNode
             {

@@ -70,20 +70,14 @@
                 case "Hand Controller":
                     <HandControllerEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
                     break;
-                case "Performance & Display":
-                    <PerformanceDisplayEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
+                case "Performance & Tuning":
+                    <PerformanceTuningEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
                     break;
                 case "Home and Park":
                     <HomeAndParkEditor Device="device" OnChanged="OnSettingChanged" />
                     break;
                 case "Limits":
                     <LimitsEditor Device="device" OnChanged="OnSettingChanged" />
-                    break;
-                case "Meridian / Hour Angle Limit":
-                    <MeridianHourAngleLimitEditor Device="device" OnChanged="OnSettingChanged" />
-                    break;
-                case "Pier Side":
-                    <PierSideEditor Device="device" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
                     break;
                 default:
                     <MudAlert Severity="Severity.Warning">No editor defined for group "@Node.GroupKey".</MudAlert>

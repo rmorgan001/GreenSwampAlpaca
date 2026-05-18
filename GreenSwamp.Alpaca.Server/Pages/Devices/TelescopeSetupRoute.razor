@@ -1,0 +1,12 @@
+﻿@page "/setup/v1/Telescope/{InstanceID:int}/setup"
+@inject NavigationManager NavManager
+
+@code {
+    [Parameter] public int InstanceID { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            NavManager.NavigateTo($"/mount-settings/{InstanceID}", replace: true);
+    }
+}
