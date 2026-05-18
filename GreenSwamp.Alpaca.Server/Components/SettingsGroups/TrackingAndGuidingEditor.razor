@@ -4,7 +4,7 @@
 
 <MudExpansionPanels MultiExpansion="true" Elevation="0">
 
-    <MudExpansionPanel Text="Tracking" Icon="@Icons.Material.Filled.Speed" IsInitiallyExpanded="true">
+    <MudExpansionPanel Text="Tracking" Icon="@Icons.Material.Filled.Speed" Expanded="true">
         <MudStack Spacing="3">
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Default tracking rate (Sidereal, Lunar, Solar, King)." Placement="Placement.Right" Arrow="true">
                 <MudTextField @bind-Value="Device!.TrackingRate" @bind-Value:after="NotifyChanged"

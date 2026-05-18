@@ -4,7 +4,7 @@
 
 <MudExpansionPanels MultiExpansion="true" Elevation="0">
 
-    <MudExpansionPanel Text="Device Information" Icon="@Icons.Material.Filled.Badge" IsInitiallyExpanded="true">
+    <MudExpansionPanel Text="Device Information" Icon="@Icons.Material.Filled.Badge" Expanded="true">
         <MudStack Spacing="3">
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable this device so it is accessible via Alpaca." Placement="Placement.Right" Arrow="true">
                 <MudCheckBox @bind-Value="Device!.Enabled" @bind-Value:after="NotifyChanged"
@@ -50,7 +50,7 @@
         </MudStack>
     </MudExpansionPanel>
 
-    <MudExpansionPanel Text="Serial Connection" Icon="@Icons.Material.Filled.Cable" IsInitiallyExpanded="true">
+    <MudExpansionPanel Text="Serial Connection" Icon="@Icons.Material.Filled.Cable" Expanded="true">
         <MudStack Spacing="3">
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Serial port name, e.g. COM3." Placement="Placement.Right" Arrow="true">
                 <MudTextField @bind-Value="Device!.Port" @bind-Value:after="NotifyChanged"

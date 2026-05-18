@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -27,10 +27,10 @@ namespace GreenSwamp.Alpaca.Settings.Models
     public class ObservatorySettings
     {
         [Range(-90, 90)]
-        public double Latitude { get; set; } = 51.21135;
+        public double Latitude { get; set; } = 51.476852;
 
         [Range(-180, 180)]
-        public double Longitude { get; set; } = -1.459816;
+        public double Longitude { get; set; } = 0.0;
 
         [Range(-500, 9000)]
         public double Elevation { get; set; } = 10.0;

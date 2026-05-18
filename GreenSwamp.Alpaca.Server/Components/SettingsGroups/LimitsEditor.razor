@@ -4,7 +4,7 @@
 
 <MudExpansionPanels MultiExpansion="true" Elevation="0">
 
-    <MudExpansionPanel Text="Axis / Slew Limits" Icon="@Icons.Material.Filled.Block" IsInitiallyExpanded="true">
+    <MudExpansionPanel Text="Axis / Slew Limits" Icon="@Icons.Material.Filled.Block" Expanded="true">
         <MudStack Spacing="3">
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Upper Dec/Alt axis limit in degrees (prevents mount from going too far north/zenith)." Placement="Placement.Right" Arrow="true">
                 <MudNumericField T="double" @bind-Value="Device!.AxisUpperLimitY" @bind-Value:after="NotifyChanged"
@@ -25,7 +25,7 @@
         </MudStack>
     </MudExpansionPanel>
 
-    <MudExpansionPanel Text="Sync Limits" Icon="@Icons.Material.Filled.SyncAlt" IsInitiallyExpanded="true">
+    <MudExpansionPanel Text="Sync Limits" Icon="@Icons.Material.Filled.SyncAlt" Expanded="true">
         <MudStack Spacing="3">
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable sync angle limit — reject syncs that would move the model by more than this angle." Placement="Placement.Right" Arrow="true">
                 <MudCheckBox @bind-Value="Device!.SyncLimitOn" @bind-Value:after="NotifyChanged"
@@ -45,7 +45,7 @@
 
     @if (!IsAltAz)
     {
-        <MudExpansionPanel Text="Meridian / Hour Angle Limit" Icon="@Icons.Material.Filled.Straighten" IsInitiallyExpanded="true">
+        <MudExpansionPanel Text="Meridian / Hour Angle Limit" Icon="@Icons.Material.Filled.Straighten" Expanded="true">
             <MudStack Spacing="3">
                 <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Hour angle at which tracking stops to prevent over-rotation (GEM/Polar)." Placement="Placement.Right" Arrow="true">
                     <MudNumericField T="double" @bind-Value="Device!.HourAngleLimit" @bind-Value:after="NotifyChanged"
@@ -57,7 +57,7 @@
 
     @if (IsAltAz)
     {
-        <MudExpansionPanel Text="Horizontal Axis Limit" Icon="@Icons.Material.Filled.Straighten" IsInitiallyExpanded="true">
+        <MudExpansionPanel Text="Horizontal Axis Limit" Icon="@Icons.Material.Filled.Straighten" Expanded="true">
             <MudStack Spacing="3">
                 <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable tracking limit on the horizontal (altitude) axis for AltAz mounts." Placement="Placement.Right" Arrow="true">
                     <MudCheckBox @bind-Value="Device!.HzLimitTracking" @bind-Value:after="NotifyChanged"

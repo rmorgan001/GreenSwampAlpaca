@@ -386,7 +386,7 @@ namespace GreenSwamp.Alpaca.Server.Controllers
         /// Observatory settings define the geographic location of the telescope site:
         /// latitude (−90 to +90°), longitude (−180 to +180°), elevation (−500 to 9000 m),
         /// and UTC offset.  If the file does not yet exist it is created from application
-        /// defaults (51.21° N, −1.46° E, 10 m, UTC+0) before being returned.
+        /// defaults (51.476852° N, 0.0° E, 10 m, UTC+0) before being returned.
         /// These values are used when creating a new device via the device-management workflow
         /// (Behaviour B1) but are not automatically propagated to existing device files.
         /// </remarks>

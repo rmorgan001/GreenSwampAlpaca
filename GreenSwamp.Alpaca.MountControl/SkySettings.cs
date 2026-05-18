@@ -65,8 +65,8 @@ namespace GreenSwamp.Alpaca.MountControl
         private PolarMode _polarMode = PolarMode.Left;
 
         // Location & Custom Gearing (11 fields)
-        private double _latitude = 51.48;
-        private double _longitude = -0.0;
+        private double _latitude = 51.476852;
+        private double _longitude = 0.0;
         private double _elevation = 0.0;
         private bool _customGearing = false;
         private int _customRa360Steps = 9024000;

@@ -4,7 +4,7 @@
 
 <MudExpansionPanels MultiExpansion="true" Elevation="0">
 
-    <MudExpansionPanel Text="Home Position" Icon="@Icons.Material.Filled.Home" IsInitiallyExpanded="true">
+    <MudExpansionPanel Text="Home Position" Icon="@Icons.Material.Filled.Home" Expanded="true">
         <MudStack Spacing="3">
             <MudText Typo="Typo.subtitle2">Home Position (axis steps)</MudText>
             <MudNumericField T="double" @bind-Value="Device!.HomeAxisX" @bind-Value:after="NotifyChanged"
@@ -19,7 +19,7 @@
         </MudStack>
     </MudExpansionPanel>
 
-    <MudExpansionPanel Text="Park Positions" Icon="@Icons.Material.Filled.LocalParking" IsInitiallyExpanded="true">
+    <MudExpansionPanel Text="Park Positions" Icon="@Icons.Material.Filled.LocalParking" Expanded="true">
         <MudStack Spacing="3">
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Name of the active park position." Placement="Placement.Right" Arrow="true">
                 <MudTextField @bind-Value="Device!.ParkName" @bind-Value:after="NotifyChanged"
