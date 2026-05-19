@@ -1,0 +1,21 @@
+﻿[Unit]
+Description=GreenSwamp Alpaca Server
+Documentation=https://github.com/Principia4834/GreenSwampAlpaca
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=greenswamp
+Group=greenswamp
+ExecStart=/opt/greenswamp/alpaca-server/GreenSwamp.Alpaca.Server
+WorkingDirectory=/opt/greenswamp/alpaca-server
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=10s
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=greenswamp-alpaca
+
+[Install]
+WantedBy=multi-user.target

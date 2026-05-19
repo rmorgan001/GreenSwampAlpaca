@@ -1,7 +1,7 @@
 ﻿# Installer Plan
 # GreenSwamp Alpaca Server — Windows MSI / Linux DEB / Raspberry Pi DEB
 
-**Last updated: 2026-05-19 13:41**
+**Last updated: 2026-05-19 14:01**
 
 ---
 
@@ -815,16 +815,16 @@ WantedBy=multi-user.target
 
 | # | Prerequisite | Owner | Status |
 |---|-------------|-------|--------|
-| P-1 | `Directory.Build.props` created at solution root with `<Version>0.0.0</Version>` | Dev | ⬜ |
-| P-2 | `release.yml` created in `.github/workflows/` (replaces `publish.yml`) | Dev | ⬜ |
+| P-1 | `Directory.Build.props` created at solution root with `<Version>0.0.0</Version>` | Dev | ✅ |
+| P-2 | `release.yml` created in `.github/workflows/` (replaces `publish.yml`) | Dev | ✅ |
 | P-3 | Self-signed PFX created locally and added as GitHub secrets `CODESIGN_PFX_B64` + `CODESIGN_PFX_PASSWORD` | Dev | ⬜ |
-| P-4 | `Installer\Windows\GreenSwamp.Alpaca.Installer.wixproj` created (content in § 4) | Dev | ⬜ |
-| P-5 | `Installer\Windows\Product.wxs` created (content in § 4) | Dev | ⬜ |
-| P-6 | `Installer\Windows\Resources\License.rtf` authored (plain text acceptable for v1) | Dev | ⬜ |
-| P-7 | `Installer\Windows\Resources\banner.bmp` (493×58 px) and `dialog.bmp` (493×312 px) created | Dev | ⬜ |
-| P-8 | `Installer\Linux\build-deb.sh` created (content in § 8) | Dev | ⬜ |
-| P-9 | `Installer\Linux\debian\` folder created with all four files from § 8 | Dev | ⬜ |
-| P-10 | `Installer\Linux\systemd\greenswamp-alpaca.service` created (content in § 8) | Dev | ⬜ |
+| P-4 | `Installer\Windows\GreenSwamp.Alpaca.Installer.wixproj` created (content in § 4) | Dev | ✅ |
+| P-5 | `Installer\Windows\Product.wxs` created (content in § 4) | Dev | ✅ |
+| P-6 | `Installer\Windows\Resources\License.rtf` authored (plain text acceptable for v1) | Dev | ✅ |
+| P-7 | `Installer\Windows\Resources\banner.bmp` (493×58 px) and `dialog.bmp` (493×312 px) created | Dev | ✅ |
+| P-8 | `Installer\Linux\build-deb.sh` created (content in § 8) | Dev | ✅ |
+| P-9 | `Installer\Linux\debian\` folder created with all four files from § 8 | Dev | ✅ |
+| P-10 | `Installer\Linux\systemd\greenswamp-alpaca.service` created (content in § 8) | Dev | ✅ |
 | P-11 | `fakeroot` + `dpkg-dev` on `ubuntu-latest` — pre-installed by default | CI | ✅ |
 | P-12 | `GITHUB_TOKEN` `contents: write` permission — set in `release.yml` (§ 7) | CI | ✅ |
 | P-13 | WiX v5 installed by workflow step — no pre-installation needed | CI | ✅ |

@@ -1,0 +1,16 @@
+﻿#!/bin/bash
+set -e
+
+# Create dedicated system user; add to dialout group for serial port access
+adduser --system --no-create-home --group greenswamp 2>/dev/null || true
+usermod -aG dialout greenswamp 2>/dev/null || true
+
+# Enable and start the systemd service
+if command -v systemctl >/dev/null 2>&1; then
+	systemctl daemon-reload
+	systemctl enable greenswamp-alpaca.service
+	systemctl start  greenswamp-alpaca.service || true
+fi
+
+echo "GreenSwamp Alpaca Server installed successfully."
+echo "Management UI: http://localhost:31426"

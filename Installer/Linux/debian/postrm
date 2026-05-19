@@ -1,0 +1,13 @@
+﻿#!/bin/bash
+set -e
+
+if command -v systemctl >/dev/null 2>&1; then
+	systemctl daemon-reload 2>/dev/null || true
+fi
+
+# On purge: remove application files and system user
+if [ "$1" = "purge" ]; then
+	rm -rf /opt/greenswamp
+	rm -rf /var/log/greenswamp
+	deluser --system greenswamp 2>/dev/null || true
+fi

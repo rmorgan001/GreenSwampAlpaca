@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="WixToolset.Sdk/5.0.0">
+  <PropertyGroup>
+	<!-- Platform is injected by CI: win-x64 or win-x86 -->
+	<Platform Condition="'$(Platform)'==''">win-x64</Platform>
+	<OutputName>GreenSwamp.Alpaca.Server_$(Version)_$(Platform)</OutputName>
+	<InstallerPlatform Condition="'$(Platform)'=='win-x64'">x64</InstallerPlatform>
+	<InstallerPlatform Condition="'$(Platform)'=='win-x86'">x86</InstallerPlatform>
+	<!--
+	  PublishDir points at the dotnet publish output folder.
+	  CI passes this via -p:PublishDir=...
+	  Local default is relative to this project file location.
+	-->
+	<PublishDir Condition="'$(PublishDir)'==''">..\..\publish\$(Platform)\</PublishDir>
+  </PropertyGroup>
+  <ItemGroup>
+	<WixExtension Include="WixToolset.UI.wixext" />
+	<WixExtension Include="WixToolset.Firewall.wixext" />
+	<WixExtension Include="WixToolset.Util.wixext" />
+  </ItemGroup>
+</Project>

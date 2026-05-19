@@ -1,0 +1,204 @@
+﻿name: Release — Build, Package, Publish
+
+on:
+  push:
+    branches: [ master ]
+    tags:     [ 'v*' ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Derive a clean SemVer from the git tag (or use 0.0.0 for dev builds)
+  # ─────────────────────────────────────────────────────────────────────
+  version:
+    name: Derive version
+    runs-on: ubuntu-latest
+    outputs:
+      app_version: ${{ steps.semver.outputs.version }}
+    steps:
+      - name: Extract SemVer from tag
+        id: semver
+        shell: pwsh
+        run: |
+          $ref = "${{ github.ref_name }}"
+          # Match MAJOR.MINOR.PATCH, optionally preceded by 'v'
+          $ver = if ($ref -match '^v?(\d+\.\d+\.\d+)') { $Matches[1] } else { "0.0.0" }
+          Write-Output "version=$ver" >> $env:GITHUB_OUTPUT
+          Write-Host "Building version: $ver"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # dotnet publish — produces self-contained single-file binary per RID
+  # ─────────────────────────────────────────────────────────────────────
+  publish:
+    name: Publish (${{ matrix.rid }})
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [ win-x64, win-x86, linux-x64, linux-arm64, linux-arm ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore GreenSwampAlpaca.sln
+
+      - name: Publish ${{ matrix.rid }}
+        run: >
+          dotnet publish GreenSwamp.Alpaca.Server/GreenSwamp.Alpaca.Server.csproj
+          -c Release
+          -r ${{ matrix.rid }}
+          --self-contained true
+          -p:PublishSingleFile=true
+          -p:PublishTrimmed=false
+          -p:Version=${{ needs.version.outputs.app_version }}
+          -o publish/${{ matrix.rid }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: greenswamp-alpaca-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}/**
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Build .deb packages for Linux x64 and Raspberry Pi (arm64 + armhf)
+  # ─────────────────────────────────────────────────────────────────────
+  build-deb:
+    name: Build DEB (${{ matrix.rid }})
+    needs: [ version, publish ]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [ linux-x64, linux-arm64, linux-arm ]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: greenswamp-alpaca-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}
+
+      - name: Install packaging tools
+        run: sudo apt-get install -y --no-install-recommends fakeroot dpkg-dev
+
+      - name: Build DEB
+        run: |
+          chmod +x Installer/Linux/build-deb.sh
+          ./Installer/Linux/build-deb.sh \
+            ${{ matrix.rid }} \
+            ${{ needs.version.outputs.app_version }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb-${{ matrix.rid }}
+          path: "*.deb"
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Build .msi packages for Windows x64 and x86
+  # ─────────────────────────────────────────────────────────────────────
+  build-msi:
+    name: Build MSI (${{ matrix.rid }})
+    needs: [ version, publish ]
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # UpgradeCode is the permanent GUID for each RID's product family
+          - rid: win-x64
+            upgrade_code: "0BFB5E9F-4475-4BFA-A8A5-1F26CD982B1C"
+          - rid: win-x86
+            upgrade_code: "D910192D-77C9-499E-80E9-10428B7FB80F"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: greenswamp-alpaca-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}
+
+      - name: Install WiX v5 and extensions
+        run: |
+          dotnet tool install --global wix --version 5.0.0
+          wix extension add WixToolset.UI.wixext/5.0.0
+          wix extension add WixToolset.Firewall.wixext/5.0.0
+          wix extension add WixToolset.Util.wixext/5.0.0
+
+      - name: Build MSI
+        run: >
+          dotnet build Installer/Windows/GreenSwamp.Alpaca.Installer.wixproj
+          -c Release
+          -p:Platform=${{ matrix.rid }}
+          -p:Version=${{ needs.version.outputs.app_version }}
+          -p:UpgradeCode=${{ matrix.upgrade_code }}
+          "-p:PublishDir=${{ github.workspace }}/publish/${{ matrix.rid }}/"
+
+      - name: Restore signing certificate
+        shell: pwsh
+        run: |
+          $bytes = [Convert]::FromBase64String("${{ secrets.CODESIGN_PFX_B64 }}")
+          [IO.File]::WriteAllBytes("sign.pfx", $bytes)
+
+      - name: Sign MSI with self-signed certificate
+        shell: pwsh
+        run: |
+          $pwd = ConvertTo-SecureString "${{ secrets.CODESIGN_PFX_PASSWORD }}" -Force -AsPlainText
+          Import-PfxCertificate -FilePath sign.pfx -CertStoreLocation Cert:\CurrentUser\My -Password $pwd | Out-Null
+          $thumb = (Get-PfxCertificate sign.pfx).Thumbprint
+          $msi = Get-ChildItem -Recurse -Filter "*.msi" | Select-Object -First 1 -ExpandProperty FullName
+          signtool sign /fd SHA256 /sha1 $thumb /tr http://timestamp.digicert.com /td SHA256 $msi
+          Write-Host "Signed: $msi"
+
+      - name: Clean up certificate file
+        if: always()
+        shell: pwsh
+        run: Remove-Item sign.pfx -ErrorAction SilentlyContinue
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: msi-${{ matrix.rid }}
+          path: "**/*.msi"
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Create GitHub Release and attach all installer artefacts
+  # Only runs on tag pushes (not on branch pushes or PRs)
+  # ─────────────────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [ version, build-deb, build-msi ]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: List release assets (diagnostic)
+        run: find release-assets -type f | sort
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "GreenSwamp Alpaca Server ${{ needs.version.outputs.app_version }}"
+          tag_name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            release-assets/**/*.msi
+            release-assets/**/*.deb

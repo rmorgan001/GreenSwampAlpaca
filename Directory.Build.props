@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Directory.Build.props — GreenSwamp Alpaca solution root
+  ========================================================
+  Used for LOCAL developer builds only.
+  CI (GitHub Actions release.yml) overrides Version via -p:Version=<tag>
+  e.g. git tag v1.2.3 && git push origin v1.2.3 → Version=1.2.3
+-->
+<Project>
+  <PropertyGroup>
+	<Version>0.0.0</Version>
+	<AssemblyVersion>$(Version).0</AssemblyVersion>
+	<FileVersion>$(Version).0</FileVersion>
+	<InformationalVersion>$(Version)</InformationalVersion>
+  </PropertyGroup>
+</Project>
