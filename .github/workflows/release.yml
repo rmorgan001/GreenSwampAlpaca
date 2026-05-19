@@ -1,5 +1,10 @@
 ﻿name: Release — Build, Package, Publish
 
+# MinVer reads the nearest git tag from the full commit history to derive
+# Version automatically — no manual version job needed.
+# Tag format:  v<MAJOR>.<MINOR>.<PATCH>  (e.g. git tag v1.0.0)
+# Untagged commits get a pre-release suffix:  1.0.0-dev.3
+
 on:
   push:
     branches: [ master ]
@@ -11,30 +16,12 @@ on:
 jobs:
 
   # ─────────────────────────────────────────────────────────────────────
-  # Derive a clean SemVer from the git tag (or use 0.0.0 for dev builds)
-  # ─────────────────────────────────────────────────────────────────────
-  version:
-    name: Derive version
-    runs-on: ubuntu-latest
-    outputs:
-      app_version: ${{ steps.semver.outputs.version }}
-    steps:
-      - name: Extract SemVer from tag
-        id: semver
-        shell: pwsh
-        run: |
-          $ref = "${{ github.ref_name }}"
-          # Match MAJOR.MINOR.PATCH, optionally preceded by 'v'
-          $ver = if ($ref -match '^v?(\d+\.\d+\.\d+)') { $Matches[1] } else { "0.0.0" }
-          Write-Output "version=$ver" >> $env:GITHUB_OUTPUT
-          Write-Host "Building version: $ver"
-
-  # ─────────────────────────────────────────────────────────────────────
   # dotnet publish — produces self-contained single-file binary per RID
+  # MinVer is a build-time package; it resolves Version during dotnet publish.
+  # fetch-depth: 0 is REQUIRED so MinVer can walk back to the nearest tag.
   # ─────────────────────────────────────────────────────────────────────
   publish:
     name: Publish (${{ matrix.rid }})
-    needs: version
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -42,6 +29,8 @@ jobs:
         rid: [ win-x64, win-x86, linux-x64, linux-arm64, linux-arm ]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # MinVer needs full history to find the nearest tag
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -58,8 +47,17 @@ jobs:
           --self-contained true
           -p:PublishSingleFile=true
           -p:PublishTrimmed=false
-          -p:Version=${{ needs.version.outputs.app_version }}
           -o publish/${{ matrix.rid }}
+
+      # Ask MSBuild what version MinVer resolved — works reliably on .NET 8 SDK
+      - name: Read version from MinVer
+        id: minver
+        run: |
+          VER=$(dotnet msbuild GreenSwamp.Alpaca.Server/GreenSwamp.Alpaca.Server.csproj \
+            -getProperty:Version --nologo -v:q 2>/dev/null | tr -d '[:space:]')
+          VER="${VER:-0.0.0-dev}"
+          echo "app_version=$VER" >> $GITHUB_OUTPUT
+          echo "MinVer resolved version: $VER"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -67,12 +65,15 @@ jobs:
           path: publish/${{ matrix.rid }}/**
           retention-days: 7
 
+    outputs:
+      app_version: ${{ steps.minver.outputs.app_version }}
+
   # ─────────────────────────────────────────────────────────────────────
   # Build .deb packages for Linux x64 and Raspberry Pi (arm64 + armhf)
   # ─────────────────────────────────────────────────────────────────────
   build-deb:
     name: Build DEB (${{ matrix.rid }})
-    needs: [ version, publish ]
+    needs: publish
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -80,6 +81,8 @@ jobs:
         rid: [ linux-x64, linux-arm64, linux-arm ]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/download-artifact@v4
         with:
@@ -94,7 +97,7 @@ jobs:
           chmod +x Installer/Linux/build-deb.sh
           ./Installer/Linux/build-deb.sh \
             ${{ matrix.rid }} \
-            ${{ needs.version.outputs.app_version }}
+            ${{ needs.publish.outputs.app_version }}
 
       - uses: actions/upload-artifact@v4
         with:
@@ -104,10 +107,12 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────────────
   # Build .msi packages for Windows x64 and x86
+  # MinVer is invoked again here during dotnet build of the WiX project;
+  # fetch-depth: 0 ensures it resolves the same tag as the publish job.
   # ─────────────────────────────────────────────────────────────────────
   build-msi:
     name: Build MSI (${{ matrix.rid }})
-    needs: [ version, publish ]
+    needs: publish
     runs-on: windows-latest
     strategy:
       fail-fast: false
@@ -120,6 +125,8 @@ jobs:
             upgrade_code: "D910192D-77C9-499E-80E9-10428B7FB80F"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # MinVer needs full history
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -142,7 +149,6 @@ jobs:
           dotnet build Installer/Windows/GreenSwamp.Alpaca.Installer.wixproj
           -c Release
           -p:Platform=${{ matrix.rid }}
-          -p:Version=${{ needs.version.outputs.app_version }}
           -p:UpgradeCode=${{ matrix.upgrade_code }}
           "-p:PublishDir=${{ github.workspace }}/publish/${{ matrix.rid }}/"
 
@@ -179,7 +185,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────
   release:
     name: Create GitHub Release
-    needs: [ version, build-deb, build-msi ]
+    needs: [ build-deb, build-msi ]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     permissions:
@@ -196,7 +202,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "GreenSwamp Alpaca Server ${{ needs.version.outputs.app_version }}"
+          name: "GreenSwamp Alpaca Server ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           files: |
