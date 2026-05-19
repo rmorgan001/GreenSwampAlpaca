@@ -17,6 +17,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 
 namespace GreenSwamp.Alpaca.Principles
 {
@@ -52,20 +53,26 @@ namespace GreenSwamp.Alpaca.Principles
         [DllImport("Kernel32.dll")]
         internal static extern bool QueryPerformanceFrequency(out long lpFrequency);
 
+        [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
         private static extern bool SetForegroundWindow(IntPtr handle);
 
+        [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
         public static extern bool ShowWindowAsync(HandleRef handle, int nCmdShow);
 
+        [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
         private static extern bool IsIconic(IntPtr handle);
 
         /// <summary>
-        /// Bring a window to the top most even if it is minimized
+        /// Bring a window to the top most even if it is minimized.
+        /// No-op on non-Windows platforms.
         /// </summary>
+        [SupportedOSPlatform("windows")]
         public static void SetForegroundWindow(string name)
         {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return;
             const int SW_RESTORE = 9;
             var objProcesses = Process.GetProcessesByName(name);
             if (objProcesses.Length <= 0) { return; }
