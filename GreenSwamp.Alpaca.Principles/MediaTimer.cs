@@ -39,13 +39,16 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
+using System.Runtime.Versioning;
 
 namespace GreenSwamp.Alpaca.Principles
 {
     /// <summary>
     /// Represents the Windows multimedia timer.
+    /// Use <see cref="MediaTimerFactory.Create"/> to obtain the correct implementation for the current OS.
     /// </summary>
-    public sealed class MediaTimer : IComponent
+    [SupportedOSPlatform("windows")]
+    public sealed class MediaTimer : IComponent, IMediaTimer
     {
         internal delegate void TimeProc(int id, int msg, int user, int param1, int param2); //timer event occurs
         private delegate void EventRaiser(EventArgs e); // methods that raise events.
@@ -81,7 +84,8 @@ namespace GreenSwamp.Alpaca.Principles
         /// </summary>
         static MediaTimer()
         {
-            NativeMethods.TimeGetDevCaps(ref _caps, Marshal.SizeOf(_caps)); // Get multimedia timer capabilities.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                NativeMethods.TimeGetDevCaps(ref _caps, Marshal.SizeOf(_caps)); // Get multimedia timer capabilities.
         }
 
         /// <summary>

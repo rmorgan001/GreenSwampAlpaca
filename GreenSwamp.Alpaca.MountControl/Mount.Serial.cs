@@ -648,7 +648,9 @@ namespace GreenSwamp.Alpaca.MountControl
                 // Event to get mount positions and update UI
                 // Ensure CheckInterval is valid for MediaTimer (must be > 0)
                 var checkInterval = Settings.CheckInterval > 0 ? Settings.CheckInterval : 2000;
-                _mediaTimer = new MediaTimer { Period = checkInterval, Resolution = 5 };
+                _mediaTimer = MediaTimerFactory.Create();
+                _mediaTimer.Period = checkInterval;
+                _mediaTimer.Resolution = 5;
                 _mediaTimer.Tick += OnUpdateServerEvent;
                 _mediaTimer.Start();
             }

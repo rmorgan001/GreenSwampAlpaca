@@ -46,8 +46,8 @@ namespace GreenSwamp.Alpaca.MountControl
         public readonly SkyPredictor SkyPredictor;
 
         // State fields
-        private MediaTimer? _mediaTimer;
-        private MediaTimer? _altAzTrackingTimer;
+        private IMediaTimer? _mediaTimer;
+        private IMediaTimer? _altAzTrackingTimer;
         internal TrackingCommandProcessor? _trackingProcessor;
         private Vector _homeAxes;
         private Vector _appAxes;
@@ -1351,7 +1351,8 @@ namespace GreenSwamp.Alpaca.MountControl
         internal void StartAltAzTrackingTimerInternal()
         {
             StopAltAzTrackingTimerInternal();
-            _altAzTrackingTimer = new MediaTimer { Period = Settings.AltAzTrackingUpdateInterval };
+            _altAzTrackingTimer = MediaTimerFactory.Create();
+            _altAzTrackingTimer.Period = Settings.AltAzTrackingUpdateInterval;
             _altAzTrackingTimer.Tick += AltAzTrackingTimerTick;
             _altAzTrackingTimer.Start();
         }
