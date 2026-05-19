@@ -43,28 +43,5 @@ namespace GreenSwamp.Alpaca.MountControl
             ErrorCode = err;
         }
 
-        // ToDo - check if this is needed in .NET 5+
-        // [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
-        // Constructor should be protected for unsealed classes, private for sealed classes.
-        // (The Serializer invokes this constructor through reflection, so it can be private)
-        //protected SkyServerException(SerializationInfo info, StreamingContext context)
-        //    : base(info, context)
-        //{
-        //    Enum.TryParse("err", out ErrorCode err);
-        //    ErrorCode = err;
-        //}
-
-        // ToDo - check if this is needed in .NET 5+
-        // [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
-        //public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        //{
-        //    if (info == null)
-        //    {
-        //        throw new ArgumentNullException(nameof(info));
-        //    }
-        //    info.AddValue("err", ErrorCode.ToString());
-        //    // MUST call through to the base class to let it save its own state
-        //    base.GetObjectData(info, context);
-        //}
     }
 }

@@ -631,7 +631,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                     });
                 }
 
-                // Q2: Warn if no corresponding device file (no auto-repair in v1)
+                // Warn if no corresponding device file (no auto-repair in v1)
                 if (!DeviceSettingsExist(d.DeviceNumber))
                 {
                     result.Warnings.Add(new ValidationError
@@ -658,7 +658,6 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 // First run: seed from appsettings.json "ServerConfig" section then persist
                 var defaults = new ServerConfig();
                 _configuration.GetSection("ServerConfig").Bind(defaults);
-                // TODO: one-time migration — if ASCOM XML profile exists, copy values here before returning defaults
                 LogSafe("INFO", "appsettings.server.user.json not found — seeding from factory defaults.");
                 try
                 {

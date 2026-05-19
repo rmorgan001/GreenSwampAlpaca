@@ -39,10 +39,6 @@ namespace GreenSwamp.Alpaca.Server
 
         public static async Task Main(string[] args)
         {
-            //First fill in information for your driver in the Alpaca Configuration Class. Some of these you may want to store in a user changeable settings file.
-            //Then fill in the ToDos in this file. Each is marked with a //ToDo
-            //You shouldn't need to do anything in the Startup and Logging or Finish Building and Start Server regions
-
             // Bootstrap logger — active before the DI container is built.
             // Log level is read from the "Logging" section in appsettings.json after the host is built.
             // To get verbose output set "Logging:LogLevel:Default" to "Debug" in appsettings.json.
@@ -185,8 +181,6 @@ namespace GreenSwamp.Alpaca.Server
             Logger.LogInformation("SkySettings registered in DI container");
             Logger.LogInformation("Settings services registered: VersionedSettings, Template");
             #endregion Startup and Logging
-
-            //ToDo you can add devices here
 
             //Load the configuration — pass BootstrapConfig so AlpacaConfiguration has no ASCOM XMLProfile dependency
             DeviceManager.LoadConfiguration(new AlpacaConfiguration(BootstrapConfig));
@@ -450,7 +444,7 @@ namespace GreenSwamp.Alpaca.Server
 
             Lifetime = app.Lifetime;
 
-            //ToDo Put code here that should run at shutdown
+            //Put code here that should run at shutdown
             Lifetime.ApplicationStopping.Register(() =>
             {
                 Logger.LogInformation($"{ServerName} Stopping");
@@ -470,7 +464,7 @@ namespace GreenSwamp.Alpaca.Server
         {
             ProcessStartInfo psi = new()
             {
-                FileName = string.Format("http://localhost:{0}", port),
+                FileName = $"http://localhost:{port}",
                 UseShellExecute = true
             };
             Process.Start(psi);

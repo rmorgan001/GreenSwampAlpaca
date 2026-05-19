@@ -67,7 +67,7 @@ planetarium, imaging, or automation application can connect to them over a stand
 | **Logging** | Configurable real-time monitor with session and file logging |
 | **Settings health** | Automatic validation and repair of the configuration file |
 
-The server runs as a Windows process and hosts a Blazor web application. Once running, you interact with it entirely through a web browser — either on the same machine (`http://localhost:31426`) or from any device on your local network when remote access is enabled.
+The server runs as a Windows process and hosts a Blazor web application. Once running, you interact with it entirely through a web browser — either on the same machine (`http://localhost:31416`) or from any device on your local network when remote access is enabled.
 
 ---
 
@@ -124,10 +124,10 @@ On first launch the server creates a default configuration containing a single *
 
 | | Value |
 |---|---|
-| Default Alpaca port | **31426** |
-| Local UI URL | `http://localhost:31426` |
-| Alpaca base URL | `http://localhost:31426/api/v1/telescope/{deviceNumber}/` |
-| Setup redirect (legacy) | `http://localhost:31426/setup/v1/Telescope/{deviceNumber}/setup` → redirects to Mount Status |
+| Default Alpaca port | **31416** |
+| Local UI URL | `http://localhost:31416` |
+| Alpaca base URL | `http://localhost:31416/api/v1/telescope/{deviceNumber}/` |
+| Setup redirect (legacy) | `http://localhost:31416/setup/v1/Telescope/{deviceNumber}/setup` → redirects to Mount Status |
 
 The port can be changed in **Alpaca Settings** → Network. A server restart is required for a port change to take effect.
 
@@ -566,14 +566,14 @@ to connect via the Alpaca Chooser in the ASCOM Platform.
 ### The browser does not open automatically on startup
 
 Enable **Auto-start Browser** in Alpaca Settings → UI Options, or navigate manually to
-`http://localhost:31426`.
+`http://localhost:31416`.
 
 ### An ASCOM client cannot find the server via discovery
 
 - Ensure **Allow Discovery** is checked in Alpaca Settings → Network.
 - If the client is on the same machine, ensure **Allow Remote Access** is off (localhost only)
   or on (all interfaces) as appropriate.
-- Check that no firewall is blocking UDP port 32227 (Alpaca discovery) or TCP port 31426.
+- Check that no firewall is blocking UDP port 32227 (Alpaca discovery) or TCP port 31416.
 
 ### A SkyWatcher mount does not connect
 
