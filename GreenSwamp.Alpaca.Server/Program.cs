@@ -83,15 +83,16 @@ namespace GreenSwamp.Alpaca.Server
                 }
                 else
                 {
-                    Assembly? entryAssembly = Assembly.GetEntryAssembly();
-                    if (entryAssembly != null)
+                    // Environment.ProcessPath works correctly for single-file published executables;
+                    // Assembly.Location returns "" in that scenario, causing false-positive detection.
+                    var processName = Path.GetFileNameWithoutExtension(
+                        Environment.ProcessPath ?? Assembly.GetEntryAssembly()?.GetName().Name ?? string.Empty);
+                    if (!string.IsNullOrWhiteSpace(processName) &&
+                        Process.GetProcessesByName(processName).Length > 1)
                     {
-                        if(Process.GetProcessesByName(entryAssembly.Location).Length > 1)
-                        {
-                            Logger.LogInformation("Detected driver already running, starting web browser on IP and Port");
-                            StartBrowser(BootstrapConfig.ServerPort);
-                            return;
-                        }
+                        Logger.LogInformation("Detected driver already running, starting web browser on IP and Port");
+                        StartBrowser(BootstrapConfig.ServerPort);
+                        return;
                     }
                 }
             }
