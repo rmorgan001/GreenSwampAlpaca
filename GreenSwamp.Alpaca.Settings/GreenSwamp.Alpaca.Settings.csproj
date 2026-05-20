@@ -39,4 +39,8 @@
     <EmbeddedResource Include="Templates\settings-override.schema.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Update="MinVer" Version="7.0.0" />
+  </ItemGroup>
+
 </Project>
