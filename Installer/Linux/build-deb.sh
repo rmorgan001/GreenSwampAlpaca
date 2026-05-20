@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env bash
+#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # build-deb.sh — Build a .deb package for one RID
 # -----------------------------------------------------------------------------
@@ -21,9 +21,9 @@ case "$RID" in
   linux-arm64) DEB_ARCH="arm64"  ;;
   linux-arm)   DEB_ARCH="armhf"  ;;
   *)
-	echo "ERROR: Unknown RID '$RID'. Expected linux-x64, linux-arm64, or linux-arm." >&2
-	exit 1
-	;;
+    echo "ERROR: Unknown RID '$RID'. Expected linux-x64, linux-arm64, or linux-arm." >&2
+    exit 1
+    ;;
 esac
 
 PKG_NAME="greenswamp-alpaca-server_${VERSION}_${DEB_ARCH}"

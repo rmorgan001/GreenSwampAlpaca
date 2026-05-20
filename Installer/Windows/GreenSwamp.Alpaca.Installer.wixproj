@@ -12,10 +12,17 @@
 	  Local default is relative to this project file location.
 	-->
 	<PublishDir Condition="'$(PublishDir)'==''">..\..\publish\$(Platform)\</PublishDir>
+
+	<!-- MinVer: derive version from git tags; tag format is v<MAJOR>.<MINOR>.<PATCH> -->
+	<MinVerTagPrefix>v</MinVerTagPrefix>
+	<MinVerDefaultPreReleaseIdentifiers>dev</MinVerDefaultPreReleaseIdentifiers>
   </PropertyGroup>
+
+  <!-- NuGet package dependencies: MinVer for auto versioning + WiX extensions -->
   <ItemGroup>
-	<WixExtension Include="WixToolset.UI.wixext" />
-	<WixExtension Include="WixToolset.Firewall.wixext" />
-	<WixExtension Include="WixToolset.Util.wixext" />
+	<PackageReference Include="MinVer" Version="5.*" PrivateAssets="All" />
+	<PackageReference Include="WixToolset.UI.wixext" Version="5.0.*" />
+	<PackageReference Include="WixToolset.Firewall.wixext" Version="5.0.*" />
+	<PackageReference Include="WixToolset.Util.wixext" Version="5.0.*" />
   </ItemGroup>
 </Project>
