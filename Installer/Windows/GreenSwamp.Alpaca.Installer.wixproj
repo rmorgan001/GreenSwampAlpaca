@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="WixToolset.Sdk/5.0.0">
   <PropertyGroup>
+	<!-- SDK-style project marker — required by MinVer -->
+	<TargetFramework>net10.0</TargetFramework>
+
 	<!-- Platform is injected by CI: win-x64 or win-x86 -->
 	<Platform Condition="'$(Platform)'==''">win-x64</Platform>
 	<OutputName>GreenSwamp.Alpaca.Server_$(Version)_$(Platform)</OutputName>
