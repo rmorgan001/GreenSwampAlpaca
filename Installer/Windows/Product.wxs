@@ -1,14 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  $(Version), $(UpgradeCode), and $(PublishDir) are WiX preprocessor variables.
+  They are defined via <DefineConstants> in GreenSwamp.Alpaca.Installer.wixproj
+  so that CI can override them with -p:UpgradeCode=... -p:PublishDir=... etc.
+-->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
 	 xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
 	 xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
-  <!--
-	UpgradeCode is injected at build time by CI via -p:UpgradeCode=...
-	  win-x64: 0BFB5E9F-4475-4BFA-A8A5-1F26CD982B1C
-	  win-x86: D910192D-77C9-499E-80E9-10428B7FB80F
-	ProductCode is set to * so WiX auto-generates a new GUID for each version.
-  -->
   <Package Name="GreenSwamp Alpaca Server"
 		   Manufacturer="Principia4834"
 		   Version="$(Version)"
@@ -19,11 +18,23 @@
 
 	<MediaTemplate EmbedCab="true" />
 
-	<!-- Installer UI -->
+	<!-- Installer UI
+		 In WiX v5, the built-in dialog sets are arch-specific.
+		 The file-scoped "WixUI_Minimal" cannot be referenced directly (WIX0094).
+		 Use the public arch-qualified variant matching the installer platform.
+	-->
 	<WixVariable Id="WixUILicenseRtf" Value="Resources\License.rtf" />
 	<WixVariable Id="WixUIBannerBmp"  Value="Resources\banner.bmp" />
 	<WixVariable Id="WixUIDialogBmp"  Value="Resources\dialog.bmp" />
-	<UIRef Id="WixUI_Minimal" />
+	<?if $(sys.BUILDARCH) = x64 ?>
+	<UIRef Id="WixUI_Minimal_X64" />
+	<?elseif $(sys.BUILDARCH) = x86 ?>
+	<UIRef Id="WixUI_Minimal_X86" />
+	<?elseif $(sys.BUILDARCH) = arm64 ?>
+	<UIRef Id="WixUI_Minimal_A64" />
+	<?else ?>
+	<UIRef Id="WixUI_Minimal_X64" />
+	<?endif ?>
 
 	<!-- Install directory structure -->
 	<StandardDirectory Id="ProgramFiles6432Folder">
@@ -45,7 +56,8 @@
 	</ComponentGroup>
 
 	<!-- Windows Service registration -->
-	<Component Id="ServiceComponent" Directory="INSTALLDIR" Guid="*">
+	<!-- Explicit GUID required: no file KeyPath (WIX0230) -->
+	<Component Id="ServiceComponent" Directory="INSTALLDIR" Guid="818DF99D-267F-4FFA-B3A7-E5F578372A8A">
 	  <util:ServiceConfig
 		ServiceName="GreenSwampAlpacaServer"
 		FirstFailureActionType="restart"
@@ -72,7 +84,8 @@
 	</Component>
 
 	<!-- Firewall exception for the Alpaca server port -->
-	<Component Id="FirewallComponent" Directory="INSTALLDIR" Guid="*">
+	<!-- Explicit GUID required: no file KeyPath (WIX0230) -->
+	<Component Id="FirewallComponent" Directory="INSTALLDIR" Guid="C4C0CD8D-200A-4035-9DB6-ABB9EFCBCEC3">
 	  <fw:FirewallException
 		Id="AlpacaServerFirewall"
 		Name="GreenSwamp Alpaca Server"
@@ -82,15 +95,15 @@
 		IgnoreFailure="yes" />
 	</Component>
 
-	<!-- Start-menu shortcut that opens the management UI in the default browser -->
-	<Component Id="ShortcutComponent" Directory="STARTMENUFOLDER" Guid="*">
-	  <Shortcut Id="ManagementUIShortcut"
-				Name="GreenSwamp Alpaca Server (Management UI)"
-				Description="Open the Alpaca Server web management interface"
-				Target="http://localhost:31426"
-				WorkingDirectory="INSTALLDIR" />
+	<!-- Start-menu shortcut that opens the management UI in the default browser.
+		 WiX Shortcut/@Target must be a file path, not a URL (ICE03), so we
+		 install a Windows .url internet-shortcut file instead.
+		 ICE38 requires a RegistryValue KeyPath for components in the user profile. -->
+	<Component Id="ShortcutComponent" Directory="STARTMENUFOLDER" Guid="90A54B68-991F-4BBA-886B-4CD9954C0BA5">
+	  <File Id="ManagementUIShortcutFile"
+			Name="GreenSwamp Alpaca Server.url"
+			Source="GreenSwampAlpacaServer.url" />
 	  <RemoveFolder Id="RemoveStartMenu" Directory="STARTMENUFOLDER" On="uninstall" />
-	  <!-- KeyPath registry entry is required when a shortcut component has no file -->
 	  <RegistryValue Root="HKCU"
 					 Key="Software\GreenSwamp\AlpacaServer"
 					 Name="installed"

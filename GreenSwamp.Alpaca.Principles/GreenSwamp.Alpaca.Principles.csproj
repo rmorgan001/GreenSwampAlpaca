@@ -8,6 +8,14 @@
     <AssemblyOriginatorKeyFile>Resources\ASCOM.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;CS8632;CS8603</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;CS8632;CS8603</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="ASCOM.AstrometryTools" Version="3.1.0" />
     <PackageReference Include="ASCOM.Tools" Version="3.1.0" />

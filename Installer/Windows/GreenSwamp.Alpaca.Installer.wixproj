@@ -1,29 +1,34 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="WixToolset.Sdk/5.0.0">
   <PropertyGroup>
-	<!-- SDK-style project marker — required by MinVer -->
-	<TargetFramework>net10.0</TargetFramework>
+	<!-- Version is inherited from MinVer via Directory.Build.props for the whole solution.
+		 MinVer is excluded from this project directly (see Directory.Build.props condition)
+		 but the Version property it computed is still available here.
+		 MSI requires a clean Major.Minor.Patch — strip any pre-release suffix. -->
+	<Version Condition="'$(Version)' == ''">0.0.0</Version>
+	<MsiVersion>$([System.Text.RegularExpressions.Regex]::Match($(Version), '\d+\.\d+\.\d+').Value)</MsiVersion>
+	<MsiVersion Condition="'$(MsiVersion)' == ''">0.0.0</MsiVersion>
+
+	<!-- UpgradeCode must be a stable GUID per platform family; CI passes it via -p:UpgradeCode=...
+		 The local default is the win-x64 GUID for developer convenience. -->
+	<UpgradeCode Condition="'$(UpgradeCode)' == ''">0BFB5E9F-4475-4BFA-A8A5-1F26CD982B1C</UpgradeCode>
 
 	<!-- Platform is injected by CI: win-x64 or win-x86 -->
-	<Platform Condition="'$(Platform)'==''">win-x64</Platform>
+	<Platform Condition="'$(Platform)' == ''">win-x64</Platform>
 	<OutputName>GreenSwamp.Alpaca.Server_$(Version)_$(Platform)</OutputName>
-	<InstallerPlatform Condition="'$(Platform)'=='win-x64'">x64</InstallerPlatform>
-	<InstallerPlatform Condition="'$(Platform)'=='win-x86'">x86</InstallerPlatform>
-	<!--
-	  PublishDir points at the dotnet publish output folder.
-	  CI passes this via -p:PublishDir=...
-	  Local default is relative to this project file location.
-	-->
-	<PublishDir Condition="'$(PublishDir)'==''">..\..\publish\$(Platform)\</PublishDir>
+	<InstallerPlatform Condition="'$(Platform)' == 'win-x64'">x64</InstallerPlatform>
+	<InstallerPlatform Condition="'$(Platform)' == 'win-x86'">x86</InstallerPlatform>
 
-	<!-- MinVer: derive version from git tags; tag format is v<MAJOR>.<MINOR>.<PATCH> -->
-	<MinVerTagPrefix>v</MinVerTagPrefix>
-	<MinVerDefaultPreReleaseIdentifiers>dev</MinVerDefaultPreReleaseIdentifiers>
+	<!-- PublishDir: CI passes via -p:PublishDir=...; local default resolves relative to this project -->
+	<PublishDir Condition="'$(PublishDir)' == ''">..\..\publish\$(Platform)\</PublishDir>
+
+	<!-- Pass MSBuild properties to WiX as preprocessor variables ($(Variable) syntax in .wxs files).
+		 This is the documented WiX v5 MSBuild mechanism — see https://wixtoolset.org/docs/tools/msbuild/ -->
+	<DefineConstants>Version=$(MsiVersion);UpgradeCode=$(UpgradeCode);PublishDir=$(PublishDir)</DefineConstants>
   </PropertyGroup>
 
-  <!-- NuGet package dependencies: MinVer for auto versioning + WiX extensions -->
+  <!-- WiX extensions -->
   <ItemGroup>
-	<PackageReference Include="MinVer" Version="5.*" PrivateAssets="All" />
 	<PackageReference Include="WixToolset.UI.wixext" Version="5.0.*" />
 	<PackageReference Include="WixToolset.Firewall.wixext" Version="5.0.*" />
 	<PackageReference Include="WixToolset.Util.wixext" Version="5.0.*" />
