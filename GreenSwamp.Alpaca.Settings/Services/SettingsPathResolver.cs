@@ -182,7 +182,10 @@ namespace GreenSwamp.Alpaca.Settings.Services
                           ?? "1.0.0";
 
             var plusIndex = version.IndexOf('+');
-            return plusIndex > 0 ? version[..plusIndex] : version;
+            if (plusIndex > 0) version = version[..plusIndex];
+
+            var dashIndex = version.IndexOf('-');
+            return dashIndex > 0 ? version[..dashIndex] : version;
         }
     }
 }
