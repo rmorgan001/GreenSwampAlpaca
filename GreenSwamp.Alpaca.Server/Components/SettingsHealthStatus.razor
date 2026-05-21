@@ -1,6 +1,8 @@
 ﻿@using GreenSwamp.Alpaca.Settings.Services
 @using GreenSwamp.Alpaca.Settings.Models
+@using System.Net
 @inject IVersionedSettingsService SettingsService
+@inject IHttpContextAccessor HttpContextAccessor
 
 @{
     var cardColor = _validationResult?.HasErrors == true ? Color.Error
@@ -118,7 +120,8 @@
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Info"
                            StartIcon="@Icons.Material.Filled.FolderOpen"
-                           OnClick="OpenSettingsFile">
+                           OnClick="OpenSettingsFile"
+                           Disabled="@(!_isLocalRequest || SettingsPathResolver.IsService)">
                     Open Settings Folder
                 </MudButton>
             </MudStack>
@@ -141,9 +144,14 @@
 @code {
     private ValidationResult? _validationResult;
     private bool _loading = true;
+    private bool _isLocalRequest;
 
     protected override void OnInitialized()
     {
+        var connection = HttpContextAccessor.HttpContext?.Connection;
+        _isLocalRequest = connection?.RemoteIpAddress is { } remote
+            && (IPAddress.IsLoopback(remote) || remote.Equals(connection.LocalIpAddress));
+
         ValidateSettings();
     }
 
@@ -186,29 +194,19 @@
 
     private void OpenSettingsFile()
     {
+        var directory = System.IO.Path.GetDirectoryName(SettingsService.MonitorSettingsPath);
+        if (string.IsNullOrEmpty(directory) || !System.IO.Directory.Exists(directory)) return;
+
         try
         {
-            var settingsPath = SettingsService.MonitorSettingsPath;
-            var directory = System.IO.Path.GetDirectoryName(settingsPath);
-            
-            if (!string.IsNullOrEmpty(directory) && System.IO.Directory.Exists(directory))
-            {
-                // Open the folder containing the settings file
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = directory,
-                    UseShellExecute = true,
-                    Verb = "open"
-                });
-            }
-            else
-            {
-                // Settings directory doesn't exist yet
-            }
+            var psi = OperatingSystem.IsWindows()
+                ? new System.Diagnostics.ProcessStartInfo("explorer.exe", $"\"{directory}\"")
+                : new System.Diagnostics.ProcessStartInfo { FileName = directory, UseShellExecute = true };
+            System.Diagnostics.Process.Start(psi);
         }
-        catch (Exception)
+        catch
         {
-            // Silently fail - non-critical UI operation
+            // Non-critical UI operation — silently ignore
         }
     }
 }
