@@ -18,13 +18,16 @@
 	<MediaTemplate EmbedCab="true" />
 
 	<!-- Installer UI
-		 In WiX v5, the built-in dialog sets are arch-specific.
+		 In WiX v7, the built-in dialog sets are arch-specific.
 		 The file-scoped "WixUI_Minimal" cannot be referenced directly (WIX0094).
 		 Use the public arch-qualified variant matching the installer platform.
 	-->
 	<WixVariable Id="WixUILicenseRtf" Value="Resources\License.rtf" />
 	<WixVariable Id="WixUIBannerBmp"  Value="Resources\banner.bmp" />
 	<WixVariable Id="WixUIDialogBmp"  Value="Resources\dialog.bmp" />
+	<Icon Id="greenswamp2.ico" SourceFile="Resources\greenswamp2.ico"/>
+	<Property Id="ARPPRODUCTICON" Value="greenswamp2.ico" />	
+	
 	<?if $(sys.BUILDARCH) = x64 ?>
 	<UIRef Id="WixUI_Minimal_X64" />
 	<?elseif $(sys.BUILDARCH) = x86 ?>
@@ -51,12 +54,18 @@
 	  for every file under PublishDir at build time. No manual component authoring needed.
 	-->
 	<ComponentGroup Id="ProductComponents" Directory="INSTALLDIR">
-	  <Files Include="$(PublishDir)**" />
+	  <Files Include="$(PublishDir)**">
+		<Exclude Files="$(PublishDir)GreenSwamp.Alpaca.Server.exe" />
+	  </Files>
 	</ComponentGroup>
 
 	<!-- Windows Service registration -->
 	<!-- Explicit GUID required: no file KeyPath (WIX0230) -->
 	<Component Id="ServiceComponent" Directory="INSTALLDIR" Guid="818DF99D-267F-4FFA-B3A7-E5F578372A8A">
+	  <File Id="ServiceExe"
+			Name="GreenSwamp.Alpaca.Server.exe"
+			Source="$(PublishDir)GreenSwamp.Alpaca.Server.exe"
+			KeyPath="yes" />
 	  <ServiceInstall
 		Id="GreenSwampAlpacaService"
 		Name="GreenSwampAlpacaServer"

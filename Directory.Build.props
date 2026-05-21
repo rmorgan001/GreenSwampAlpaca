@@ -25,7 +25,7 @@
 	<!-- Exclude the WiX installer project: its custom SDK is incompatible with MinVer (MINVER0001).
 		 The Version property computed by MinVer is still available to the WiX project via MSBuild
 		 because Directory.Build.props runs before the WiX SDK target evaluation. -->
-	<PackageReference Include="MinVer" Version="5.*" PrivateAssets="All"
-					  Condition="'$(MSBuildProjectName)' != 'GreenSwamp.Alpaca.Installer'" />
+	  <PackageReference Include="MinVer" Version="7.*" PrivateAssets="All"
+						Condition="'$(MSBuildProjectName)' != 'GreenSwamp.Alpaca.Installer' And '$(MSBuildProjectName)' != 'ServerInstall'" />
   </ItemGroup>
 </Project>
