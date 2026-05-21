@@ -85,25 +85,11 @@ namespace GreenSwamp.Alpaca.Settings.Models
             new() { WriteIndented = true };
 
         /// <summary>
-        /// Resolves the current assembly version string, matching the logic used by
-        /// VersionedSettingsService so bootstrap and service agree on the path.
+        /// Resolves the current assembly version string. Delegates to
+        /// <see cref="SettingsPathResolver.GetAssemblyVersion"/> so that bootstrap
+        /// and the DI service always agree on the versioned settings folder.
         /// </summary>
-        public static string GetVersion()
-        {
-            var assembly = System.Reflection.Assembly.GetEntryAssembly()
-                           ?? System.Reflection.Assembly.GetExecutingAssembly();
-
-            var attr = assembly
-                .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
-                .FirstOrDefault() as System.Reflection.AssemblyInformationalVersionAttribute;
-
-            var version = attr?.InformationalVersion
-                          ?? assembly.GetName().Version?.ToString()
-                          ?? "1.0.0";
-
-            var plusIndex = version.IndexOf('+');
-            return plusIndex > 0 ? version[..plusIndex] : version;
-        }
+        public static string GetVersion() => Services.SettingsPathResolver.GetAssemblyVersion();
 
         /// <summary>
         /// Reads appsettings.server.user.json directly from disk without the DI container.

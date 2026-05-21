@@ -140,11 +140,14 @@
                     </MudList>
                 }
 
-                <MudTooltip Inline="false" RootStyle="max-width:260px" Text="@(_isLocalRequest ? string.Empty : "Only available when browsing from the server machine")">
+                <MudTooltip Inline="false" RootStyle="max-width:280px"
+                            Text="@(!_isLocalRequest ? "Only available when browsing from the server machine"
+                                  : SettingsPathResolver.IsService ? "Cannot open Explorer when running as a Windows service"
+                                  : string.Empty)">
                     <MudButton Variant="Variant.Outlined" Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.FolderOpen"
                                OnClick="OpenSettingsFolder"
-                               Disabled="!_isLocalRequest">
+                               Disabled="@(!_isLocalRequest || SettingsPathResolver.IsService)">
                         Open Settings Folder
                     </MudButton>
                 </MudTooltip>
