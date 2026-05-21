@@ -30,7 +30,7 @@
 
   <PropertyGroup>
     <DocumentationFile>.\ASCOM.Alpaca.Razor.xml</DocumentationFile>
-    <NoWarn>1701;1702;1591</NoWarn>
+    <NoWarn>1701;1702;1591;8632</NoWarn>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>Resources\ASCOM.snk</AssemblyOriginatorKeyFile>
