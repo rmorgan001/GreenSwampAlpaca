@@ -119,9 +119,12 @@ jobs:
       matrix:
         include:
           # UpgradeCode is the permanent GUID for each RID's product family
+          # platform must be x64/x86 — WiX does not accept win-x64/win-x86 as Platform values
           - rid: win-x64
+            platform: x64
             upgrade_code: "0BFB5E9F-4475-4BFA-A8A5-1F26CD982B1C"
           - rid: win-x86
+            platform: x86
             upgrade_code: "D910192D-77C9-499E-80E9-10428B7FB80F"
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +152,7 @@ jobs:
         run: >
           dotnet build GreenSwamp.Alpaca.Installer/GreenSwamp.Alpaca.Installer.wixproj
           -c Release
-          -p:Platform=${{ matrix.rid }}
+          -p:Platform=${{ matrix.platform }}
           -p:UpgradeCode=${{ matrix.upgrade_code }}
           "-p:PublishDir=${{ github.workspace }}/publish/${{ matrix.rid }}/"
 

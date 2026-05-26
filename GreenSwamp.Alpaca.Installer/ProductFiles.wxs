@@ -84,7 +84,7 @@
         <File Source="$(var.SourceDir)\wwwroot\fonts\RobotoMono-Regular.woff2" KeyPath="yes" />
       </Component>
       <Component Directory="INSTALLDIR" Subdirectory="wwwroot\fonts">
-        <File Source="$(var.SourceDir)\wwwroot\fonts\SwampWitch.ttf" KeyPath="yes" />
+        <File Source="$(var.SourceDir)\wwwroot\fonts\SwampWitch.ttf" KeyPath="yes" DefaultLanguage="0" />
       </Component>
       <Component Directory="INSTALLDIR" Subdirectory="wwwroot\js">
         <File Source="$(var.SourceDir)\wwwroot\js\profileUtils.js.gz" KeyPath="yes" />
