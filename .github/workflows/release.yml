@@ -225,6 +225,7 @@ jobs:
           name: "GreenSwamp Alpaca Server ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             release-assets/**/*.msi
             release-assets/**/*.deb
