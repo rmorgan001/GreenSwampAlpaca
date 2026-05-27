@@ -1,6 +1,6 @@
 ﻿# Green Swamp Alpaca Server — User Guide
 
-**2026-05-18 14:46**
+**2026-05-27 08:29**
 
 ---
 
@@ -46,6 +46,7 @@
 11. [Settings Files and Persistence](#11-settings-files-and-persistence)
 12. [ASCOM Client Compatibility](#12-ascom-client-compatibility)
 13. [Troubleshooting](#13-troubleshooting)
+14. [Appendix A — File and Directory Locations](#14-appendix-a--file-and-directory-locations)
 
 ---
 
@@ -606,4 +607,194 @@ Enable **Auto-start Browser** in Alpaca Settings → UI Options, or navigate man
 
 ---
 
-*Green Swamp Alpaca Server — User Guide — 2026-05-18 14:46*
+## 14. Appendix A — File and Directory Locations
+
+This appendix lists every directory and file that the application reads or writes at runtime,
+covering both the Windows installer deployment and the Linux `.deb` package deployment.
+
+---
+
+### A.1 Application Binaries
+
+The executable, supporting assemblies, and static web assets that make up the server itself.
+
+#### Windows (MSI installer)
+
+```
+C:\Program Files\GreenSwamp\Alpaca Server\
+  GreenSwamp.Alpaca.Server.exe          ← main executable
+  *.dll                                  ← runtime assemblies
+  appsettings.json                       ← built-in default settings (read-only)
+  wwwroot\                               ← Blazor static web assets
+```
+
+The installer registers a Windows Service named **GreenSwampAlpacaServer** pointing at
+`GreenSwamp.Alpaca.Server.exe` in the directory above.
+
+#### Linux (.deb package)
+
+```
+/opt/greenswamp/alpaca-server/
+  GreenSwamp.Alpaca.Server               ← main executable (chmod +x)
+  *.dll                                  ← runtime assemblies
+  appsettings.json                       ← built-in default settings (read-only)
+  wwwroot/                               ← Blazor static web assets
+```
+
+The package installs a systemd unit at `/lib/systemd/system/greenswamp-alpaca.service`.
+The service runs as the dedicated system account **greenswamp**.
+
+---
+
+### A.2 User Configuration Files
+
+All settings that you can change through the UI are stored in a versioned sub-folder whose
+name matches the application version (e.g. `1.2.3`). The folder is created automatically on
+first run.
+
+| File | Contents |
+|---|---|
+| `appsettings.user.json` | Main settings: all telescope devices, observatory location, and most server options |
+| `appsettings.server.user.json` | Server configuration: port, network binding, authentication, identity |
+| `monitor.settings.json` | Logging filter settings: device, category, and message-type filters; log file targets |
+
+#### Interactive user — Windows
+
+```
+%AppData%\GreenSwampAlpaca\{version}\
+  appsettings.user.json
+  appsettings.server.user.json
+  monitor.settings.json
+```
+
+Typical resolved path:
+```
+C:\Users\{YourName}\AppData\Roaming\GreenSwampAlpaca\1.2.3\
+```
+
+#### Interactive user — Linux
+
+```
+~/.config/GreenSwampAlpaca/{version}/
+  appsettings.user.json
+  appsettings.server.user.json
+  monitor.settings.json
+```
+
+Typical resolved path:
+```
+/home/{yourname}/.config/GreenSwampAlpaca/1.2.3/
+```
+
+#### Windows Service (MSI installer)
+
+When running as a Windows SCM service the settings root moves to the shared-documents area
+so all Windows user accounts can share the same configuration:
+
+```
+C:\Users\Public\Documents\GreenSwampServer\{version}\
+  appsettings.user.json
+  appsettings.server.user.json
+  monitor.settings.json
+```
+
+#### Linux systemd service (.deb package)
+
+When running as the **greenswamp** system account the settings root is that account's home
+directory:
+
+```
+/home/greenswamp/GreenSwampServer/{version}/
+  appsettings.user.json
+  appsettings.server.user.json
+  monitor.settings.json
+```
+
+> **Override:** The settings root can be redirected independently of the run mode using the
+> `GREENSWAMP_SETTINGS_PATH` environment variable or the
+> `--service-settings-path=<path>` command-line argument. When either override is active
+> the log files also move into a `Logs\` sub-folder of that root (see Section A.3).
+
+> **Backup tip:** Copy the entire versioned folder to preserve a complete working
+> configuration. Restoring it to the same path will fully recover all settings.
+
+---
+
+### A.3 Log and Monitor Files
+
+Log files record session activity, errors, and detailed mount communication for
+diagnostics. All log file names include a `YYYY-MM-DD` date stamp appended before the
+extension, so a new file is created each day.
+
+| File prefix | Contents | Enabled by |
+|---|---|---|
+| `GSSessionLog` | Information, Warning, and Error entries — the primary session record | **Log Session** toggle in Monitor → Logging Control |
+| `GSErrorLog` | Warnings and errors only — a focused error-only record | Always written when monitoring is active |
+| `GSMonitorLog` | All filtered monitor entries — verbose full log | **Log Monitor** toggle in Monitor → Logging Control |
+
+#### Interactive user — Windows
+
+```
+%USERPROFILE%\Documents\GSServer\
+  GSSessionLog_YYYY-MM-DD.txt
+  GSErrorLog_YYYY-MM-DD.txt
+  GSMonitorLog_YYYY-MM-DD.txt
+```
+
+Typical resolved path:
+```
+C:\Users\{YourName}\Documents\GSServer\
+```
+
+#### Interactive user — Linux
+
+```
+~/GSServer/
+  GSSessionLog_YYYY-MM-DD.txt
+  GSErrorLog_YYYY-MM-DD.txt
+  GSMonitorLog_YYYY-MM-DD.txt
+```
+
+#### Windows Service / Linux systemd service (or path override)
+
+When a service or path override is active the log files move into a `Logs\` sub-folder of
+the settings root:
+
+**Windows service:**
+```
+C:\Users\Public\Documents\GreenSwampServer\Logs\
+  GSSessionLog_YYYY-MM-DD.txt
+  GSErrorLog_YYYY-MM-DD.txt
+  GSMonitorLog_YYYY-MM-DD.txt
+```
+
+**Linux systemd service:**
+```
+/home/greenswamp/GreenSwampServer/Logs/
+  GSSessionLog_YYYY-MM-DD.txt
+  GSErrorLog_YYYY-MM-DD.txt
+  GSMonitorLog_YYYY-MM-DD.txt
+```
+
+On Linux, systemd also captures `stdout` and `stderr` from the process and sends them
+to the journal. Use `journalctl -u greenswamp-alpaca` to view these entries.
+
+> **Custom log path:** The log directory can be redirected by setting a custom path in
+> **Settings Explorer → Logging → Logging Control → Log Path**. When the field is blank
+> the defaults described above apply.
+
+---
+
+### A.4 Summary Table
+
+| Item | Windows (interactive) | Windows (service) | Linux (interactive) | Linux (systemd service) |
+|---|---|---|---|---|
+| **Binaries** | `%ProgramFiles%\GreenSwamp\Alpaca Server\` | same | — | `/opt/greenswamp/alpaca-server/` |
+| **Config files** | `%AppData%\GreenSwampAlpaca\{ver}\` | `%PUBLIC%\Documents\GreenSwampServer\{ver}\` | `~/.config/GreenSwampAlpaca/{ver}/` | `/home/greenswamp/GreenSwampServer/{ver}/` |
+| **Log files** | `%USERPROFILE%\Documents\GSServer\` | `%PUBLIC%\Documents\GreenSwampServer\Logs\` | `~/GSServer/` | `/home/greenswamp/GreenSwampServer/Logs/` |
+| **systemd unit** | — | — | — | `/lib/systemd/system/greenswamp-alpaca.service` |
+| **Service account** | LocalSystem (SCM) | LocalSystem (SCM) | — | `greenswamp` (system user) |
+
+---
+
+*Green Swamp Alpaca Server — User Guide — 2026-05-27 08:29*

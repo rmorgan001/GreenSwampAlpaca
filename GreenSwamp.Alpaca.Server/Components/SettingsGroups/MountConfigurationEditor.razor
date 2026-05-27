@@ -5,7 +5,7 @@
 
 <MudExpansionPanels MultiExpansion="true" Elevation="0">
 
-    <MudExpansionPanel Text="Device Information" Icon="@Icons.Material.Filled.Badge" Expanded="true">
+    <MudExpansionPanel Text="Device Information" Icon="@Icons.Material.Filled.Badge" Expanded="false">
         <MudStack Spacing="3">
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Enable this device so it is accessible via Alpaca." Placement="Placement.Right" Arrow="true">
                 <MudCheckBox @bind-Value="Device!.Enabled" @bind-Value:after="NotifyChanged"
@@ -51,7 +51,7 @@
         </MudStack>
     </MudExpansionPanel>
 
-    <MudExpansionPanel Text="Serial Connection" Icon="@Icons.Material.Filled.Cable" Expanded="true">
+    <MudExpansionPanel Text="Serial Connection" Icon="@Icons.Material.Filled.Cable" Expanded="false">
         <MudStack Spacing="3">
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Select or type a serial port name (e.g. COM3 or /dev/ttyUSB0)." Placement="Placement.Right" Arrow="true">
                 @if (_availablePorts.Length > 0)

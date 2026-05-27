@@ -45,6 +45,9 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
         private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
+        // Used when reading device files — case-insensitive so any future key-casing variation never silently produces nulls.
+        private static readonly JsonSerializerOptions _jsonReadOptions = new() { PropertyNameCaseInsensitive = true };
+
         public string CurrentVersion { get; private set; }
         public string MonitorSettingsPath => Path.Combine(_currentVersionPath, "monitor.settings.user.json");
         public string AlpacaDevicesSettingsPath => Path.Combine(_currentVersionPath, "devices.alpaca.user.json");
@@ -69,6 +72,10 @@ namespace GreenSwamp.Alpaca.Settings.Services
             // Migrate legacy file names from earlier versions of the application.
             // Must run before any file read operations.
             MigrateLegacyFileNames();
+
+            // Ensure the default device file exists before anything else (e.g. discovery, DeviceManager)
+            // can attempt to read it. This is a no-op if device files already exist.
+            RunFirstRunDeviceInit();
         }
 
         // Renames pre-rename-era files to the new canonical names on first startup
@@ -134,7 +141,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
             try
             {
                 var json = File.ReadAllText(path);
-                var settings = JsonSerializer.Deserialize<SkySettings>(json);
+                var settings = JsonSerializer.Deserialize<SkySettings>(json, _jsonReadOptions);
                 if (settings == null) return null;
 
                 if (settings.DeviceNumber != deviceNumber)
@@ -155,13 +162,9 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
         public List<SkySettings> GetAllDeviceSettings()
         {
+            // First-run initialisation is now handled eagerly in the constructor;
+            // no lazy fallback needed here.
             var files = Directory.GetFiles(_currentVersionPath, "device-??.settings.json");
-
-            if (files.Length == 0)
-            {
-                RunFirstRunDeviceInit();
-                files = Directory.GetFiles(_currentVersionPath, "device-??.settings.json");
-            }
 
             var result = new List<SkySettings>();
             foreach (var file in files)
@@ -247,6 +250,11 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
         private void RunFirstRunDeviceInit()
         {
+            // No-op if device files are already present (normal startup after first run).
+            var existingFiles = Directory.GetFiles(_currentVersionPath, "device-??.settings.json");
+            if (existingFiles.Length > 0)
+                return;
+
             LogSafe("INFO", "No device files found — running first-run device initialisation from DeviceTemplates.");
 
             var devicesSection = _configuration.GetSection("Devices");
@@ -276,6 +284,19 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 {
                     var device = new SkySettings();
                     _configuration.GetSection($"DeviceTemplates:{stub.AlignmentMode}").Bind(device);
+
+                    // Guard: if IConfiguration.Bind silently failed to populate critical fields,
+                    // fall back to values from the stub or known defaults so the file is never written with nulls.
+                    if (string.IsNullOrEmpty(device.AlignmentMode))
+                    {
+                        LogSafe("WARNING", $"Device {stub.DeviceNumber}: AlignmentMode was null after template bind — using stub value '{stub.AlignmentMode}'.");
+                        device.AlignmentMode = stub.AlignmentMode;
+                    }
+                    if (string.IsNullOrEmpty(device.Mount))
+                    {
+                        LogSafe("WARNING", $"Device {stub.DeviceNumber}: Mount was null after template bind — defaulting to 'Simulator'.");
+                        device.Mount = string.IsNullOrEmpty(stub.Mount) ? "Simulator" : stub.Mount;
+                    }
 
                     device.Latitude = observatory.Latitude;
                     device.Longitude = observatory.Longitude;
