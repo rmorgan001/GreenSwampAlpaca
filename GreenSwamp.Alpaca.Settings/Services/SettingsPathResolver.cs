@@ -159,10 +159,22 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 return Path.Combine(GetSettingsRoot(), "Logs");
             }
 
-            // Interactive legacy default — mirrors the existing GsFile behaviour
-            return Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "GSServer");
+            // Interactive legacy default.
+            // NOTE: Use UserProfile (= $HOME) rather than MyDocuments on Linux.
+            // In .NET 8+, MyDocuments on Linux resolves to $HOME/Documents (XDG),
+            // not $HOME, which is a breaking change. UserProfile reliably returns
+            // $HOME on all Unix platforms so ~/GSServer is created as intended.
+            var baseFolder = OperatingSystem.IsWindows()
+                ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+            var logsRoot = Path.Combine(baseFolder, "GSServer");
+
+            // Eagerly create the directory so it is visible even before the first
+            // log entry is written (e.g. before logging flags are enabled).
+            Directory.CreateDirectory(logsRoot);
+
+            return logsRoot;
         }
 
         /// <summary>

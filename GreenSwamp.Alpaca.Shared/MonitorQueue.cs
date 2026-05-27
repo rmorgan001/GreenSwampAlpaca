@@ -462,6 +462,7 @@ namespace GreenSwamp.Alpaca.Shared
         {
             try
             {
+                if (!Directory.Exists(path)) return;
                 var files = Directory.GetFiles(path);
                 foreach (var file in files)
                 {
