@@ -270,6 +270,16 @@ namespace GreenSwamp.Alpaca.Server
                 GreenSwamp.Alpaca.Shared.Settings.Load();
                 Logger.LogInformation("Settings.Load() completed");
 
+                // Fire-and-forget environment log — written once at startup, never blocks the server
+                GreenSwamp.Alpaca.Shared.EnvironmentLog.EnvironmentHelper.LogToDefaultLocationAsync()
+                    .ContinueWith(t =>
+                    {
+                        if (t.Exception is not null)
+                            Logger.LogWarning(t.Exception, "Environment log failed");
+                        else
+                            Logger.LogInformation("Environment log written to: {Path}", t.Result ?? "(unknown)");
+                    }, System.Threading.Tasks.TaskContinuationOptions.ExecuteSynchronously);
+
                 // Populate filter checklists (now that Settings properties have values)
                 GreenSwamp.Alpaca.Shared.MonitorLog.Load_Settings();
                 Logger.LogInformation("Monitor filters loaded");
