@@ -42,6 +42,18 @@ namespace GreenSwamp.Alpaca.Mount.Commands
             queue.AddCommand(this);
         }
 
+        /// <summary>
+        /// No-enqueue overload for derived classes that set fields after base construction.
+        /// The derived constructor must call queue.AddCommand(this) as its last statement.
+        /// </summary>
+        protected CommandBase(long id)
+        {
+            Id = id;
+            CreatedUtc = Principles.HiResDateTime.UtcNow;
+            Successful = false;
+            Result = null;
+        }
+
         public void Execute(TExecutor executor)
         {
             try
@@ -66,6 +78,7 @@ namespace GreenSwamp.Alpaca.Mount.Commands
     public abstract class QueryCommand<TExecutor> : CommandBase<TExecutor>
     {
         protected QueryCommand(long id, ICommandQueue<TExecutor> queue) : base(id, queue) { }
+        protected QueryCommand(long id) : base(id) { }
 
         protected override void ExecuteInternal(TExecutor executor)
         {
@@ -84,6 +97,7 @@ namespace GreenSwamp.Alpaca.Mount.Commands
         public override dynamic Result => null;
 
         protected ActionCommand(long id, ICommandQueue<TExecutor> queue) : base(id, queue) { }
+        protected ActionCommand(long id) : base(id) { }
 
         protected override void ExecuteInternal(TExecutor executor)
         {

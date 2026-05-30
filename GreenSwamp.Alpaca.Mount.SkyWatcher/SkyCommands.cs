@@ -46,6 +46,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     public abstract class SkyQueryCommand : QueryCommand<SkyWatcher>, ISkyCommand
     {
         protected SkyQueryCommand(long id, ICommandQueue<SkyWatcher> queue) : base(id, queue) { }
+        protected SkyQueryCommand(long id) : base(id) { }
     }
 
     /// <summary>
@@ -54,6 +55,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     public abstract class SkyActionCommand : ActionCommand<SkyWatcher>, ISkyCommand
     {
         protected SkyActionCommand(long id, ICommandQueue<SkyWatcher> queue) : base(id, queue) { }
+        protected SkyActionCommand(long id) : base(id) { }
     }
 
     // Action Commands (no result returned)
@@ -61,9 +63,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly bool _on;
 
-        public SkyAllowAdvancedCommandSet(long id, ICommandQueue<SkyWatcher> queue, bool on) : base(id, queue)
+        public SkyAllowAdvancedCommandSet(long id, ICommandQueue<SkyWatcher> queue, bool on) : base(id)
         {
             _on = on;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -77,10 +80,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly long _steps;
 
-        public SkyAxisMoveSteps(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long steps) : base(id, queue)
+        public SkyAxisMoveSteps(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long steps) : base(id)
         {
             _axis = axis;
             _steps = steps;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -97,13 +101,14 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly int _backlashSteps;
         private readonly CancellationToken _token;
 
-        public SkyAxisPulse(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double guideRate, int duration, int backlashSteps, CancellationToken token) : base(id, queue)
+        public SkyAxisPulse(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double guideRate, int duration, int backlashSteps, CancellationToken token) : base(id)
         {
             _axis = axis;
             _guideRate = guideRate;
             _duration = duration;
             _backlashSteps = backlashSteps;
             _token = token;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -116,9 +121,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyAxisStop(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyAxisStop(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -131,9 +137,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyAxisStopInstant(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyAxisStopInstant(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -147,10 +154,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly double _rate;
 
-        public SkyAxisSlew(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double rate) : base(id, queue)
+        public SkyAxisSlew(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double rate) : base(id)
         {
             _axis = axis;
             _rate = rate;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -174,10 +182,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly double _position;
 
-        public SkySetAxisPosition(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double position) : base(id, queue)
+        public SkySetAxisPosition(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double position) : base(id)
         {
             _axis = axis;
             _position = position;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -191,10 +200,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly int _position;
 
-        public SkySetAxisPositionCounter(long id, ICommandQueue<SkyWatcher> queue, Axis axis, int position) : base(id, queue)
+        public SkySetAxisPositionCounter(long id, ICommandQueue<SkyWatcher> queue, Axis axis, int position) : base(id)
         {
             _axis = axis;
             _position = position;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -209,11 +219,12 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly int _func;
         private readonly int _direction;
 
-        public SkySetMotionMode(long id, ICommandQueue<SkyWatcher> queue, Axis axis, int func, int direction) : base(id, queue)
+        public SkySetMotionMode(long id, ICommandQueue<SkyWatcher> queue, Axis axis, int func, int direction) : base(id)
         {
             _axis = axis;
             _func = func;
             _direction = direction;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -226,9 +237,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyStartMotion(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyStartMotion(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -242,10 +254,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly double _targetPosition;
 
-        public SkyAxisGoToTarget(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double targetPosition) : base(id, queue)
+        public SkyAxisGoToTarget(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double targetPosition) : base(id)
         {
             _axis = axis;
             _targetPosition = targetPosition;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -258,9 +271,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly bool _on;
 
-        public SkySetAlternatingPPec(long id, ICommandQueue<SkyWatcher> queue, bool on) : base(id, queue)
+        public SkySetAlternatingPPec(long id, ICommandQueue<SkyWatcher> queue, bool on) : base(id)
         {
             _on = on;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -273,9 +287,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly bool _on;
 
-        public SkySetDecPulseToGoTo(long id, ICommandQueue<SkyWatcher> queue, bool on) : base(id, queue)
+        public SkySetDecPulseToGoTo(long id, ICommandQueue<SkyWatcher> queue, bool on) : base(id)
         {
             _on = on;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -288,9 +303,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly bool _southernHemisphere;
 
-        public SkySetSouthernHemisphere(long id, ICommandQueue<SkyWatcher> queue, bool southernHemisphere) : base(id, queue)
+        public SkySetSouthernHemisphere(long id, ICommandQueue<SkyWatcher> queue, bool southernHemisphere) : base(id)
         {
             _southernHemisphere = southernHemisphere;
+            queue.AddCommand(this);
         }
 
         public override dynamic Result => null;
@@ -306,10 +322,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly bool _on;
 
-        public SkySetEncoder(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool on) : base(id, queue)
+        public SkySetEncoder(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool on) : base(id)
         {
             _axis = axis;
             _on = on;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -322,9 +339,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly bool _on;
 
-        public SkySetMonitorPulse(long id, ICommandQueue<SkyWatcher> queue, bool on) : base(id, queue)
+        public SkySetMonitorPulse(long id, ICommandQueue<SkyWatcher> queue, bool on) : base(id)
         {
             _on = on;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -338,10 +356,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly int _duration;
         private readonly Axis _axis;
 
-        public SkySetMinPulseDuration(long id, ICommandQueue<SkyWatcher> queue, Axis axis, int duration) : base(id, queue)
+        public SkySetMinPulseDuration(long id, ICommandQueue<SkyWatcher> queue, Axis axis, int duration) : base(id)
         {
             _axis = axis;
             _duration = duration;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -362,10 +381,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly bool _on;
 
-        public SkySetPPecTrain(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool on) : base(id, queue)
+        public SkySetPPecTrain(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool on) : base(id)
         {
             _axis = axis;
             _on = on;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -379,10 +399,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly int _level;
 
-        public SkySetPolarLedLevel(long id, ICommandQueue<SkyWatcher> queue, Axis axis, int level) : base(id, queue)
+        public SkySetPolarLedLevel(long id, ICommandQueue<SkyWatcher> queue, Axis axis, int level) : base(id)
         {
             _axis = axis;
             _level = level;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -396,10 +417,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly bool _on;
 
-        public SkySetFullCurrent(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool on) : base(id, queue)
+        public SkySetFullCurrent(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool on) : base(id)
         {
             _axis = axis;
             _on = on;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -413,10 +435,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly long _stepsCount;
 
-        public SkySetGotoTargetIncrement(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long stepsCount) : base(id, queue)
+        public SkySetGotoTargetIncrement(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long stepsCount) : base(id)
         {
             _axis = axis;
             _stepsCount = stepsCount;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -430,10 +453,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly long _stepSpeed;
 
-        public SkySetStepSpeed(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long stepSpeed) : base(id, queue)
+        public SkySetStepSpeed(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long stepSpeed) : base(id)
         {
             _axis = axis;
             _stepSpeed = stepSpeed;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -447,10 +471,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly long _stepsCount;
 
-        public SkySetBreakPointIncrement(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long stepsCount) : base(id, queue)
+        public SkySetBreakPointIncrement(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long stepsCount) : base(id)
         {
             _axis = axis;
             _stepsCount = stepsCount;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -463,9 +488,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly int _rate;
 
-        public SkySetSt4GuideRate(long id, ICommandQueue<SkyWatcher> queue, int rate) : base(id, queue)
+        public SkySetSt4GuideRate(long id, ICommandQueue<SkyWatcher> queue, int rate) : base(id)
         {
             _rate = rate;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -479,10 +505,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly double _position;
 
-        public SkySetTargetPosition(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double position) : base(id, queue)
+        public SkySetTargetPosition(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double position) : base(id)
         {
             _axis = axis;
             _position = position;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -495,9 +522,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkySetHomePositionIndex(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkySetHomePositionIndex(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -521,10 +549,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly double _position;
 
-        public SkySyncAxis(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double position) : base(id, queue)
+        public SkySyncAxis(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double position) : base(id)
         {
             _axis = axis;
             _position = position;
+            queue.AddCommand(this);
         }
 
         protected override void ExecuteAction(SkyWatcher skyWatcher)
@@ -631,12 +660,13 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly string _cmdData;
         private readonly string _ignoreWarnings;
 
-        public SkyCmdToMount(long id, ICommandQueue<SkyWatcher> queue, int axis, string cmd, string cmdData, string ignoreWarnings) : base(id, queue)
+        public SkyCmdToMount(long id, ICommandQueue<SkyWatcher> queue, int axis, string cmd, string cmdData, string ignoreWarnings) : base(id)
         {
             _axis = axis;
             _cmd = cmd;
             _cmdData = cmdData;
             _ignoreWarnings = ignoreWarnings;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -660,10 +690,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly double _angleInRad;
 
-        public SkyGetAngleToStep(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double angleInRad) : base(id, queue)
+        public SkyGetAngleToStep(long id, ICommandQueue<SkyWatcher> queue, Axis axis, double angleInRad) : base(id)
         {
             _axis = axis;
             _angleInRad = angleInRad;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -676,9 +707,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetAxisPosition(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetAxisPosition(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -692,10 +724,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly bool _raw;
 
-        public SkyGetAxisPositionCounter(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool raw = false) : base(id, queue)
+        public SkyGetAxisPositionCounter(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool raw = false) : base(id)
         {
             _axis = axis;
             _raw = raw;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -708,9 +741,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetAxisPositionDate(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetAxisPositionDate(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -723,9 +757,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetControllerVoltage(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetControllerVoltage(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -738,9 +773,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetRampDownRange(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetRampDownRange(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -763,9 +799,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetEncoderCount(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetEncoderCount(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -779,10 +816,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly bool _raw;
 
-        public SkyGetJ(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool raw) : base(id, queue)
+        public SkyGetJ(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool raw) : base(id)
         {
             _axis = axis;
             _raw = raw;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -795,9 +833,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetLastGoToTarget(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetLastGoToTarget(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -810,9 +849,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetLastSlewSpeed(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetLastSlewSpeed(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -825,9 +865,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetHomePosition(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetHomePosition(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -840,9 +881,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetMotorCardVersion(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetMotorCardVersion(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -855,9 +897,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetPecPeriod(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetPecPeriod(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -870,9 +913,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly bool _raw;
 
-        public SkyGetPositionsAndTime(long id, ICommandQueue<SkyWatcher> queue, bool raw) : base(id, queue)
+        public SkyGetPositionsAndTime(long id, ICommandQueue<SkyWatcher> queue, bool raw) : base(id)
         {
             _raw = raw;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -905,9 +949,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyGetSiderealRate(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyGetSiderealRate(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -921,10 +966,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly long _steps;
 
-        public SkyGetStepToAngle(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long steps) : base(id, queue)
+        public SkyGetStepToAngle(long id, ICommandQueue<SkyWatcher> queue, Axis axis, long steps) : base(id)
         {
             _axis = axis;
             _steps = steps;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -960,7 +1006,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
 
         public SkyIsAxisFullStop(long id, ICommandQueue<SkyWatcher> queue, Axis axis, 
             [System.Runtime.CompilerServices.CallerMemberName] string caller = "",
-            [System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = 0) : base(id, queue)
+            [System.Runtime.CompilerServices.CallerLineNumber] int sourceLineNumber = 0) : base(id)
         {
             _axis = axis;
             _axisStr = axis == Axis.Axis1 ? "RA" : "DEC";
@@ -975,6 +1021,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
             //    Message = $"{Id}|{_axis}|{caller}|{sourceLineNumber}"
             //};
             //MonitorLog.LogToMonitor(monitorItem);
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -1009,9 +1056,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyIsHighSpeed(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyIsHighSpeed(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -1044,9 +1092,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyIsSlewing(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyIsSlewing(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -1059,9 +1108,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyIsSlewingForward(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyIsSlewingForward(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -1074,9 +1124,10 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
     {
         private readonly Axis _axis;
 
-        public SkyIsSlewingTo(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id, queue)
+        public SkyIsSlewingTo(long id, ICommandQueue<SkyWatcher> queue, Axis axis) : base(id)
         {
             _axis = axis;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -1110,10 +1161,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly Axis _axis;
         private readonly bool _on;
 
-        public SkySetPPec(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool on) : base(id, queue)
+        public SkySetPPec(long id, ICommandQueue<SkyWatcher> queue, Axis axis, bool on) : base(id)
         {
             _axis = axis;
             _on = on;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
@@ -1127,10 +1179,11 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private readonly bool _on;
         private readonly int _port;
 
-        public SkySetSnapPort(long id, ICommandQueue<SkyWatcher> queue, int port, bool on) : base(id, queue)
+        public SkySetSnapPort(long id, ICommandQueue<SkyWatcher> queue, int port, bool on) : base(id)
         {
             _on = on;
             _port = port;
+            queue.AddCommand(this);
         }
 
         protected override dynamic ExecuteQuery(SkyWatcher skyWatcher)
