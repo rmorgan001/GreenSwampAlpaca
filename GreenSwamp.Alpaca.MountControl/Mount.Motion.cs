@@ -470,26 +470,6 @@ namespace GreenSwamp.Alpaca.MountControl
                             break;
                         }
                         axis2Stopped = Convert.ToBoolean(y.Result);
-
-                        if (axis2Stopped)
-                        {
-                            var statusZ = new SkyCmdToMount(SkyQueue.NewId, SkyQueue, 2, "X", "0001", "true" );
-                            var z = SkyQueue.GetCommandResult(statusZ);
-                            var result = z.Result;
-                            {
-                                monitorItem = new MonitorEntry
-                                {
-                                    Datetime = HiResDateTime.UtcNow,
-                                    Device = MonitorDevice.Server,
-                                    Category = MonitorCategory.Server,
-                                    Type = MonitorType.Information,
-                                    Method = MethodBase.GetCurrentMethod()?.Name,
-                                    Thread = Environment.CurrentManagedThreadId,
-                                    Message = $"Mount:{_mountId}|Check diagnostic|{result}|{id}"
-                                };
-                                MonitorLog.LogToMonitor(monitorItem);
-                            }
-                        }
                     }
                     catch (InvalidOperationException ex)
                     {
