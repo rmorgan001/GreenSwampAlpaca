@@ -5,7 +5,7 @@ using System.Security.Claims;
 
 namespace ASCOM.Alpaca
 {
-    [ApiExplorerSettings(GroupName = "OmniSim")]
+    [ApiExplorerSettings(GroupName = "Authorisation")]
     public class LoginController : ControllerBase
     {
         IUserService _userService;

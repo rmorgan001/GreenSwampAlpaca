@@ -31,7 +31,7 @@ namespace ASCOM.Alpaca.Razor
 
                     c.SwaggerDoc("Alpaca", new OpenApiInfo { Title = $"Alpaca JSON API Specification", Description = "The Alpaca JSON API Specification. You can find the Alpaca HTML Specification and the Configuration File Management API in the drop down. Please note that the Alpaca API documentation on the ASCOM website is the canonical version. RThis is currently provided only for testing.", Version = "v1" });
                     c.SwaggerDoc("AlpacaSetup", new OpenApiInfo { Title = $"Alpaca HTTP Configuration Specification", Description = "Alpaca HTML Setup API - These are used to give the end user a GUI to configure device specific settings.", Version = "v1" });
-                    c.SwaggerDoc("OmniSim", new OpenApiInfo { Title = "OmniSim JSON API", Description = "API configuration that is unique to the OmniSim. These are not part of the Alpaca Spec but are helpful to automate testing with the OmniSim. Note that these have not yet been fully stabilized, expect some changes.", Version = "v1" });
+                    c.SwaggerDoc("Authorisation", new OpenApiInfo { Title = "GreenSwamp Alpaca — Authorisation API", Description = "Cookie-based login and logout endpoints for the GreenSwamp Alpaca Blazor server application. These endpoints authenticate users against the configured GreenSwamp user store and issue or clear the ASP.NET Core session cookie that controls access to the web UI. They are not part of the ASCOM Alpaca protocol.", Version = "v1" });
                     c.SwaggerDoc("Config", new OpenApiInfo { Title = "Configuration File Management API", Description = "REST API for managing all GreenSwamp Alpaca configuration files. Supports CRUD, upload, and download for monitor, server, observatory, Alpaca device, and per-device settings.", Version = "v1" });
 
 
@@ -86,7 +86,7 @@ namespace ASCOM.Alpaca.Razor
                 {
                     c.SwaggerEndpoint("/swagger/Alpaca/swagger.json", $"Alpaca JSON Endpoints - v1");
                     c.SwaggerEndpoint("/swagger/AlpacaSetup/swagger.json", $"Alpaca HTML Endpoints - v1");
-                    c.SwaggerEndpoint("/swagger/OmniSim/swagger.json", "OmniSim Only Endpoints");
+                    c.SwaggerEndpoint("/swagger/Authorisation/swagger.json", "Authorisation Endpoints");
                     c.SwaggerEndpoint("/swagger/Config/swagger.json", "Configuration File Management API");
                     c.DocExpansion(DocExpansion.None);
                 });
