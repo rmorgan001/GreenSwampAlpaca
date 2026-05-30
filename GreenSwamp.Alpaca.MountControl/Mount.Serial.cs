@@ -760,8 +760,8 @@ namespace GreenSwamp.Alpaca.MountControl
                 CheckAxisLimits();
                 CheckPecTraining();
 
-                // Refresh controller voltage for SkyWatcher mounts every 30 ticks (~60 s at default interval)
-                if (Settings.Mount == MountType.SkyWatcher && SkyQueue != null && _loopCounter % 30 == 0)
+                // Refresh controller voltage on every tick for SkyWatcher mounts
+                if (Settings.Mount == MountType.SkyWatcher && SkyQueue != null)
                 {
                     try
                     {
