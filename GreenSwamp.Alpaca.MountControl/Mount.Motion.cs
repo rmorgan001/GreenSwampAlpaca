@@ -420,7 +420,38 @@ namespace GreenSwamp.Alpaca.MountControl
 
             #region First Slew
             token.ThrowIfCancellationRequested();
-            _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1, skyTarget[0]);
+
+            // RA pre-correction: advance the axis1 target by how far the sky will move during the slew.
+            // Model: t = rampTime + axis1Distance / maxSlewRate (valid for long slews that reach full speed).
+            // Only applied for GEM/Polar RaDec slews; AltAz uses SkyPredictor in the precision loop instead.
+            var axis1GoTarget = skyTarget[0];
+            if (slewType == SlewType.SlewRaDec && Settings.AlignmentMode != AlignmentMode.AltAz)
+            {
+                var rawPos = GetRawDegrees();
+                if (rawPos != null && !double.IsNaN(rawPos[0]))
+                {
+                    const double rampTimeSec = 1.5;   // combined ramp-up + ramp-down
+                    const double maxSlewRateDegSec = 3.5;
+                    var axis1DistDeg = Math.Abs(skyTarget[0] - rawPos[0]);
+                    var estimatedSlewSec = rampTimeSec + axis1DistDeg / maxSlewRateDegSec;
+                    var driftSign = Settings.Latitude >= 0 ? +1.0 : -1.0;
+                    var raAdv = driftSign * (Settings.SiderealRate / 3_600.0) * estimatedSlewSec;
+                    axis1GoTarget = skyTarget[0] + raAdv;
+                    var advItem = new MonitorEntry
+                    {
+                        Datetime = HiResDateTime.UtcNow,
+                        Device = MonitorDevice.Server,
+                        Category = MonitorCategory.Server,
+                        Type = MonitorType.Information,
+                        Method = MethodBase.GetCurrentMethod()?.Name,
+                        Thread = Environment.CurrentManagedThreadId,
+                        Message = $"Mount:{_mountId}|RaPreCorr|Dist:{axis1DistDeg:F4}deg|EstT:{estimatedSlewSec:F3}s|Adv:{raAdv:F6}deg"
+                    };
+                    MonitorLog.LogToMonitor(advItem);
+                }
+            }
+
+            _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1, axis1GoTarget);
             _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis2, skyTarget[1]);
 
             var axis1Stopped = false;
@@ -634,18 +665,18 @@ namespace GreenSwamp.Alpaca.MountControl
                 double raFeedforward = 0.0;
                 if (!axis1AtTarget)
                 {
-                    var predictor = (slewType != SlewType.SlewRaDec)
-                        ? 0.0
-                        : 0.25;
-                    // Sidereal feedforward for GEM/Polar RaDec: advance the target by how far the sky
-                    // will move during the next settling period so the axis lands near the true position.
+                    // Feedforward: advance axis1 target by sky motion during axis travel only.
+                    // Use triangular velocity profile: t_move = 2 * sqrt(dist / accel).
+                    // This avoids using deltaTime (which includes polling overhead, not just axis motion).
                     if (slewType == SlewType.SlewRaDec && Settings.AlignmentMode != AlignmentMode.AltAz)
                     {
+                        const double slewAccelDegPerSec2 = 7.0;
+                        var axisTravelSec = 2.0 * Math.Sqrt(Math.Abs(deltaDegree[0]) / slewAccelDegPerSec2);
                         var driftSign = Settings.Latitude >= 0 ? +1.0 : -1.0;
-                        raFeedforward = driftSign * (Settings.SiderealRate / 3_600_000.0) * deltaTime;
+                        raFeedforward = driftSign * (Settings.SiderealRate / 3_600.0) * axisTravelSec;
                     }
                     _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1,
-                        skyTarget[0] + predictor * deltaDegree[0] + raFeedforward);
+                        skyTarget[0] + raFeedforward);
                 }
                 var axis1Done = axis1AtTarget;
                 while (loopTimer.Elapsed.TotalMilliseconds < 3000)
@@ -670,10 +701,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 token.ThrowIfCancellationRequested();
                 if (!axis2AtTarget)
                 {
-                    var predictor = (slewType == SlewType.SlewRaDec && Settings.AlignmentMode != AlignmentMode.AltAz)
-                        ? 0
-                        : 0.1;
-                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis2, skyTarget[1] + predictor * deltaDegree[1]);
+                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis2, skyTarget[1]);
                 }
 
                 var axis2Done = axis2AtTarget;
