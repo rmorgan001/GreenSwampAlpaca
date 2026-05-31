@@ -83,7 +83,7 @@ namespace GreenSwamp.Alpaca.MountControl
                         ? Math.Max(minSlewMs, (Math.Max(axis1Distance, axis2Distance) / Settings.MaxSlewRate) * 1000.0)
                         : minSlewMs;
                     var driftSign = Settings.Latitude >= 0 ? +1.0 : -1.0;
-                    var raCorrection = driftSign * (Settings.SiderealRate / 3_600_000.0) * estimatedSlewMs;
+                    var raCorrection = driftSign * (Settings.SiderealRate / 3600.0 / 1000.0) * estimatedSlewMs;
                     axis1SlewTarget = simTarget[0] + raCorrection;
 
                     monitorItem = new MonitorEntry
@@ -223,8 +223,9 @@ namespace GreenSwamp.Alpaca.MountControl
                 if (slewType == SlewType.SlewRaDec && Settings.AlignmentMode != AlignmentMode.AltAz)
                 {
                     var driftSign = Settings.Latitude >= 0 ? +1.0 : -1.0;
-                    raFeedforward = driftSign * (Settings.SiderealRate / 3_600_000.0) * deltaTime;
+                    raFeedforward = driftSign * (Settings.SiderealRate / 3600.0 / 1000.0) * deltaTime;
                 }
+
                 if (!axis1AtTarget)
                     _ = new CmdAxisGoToTarget(SimQueue!.NewId, SimQueue, Axis.Axis1, simTarget[0] + raFeedforward + 0.125 * deltaDegree[0]);
                 token.ThrowIfCancellationRequested();
@@ -435,7 +436,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     var axis1DistDeg = Math.Abs(skyTarget[0] - rawPos[0]);
                     var estimatedSlewSec = rampTimeSec + axis1DistDeg / maxSlewRateDegSec;
                     var driftSign = Settings.Latitude >= 0 ? +1.0 : -1.0;
-                    var raAdv = driftSign * (Settings.SiderealRate / 3_600.0) * estimatedSlewSec;
+                    var raAdv = driftSign * (Settings.SiderealRate / 3600.0) * estimatedSlewSec;
                     axis1GoTarget = skyTarget[0] + raAdv;
                     var advItem = new MonitorEntry
                     {
@@ -673,12 +674,24 @@ namespace GreenSwamp.Alpaca.MountControl
                         const double slewAccelDegPerSec2 = 7.0;
                         var axisTravelSec = 2.0 * Math.Sqrt(Math.Abs(deltaDegree[0]) / slewAccelDegPerSec2);
                         var driftSign = Settings.Latitude >= 0 ? +1.0 : -1.0;
-                        raFeedforward = driftSign * (Settings.SiderealRate / 3_600.0) * axisTravelSec;
+                        raFeedforward = driftSign * (Settings.SiderealRate / 3600.0) * axisTravelSec;
                     }
                     _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1,
                         skyTarget[0] + raFeedforward);
                 }
+
+                // Issue Axis2 GoToTarget immediately after Axis1 so both axes move concurrently
+                // rather than waiting for Axis1 to fully stop first. The serial queue serialises
+                // the two commands on the bus (~1 round-trip apart), but the hardware starts
+                // Axis2 without waiting for Axis1 to finish its move.
+                if (!axis2AtTarget)
+                {
+                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis2, skyTarget[1]);
+                }
+
+                // Poll both axes in a single interleaved loop until each reports FullStop.
                 var axis1Done = axis1AtTarget;
+                var axis2Done = axis2AtTarget;
                 while (loopTimer.Elapsed.TotalMilliseconds < 3000)
                 {
                     Thread.Sleep(30);
@@ -695,20 +708,6 @@ namespace GreenSwamp.Alpaca.MountControl
                         }
                         catch (InvalidOperationException) { break; }
                     }
-                    if (axis1Done) { break; }
-                }
-
-                token.ThrowIfCancellationRequested();
-                if (!axis2AtTarget)
-                {
-                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis2, skyTarget[1]);
-                }
-
-                var axis2Done = axis2AtTarget;
-                while (loopTimer.Elapsed.TotalMilliseconds < 3000)
-                {
-                    Thread.Sleep(30);
-                    token.ThrowIfCancellationRequested();
 
                     if (!axis2Done)
                     {
@@ -721,7 +720,8 @@ namespace GreenSwamp.Alpaca.MountControl
                         }
                         catch (InvalidOperationException) { break; }
                     }
-                    if (axis2Done) { break; }
+
+                    if (axis1Done && axis2Done) { break; }
                 }
 
                 loopTimer.Stop();
