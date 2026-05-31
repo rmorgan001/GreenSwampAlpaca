@@ -565,7 +565,7 @@ namespace GreenSwamp.Alpaca.MountControl
             var axis1AtTarget = false;
             var axis2AtTarget = false;
             double[] gotoPrecision = [Settings.GotoPrecision, Settings.GotoPrecision];
-            long deltaTime = 800;
+            double deltaTime = 800.0;
 
             while (true)
             {
@@ -631,12 +631,21 @@ namespace GreenSwamp.Alpaca.MountControl
                 if (axis1AtTarget && axis2AtTarget) { break; }
 
                 token.ThrowIfCancellationRequested();
+                double raFeedforward = 0.0;
                 if (!axis1AtTarget)
                 {
                     var predictor = (slewType != SlewType.SlewRaDec)
-                        ? 0
+                        ? 0.0
                         : 0.25;
-                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1, skyTarget[0] + predictor * deltaDegree[0]);
+                    // Sidereal feedforward for GEM/Polar RaDec: advance the target by how far the sky
+                    // will move during the next settling period so the axis lands near the true position.
+                    if (slewType == SlewType.SlewRaDec && Settings.AlignmentMode != AlignmentMode.AltAz)
+                    {
+                        var driftSign = Settings.Latitude >= 0 ? +1.0 : -1.0;
+                        raFeedforward = driftSign * (Settings.SiderealRate / 3_600_000.0) * deltaTime;
+                    }
+                    _ = new SkyAxisGoToTarget(SkyQueue!.NewId, SkyQueue, Axis.Axis1,
+                        skyTarget[0] + predictor * deltaDegree[0] + raFeedforward);
                 }
                 var axis1Done = axis1AtTarget;
                 while (loopTimer.Elapsed.TotalMilliseconds < 3000)
@@ -688,7 +697,8 @@ namespace GreenSwamp.Alpaca.MountControl
                 }
 
                 loopTimer.Stop();
-                deltaTime = loopTimer.ElapsedMilliseconds;
+                // EMA smoothing (α=0.4): reduces noise while adapting to iteration time changes
+                deltaTime = 0.4 * loopTimer.Elapsed.TotalMilliseconds + 0.6 * deltaTime;
 
                 monitorItem = new MonitorEntry
                 {
@@ -698,7 +708,7 @@ namespace GreenSwamp.Alpaca.MountControl
                     Type = MonitorType.Information,
                     Method = MethodBase.GetCurrentMethod()?.Name,
                     Thread = Environment.CurrentManagedThreadId,
-                    Message = $"Mount:{_mountId}|Delta|{deltaDegree[0]}|{deltaDegree[1]}|Seconds|{loopTimer.Elapsed.TotalSeconds}"
+                    Message = $"Mount:{_mountId}|Delta|({deltaDegree[0]},{deltaDegree[1]})|RaFwd|{raFeedforward:F6}|Seconds|{loopTimer.Elapsed.TotalSeconds}"
                 };
                 MonitorLog.LogToMonitor(monitorItem);
             }
@@ -715,7 +725,7 @@ namespace GreenSwamp.Alpaca.MountControl
             var axis1AtTarget = false;
             var axis2AtTarget = false;
             double[] gotoPrecision = [Settings.GotoPrecision, Settings.GotoPrecision];
-            long deltaTime = 400;
+            double deltaTime = 400.0;
 
             try
             {
@@ -817,7 +827,8 @@ namespace GreenSwamp.Alpaca.MountControl
                     }
 
                     loopTimer.Stop();
-                    deltaTime = loopTimer.ElapsedMilliseconds;
+                    // EMA smoothing (α=0.4): reduces noise while adapting to iteration time changes
+                    deltaTime = 0.4 * loopTimer.Elapsed.TotalMilliseconds + 0.6 * deltaTime;
                 }
             }
             catch (OperationCanceledException)
