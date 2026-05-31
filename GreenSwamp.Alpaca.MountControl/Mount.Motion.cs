@@ -151,6 +151,7 @@ namespace GreenSwamp.Alpaca.MountControl
 
             #region Final precision slew
             token.ThrowIfCancellationRequested();
+            _flipOnNextGoto = false;  // consumed by first slew; must not bleed into precision loop
             if (stopwatch.Elapsed.TotalSeconds <= timer)
                 SimPrecisionGoto(target, slewType, token);
             #endregion
@@ -518,8 +519,9 @@ namespace GreenSwamp.Alpaca.MountControl
 
             #region Final precision slew — only when both axes confirmed stopped
             token.ThrowIfCancellationRequested();
+            _flipOnNextGoto = false;  // consumed by first slew; must not bleed into precision loop
             if (firstSlewCompleted)
-                SkyPrecisionGoto(target, slewType, token);
+            SkyPrecisionGoto(target, slewType, token);
             #endregion
 
             SkyTasks(MountTaskName.StopAxes);

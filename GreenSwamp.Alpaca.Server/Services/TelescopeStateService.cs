@@ -30,14 +30,14 @@ namespace GreenSwamp.Alpaca.Server.Services
         private readonly Timer _updateTimer;
 
         /// <summary>
-        /// Fired every 100 ms so Blazor pages can call StateHasChanged().
+        /// Fired every 200 ms so Blazor pages can call StateHasChanged().
         /// </summary>
         public event EventHandler? StateChanged;
 
         public TelescopeStateService()
         {
             _updateTimer = new Timer(OnTimerTick, null,
-                TimeSpan.FromMilliseconds(100), TimeSpan.FromMilliseconds(100));
+                TimeSpan.FromMilliseconds(200), TimeSpan.FromMilliseconds(200));
         }
 
         private void OnTimerTick(object? state) =>
