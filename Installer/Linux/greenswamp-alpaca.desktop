@@ -1,0 +1,10 @@
+﻿[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GreenSwamp Alpaca Server
+Comment=Open the GreenSwamp Alpaca Server management interface
+Exec=xdg-open http://localhost:31416
+Icon=web-browser
+Terminal=false
+Categories=Science;Astronomy;
+Keywords=alpaca;ascom;telescope;astronomy;

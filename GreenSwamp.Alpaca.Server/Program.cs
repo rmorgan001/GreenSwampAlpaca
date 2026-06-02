@@ -1,12 +1,14 @@
 ﻿using ASCOM.Alpaca;
 using GreenSwamp.Alpaca.MountControl;
-using Microsoft.Extensions.Logging;
 using GreenSwamp.Alpaca.Server.Models;
 using GreenSwamp.Alpaca.Settings.Extensions;
 using GreenSwamp.Alpaca.Settings.Models;
 using GreenSwamp.Alpaca.Settings.Services;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 using System.Diagnostics;
+using System.IO.Compression;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -171,6 +173,13 @@ namespace GreenSwamp.Alpaca.Server
 
             var builder = WebApplication.CreateBuilder(args ?? []);
 
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+                options.Providers.Add<BrotliCompressionProvider>();
+                options.Providers.Add<GzipCompressionProvider>();
+            });
+
             // Register the appropriate managed-service lifetime for Windows SCM and Linux systemd.
             // Both calls are no-ops when the process is not started by the respective service manager.
             if (OperatingSystem.IsWindows())
@@ -242,6 +251,8 @@ namespace GreenSwamp.Alpaca.Server
             builder.Services.AddSingleton<GreenSwamp.Alpaca.Server.Services.MonitorDisplayService>();
 
             var app = builder.Build();
+
+            app.UseResponseCompression();
 
             // Replace bootstrap logger with the DI-resolved logger so the host's configured
             // log levels (from appsettings.json "Logging" section) take effect from this point.

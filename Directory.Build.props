@@ -19,6 +19,10 @@
 	<MinVerTagPrefix>v</MinVerTagPrefix>
 	<!-- Pre-release label used when no tag exists or there are commits ahead of the tag -->
 	<MinVerDefaultPreReleaseIdentifiers>dev</MinVerDefaultPreReleaseIdentifiers>
+	<!-- Skip MinVer on non-Release builds so that hot reload is not blocked by
+		 assembly version changes between incremental rebuilds. CI and publish
+		 builds use -c Release and therefore still get the correct version. -->
+	<MinVerSkip Condition="'$(Configuration)' != 'Release'">true</MinVerSkip>
   </PropertyGroup>
   <ItemGroup>
 	<!-- PrivateAssets=All: build-only tool, not a runtime or transitive dependency -->

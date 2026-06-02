@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+﻿#!/usr/bin/env bash
 # -----------------------------------------------------------------------------
 # build-deb.sh — Build a .deb package for one RID
 # -----------------------------------------------------------------------------
@@ -31,11 +31,12 @@ PKG_ROOT="${PKG_NAME}"
 INSTALL_DIR="${PKG_ROOT}/opt/greenswamp/alpaca-server"
 DEBIAN_DIR="${PKG_ROOT}/DEBIAN"
 SYSTEMD_DIR="${PKG_ROOT}/lib/systemd/system"
+APPLICATIONS_DIR="${PKG_ROOT}/usr/share/applications"
 
 echo "==> Building ${PKG_NAME}.deb ..."
 rm -rf "${PKG_ROOT}"
 
-mkdir -p "${INSTALL_DIR}" "${DEBIAN_DIR}" "${SYSTEMD_DIR}"
+mkdir -p "${INSTALL_DIR}" "${DEBIAN_DIR}" "${SYSTEMD_DIR}" "${APPLICATIONS_DIR}"
 
 # Stage publish output
 cp -r "publish/${RID}/." "${INSTALL_DIR}/"
@@ -43,6 +44,9 @@ chmod +x "${INSTALL_DIR}/GreenSwamp.Alpaca.Server" 2>/dev/null || true
 
 # Stage systemd unit file
 cp "${SCRIPT_DIR}/systemd/greenswamp-alpaca.service" "${SYSTEMD_DIR}/"
+
+# Stage XDG desktop entry (browser-launch menu item)
+cp "${SCRIPT_DIR}/greenswamp-alpaca.desktop" "${APPLICATIONS_DIR}/"
 
 # Stage and chmod maintainer scripts
 for script in postinst prerm postrm; do

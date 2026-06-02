@@ -1,16 +1,28 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 # Create dedicated system user; add to dialout group for serial port access
 adduser --system --no-create-home --group greenswamp 2>/dev/null || true
 usermod -aG dialout greenswamp 2>/dev/null || true
 
-# Enable and start the systemd service
+# Enable the service so it starts automatically on next boot.
+# Do NOT start it immediately — the service will start on next reboot.
 if command -v systemctl >/dev/null 2>&1; then
     systemctl daemon-reload
     systemctl enable greenswamp-alpaca.service
-    systemctl start  greenswamp-alpaca.service || true
 fi
 
-echo "GreenSwamp Alpaca Server installed successfully."
-echo "Management UI: http://localhost:31426"
+echo ""
+echo "================================================"
+echo " GreenSwamp Alpaca Server installed successfully"
+echo "================================================"
+echo ""
+echo " The service has been enabled and will start"
+echo " automatically on the next boot."
+echo ""
+echo " To start it now without rebooting, run:"
+echo "   sudo systemctl start greenswamp-alpaca.service"
+echo ""
+echo " Once running, the management UI is available at:"
+echo "   http://localhost:31416"
+echo ""

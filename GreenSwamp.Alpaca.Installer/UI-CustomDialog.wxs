@@ -1,48 +1,71 @@
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
   <Fragment>
-    <UI Id="CustomDlg">
-      <Dialog Id="CustomDlg" Height="270" Width="370" Title="[ProductName] Setup">
-        <!-- Header -->
-        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" Text="WixUI_Bmp_Banner" />
-        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Text="{\WixUI_Font_Title}Custom Dialog" Transparent="yes" />
-        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Text="Place your custom description here" Transparent="yes" />
-        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
-        <!-- Body  -->
-        <Control Id="CustomLabel" Type="Text" X="20" Y="60" Width="290" Height="15" Text="Customer:" TabSkip="yes" />
-        <Control Id="Custom" Type="Edit" X="20" Y="80" Width="320" Height="18" Property="CUSTOM" />
-        <!-- Footer -->
-        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
-        <Control Id="Next" Type="PushButton" Text="&amp;Next" TabSkip="no" Default="yes" Height="17" Width="56" X="236" Y="243">
-          <Publish Event="NewDialog" Value="CustomizeDlg" />
-        </Control>
-        <Control Id="Cancel" Type="PushButton" Text="Cancel" TabSkip="no" Height="17" Width="56" X="304" Y="243" Cancel="yes">
-          <Publish Event="SpawnDialog" Value="CancelDlg" />
-        </Control>
-        <Control Id="Back" Type="PushButton" Text="&amp;Back" TabSkip="no" Height="17" Width="56" X="180" Y="243">
-          <Publish Event="NewDialog" Value="LicenseAgreementDlg" />
-        </Control>
-      </Dialog>
-      <!-- Insert into dialog sequencing by inserting control events on previous and next dialogs-->
-      <Publish Dialog="LicenseAgreementDlg" Control="Next" Event="NewDialog" Value="CustomDlg" />
-      <Publish Dialog="CustomizeDlg" Control="Back" Event="NewDialog" Value="CustomDlg" Order="3" Condition="NOT Installed" />
-    </UI>
-    <!-- Make Property a SecureCustom Property-->
-    <Property Id="CUSTOM" Secure="yes" />
-    <!-- Note: You must author a registry component somewhere in your installer to persist the property for later retrieval
-    Example:
-    ...
-    <Component Id='RememberCustom' Guid='{????????-????-????-????-????????????}' KeyPath='yes' Permanent='yes'>
-      <RegistryValue Root='HKLM' Key='SOFTWARE\CompanyName\ProductName' Name='Custom' Type='string' Value='[CUSTOM]'/>
-    </Component>
-    ...
-    -->
-    <!-- Attempt to retrieve previously persisted property -->
-    <Property Id="FINDCUSTOM" Secure="yes">
-      <RegistrySearch Id="CustomerNumber" Root="HKLM" Key="SOFTWARE\CompanyName\ProductName" Name="Custom" Type="raw" />
-    </Property>
-    <!-- Assign default value if retrieval failed -->
-    <SetProperty Id="FINDCUSTOM" Value="default value" After="AppSearch" Sequence="first" Condition="Not FINDCUSTOM" />
-    <!-- Assign retrieved / defaulted value to actual property if it doesn't already have a value -->
-    <SetProperty Id="CUSTOM" Value="[FINDCUSTOM]" After="SetFINDCUSTOM" Sequence="first" Condition="Not CUSTOM" />
+	<!-- ================================================================
+		 ServiceConfigDlg — shown between LicenseAgreementDlg and
+		 CustomizeDlg so the user can choose the Windows service start type.
+		 SERVICESTART property: "auto" (default) or "demand" (manual).
+		 ================================================================ -->
+	<UI Id="ServiceConfigUI">
+	  <Dialog Id="ServiceConfigDlg" Height="270" Width="370" Title="[ProductName] Setup">
+
+		<!-- Header -->
+		<Control Id="BannerBitmap"  Type="Bitmap" X="0"  Y="0"   Width="370" Height="44"  Text="WixUI_Bmp_Banner" />
+		<Control Id="BannerLine"    Type="Line"   X="0"  Y="44"  Width="370" Height="0" />
+		<Control Id="Title"         Type="Text"   X="15" Y="6"   Width="200" Height="15"
+				 Text="{\WixUI_Font_Title}Service Configuration" Transparent="yes" />
+		<Control Id="Description"   Type="Text"   X="25" Y="23"  Width="280" Height="15"
+				 Text="Choose how the GreenSwamp Alpaca Server service starts"
+				 Transparent="yes" />
+
+		<!-- Body -->
+		<Control Id="ServiceLabel"  Type="Text"   X="20" Y="57"  Width="330" Height="15"
+				 Text="Windows service start type:" TabSkip="yes" />
+		<Control Id="ServiceStartGroup" Type="RadioButtonGroup"
+				 X="20" Y="74" Width="330" Height="50"
+				 Property="SERVICESTART" />
+		<Control Id="ServiceNote"   Type="Text"   X="20" Y="133" Width="330" Height="40"
+				 Text="Automatic is recommended for permanent observatory setups. Manual is useful if you run the server on demand or prefer to control it via the Services console."
+				 TabSkip="yes" />
+
+		<!-- Footer -->
+		<Control Id="BottomLine"    Type="Line"   X="0"  Y="234" Width="370" Height="0" />
+		<Control Id="Back" Type="PushButton" Text="&amp;Back"   TabSkip="no"
+				 Height="17" Width="56" X="180" Y="243">
+		  <Publish Event="NewDialog" Value="LicenseAgreementDlg" />
+		</Control>
+		<Control Id="Next" Type="PushButton" Text="&amp;Next"   TabSkip="no" Default="yes"
+				 Height="17" Width="56" X="236" Y="243">
+		  <Publish Event="NewDialog" Value="VerifyReadyDlg" />
+		</Control>
+		<Control Id="Cancel" Type="PushButton" Text="Cancel"    TabSkip="no" Cancel="yes"
+				 Height="17" Width="56" X="304" Y="243">
+		  <Publish Event="SpawnDialog" Value="CancelDlg" />
+		</Control>
+
+	  </Dialog>
+
+	  <!-- Inject ServiceConfigDlg between LicenseAgreementDlg and CustomizeDlg.
+		   Order="1" fires before WixUI_FeatureTree's built-in Order="2" event.
+		   LicenseAgreementDlg.Next is disabled until LicenseAccepted="1", so no
+		   extra condition is needed here. -->
+	  <Publish Dialog="LicenseAgreementDlg" Control="Next"
+			   Event="NewDialog" Value="ServiceConfigDlg" Order="1" />
+	  <Publish Dialog="VerifyReadyDlg" Control="Back"
+			   Event="NewDialog" Value="ServiceConfigDlg" Order="3"
+			   Condition="NOT Installed" />
+
+	  <!-- Radio buttons displayed inside the ServiceStartGroup control -->
+	  <RadioButtonGroup Property="SERVICESTART">
+		<RadioButton Value="auto"   X="0" Y="0"  Width="310" Height="17"
+					 Text="&amp;Automatic — start on boot (recommended)" />
+		<RadioButton Value="demand" X="0" Y="22" Width="310" Height="17"
+					 Text="&amp;Manual — start and stop via the Services console" />
+	  </RadioButtonGroup>
+
+	</UI>
+
+	<!-- Default to automatic; secured so it survives deferred execution -->
+	<Property Id="SERVICESTART" Value="auto" Secure="yes" />
+
   </Fragment>
 </Wix>

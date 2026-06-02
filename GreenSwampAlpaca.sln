@@ -30,9 +30,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "GreenSwamp.Alpaca.Installer", "GreenSwamp.Alpaca.Installer\GreenSwamp.Alpaca.Installer.wixproj", "{36AA575E-712F-450B-9CFF-C7F677E08392}"
-	ProjectSection(ProjectDependencies) = postProject
-		{BA42591E-C62A-864C-B5A4-F82236C4A66B} = {BA42591E-C62A-864C-B5A4-F82236C4A66B}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

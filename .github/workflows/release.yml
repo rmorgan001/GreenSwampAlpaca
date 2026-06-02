@@ -176,7 +176,7 @@ jobs:
           -p:Platform=${{ matrix.platform }}
           -p:UpgradeCode=${{ matrix.upgrade_code }}
           "-p:PublishDir=${{ github.workspace }}/publish/${{ matrix.rid }}/"
-          -p:Version=${{ needs.publish.outputs.app_version }}
+          -p:AppVersion=${{ needs.publish.outputs.app_version }}
 
       # - name: Restore signing certificate
       #   shell: pwsh

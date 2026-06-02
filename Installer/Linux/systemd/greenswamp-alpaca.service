@@ -1,4 +1,4 @@
-[Unit]
+﻿[Unit]
 Description=GreenSwamp Alpaca Server
 Documentation=https://github.com/Principia4834/GreenSwampAlpaca
 After=network.target
@@ -18,4 +18,5 @@ StandardError=journal
 SyslogIdentifier=greenswamp-alpaca
 
 [Install]
+WantedBy=multi-user.target
 WantedBy=multi-user.target

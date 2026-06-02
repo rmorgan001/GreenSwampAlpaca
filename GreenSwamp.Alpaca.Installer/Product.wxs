@@ -1,10 +1,11 @@
 ﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
-     xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall">
+	 xmlns:fw="http://wixtoolset.org/schemas/v4/wxs/firewall"
+	 xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
   <!-- 
   MSIProductVersion is defined in ProductName1.wixproj as 0.0.1 for local desktop builds.  
   You should pass in the MSBuild Property 'MSIProductVersion' to override it during an automated build.
   See http://msdn.microsoft.com/en-us/library/windows/desktop/aa370859%28v=vs.85%29.aspx for information on allowable values.
-  
+
   The Product@Id attribute (ProductCode Property) will be a random GUID for each build.  This is to support "Major Upgrades" where each install 
   is a seamless uninstall/reinstall.
   -->
@@ -13,21 +14,23 @@
 		 Version="$(var.Version)" 
 		 Manufacturer="Principia4834" 
 		 UpgradeCode="1795b59d-e9b5-460c-a4db-db0b1f8f6237">
-    <MediaTemplate EmbedCab="yes" />
-    <!-- Major Upgrade Rule to disallow downgrades -->
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
-    <Icon Id="Icon.ico" SourceFile="Resources\Icon.ico"/>
-    <Property Id="ARPPRODUCTICON" Value="Icon.ico"></Property>
-    <Property Id="DISABLEADVTSHORTCUTS" Value="1"></Property>
-    <UIRef Id="UI"/>
-	
-    <!-- Install directory structure -->
-    <StandardDirectory Id="ProgramFiles6432Folder">
-	    <Directory Id="MANUFACTURERDIR" Name="GreenSwamp">
-		    <Directory Id="INSTALLDIR" Name="Alpaca Server" />
-	    </Directory>
-    </StandardDirectory>
+	<MediaTemplate EmbedCab="yes" />
+	<!-- Major Upgrade Rule to disallow downgrades -->
+	<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+	<Icon Id="InstallerIcon.ico" SourceFile="Resources\greenswamp2.ico"/>
+	<Icon Id="AppIcon.ico" SourceFile="Resources\greenswamp1.ico"/>
+	<Property Id="ARPPRODUCTICON" Value="InstallerIcon.ico"></Property>
+	<Property Id="DISABLEADVTSHORTCUTS" Value="1"></Property>
+	<UIRef Id="UI"/>
 
+	<!-- Install directory structure -->
+	<StandardDirectory Id="ProgramFiles6432Folder">
+		<Directory Id="MANUFACTURERDIR" Name="GreenSwamp">
+			<Directory Id="INSTALLDIR" Name="Alpaca Server" />
+		</Directory>
+	</StandardDirectory>
+
+	<!-- Start Menu folder: "GreenSwamp" -->
 	<StandardDirectory Id="ProgramMenuFolder">
 		<Directory Id="STARTMENUFOLDER" Name="GreenSwamp Alpaca Server">
 		  <!-- ICE64: Remove the Start Menu folder on uninstall -->
@@ -35,51 +38,106 @@
 			  <RemoveFolder Id="RemoveStartMenuFolder" On="uninstall" />
 			  <RegistryValue Root="HKCU" Key="Software\GreenSwamp\AlpacaServer" Name="StartMenuInstalled" Type="integer" Value="1" KeyPath="yes" />
 		  </Component>
+
+		  <!-- Shortcut: Launch the Alpaca Server application -->
+		  <Component Id="AppShortcutComponent" Guid="B7D2E3F4-A6C5-4891-BCDE-F01234567891">
+			  <Shortcut Id="AppShortcut"
+						Name="GreenSwamp Alpaca Server"
+						Description="Launch the GreenSwamp Alpaca Server"
+						Target="[INSTALLDIR]GreenSwamp.Alpaca.Server.exe"
+						WorkingDirectory="INSTALLDIR"
+						Icon="AppIcon.ico" />
+			  <RemoveFolder Id="RemoveStartMenuForApp" Directory="STARTMENUFOLDER" On="uninstall" />
+			  <RegistryValue Root="HKCU" Key="Software\GreenSwamp\AlpacaServer" Name="AppShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+		  </Component>
+
+		  <!-- Shortcut: Open management UI in default browser -->
+		  <Component Id="BrowserShortcutComponent" Guid="C8E3F4A5-B7D6-4902-CDEF-012345678902">
+			  <util:InternetShortcut Id="BrowserShortcut"
+									 Name="GreenSwamp Alpaca Server - Management UI"
+									 Target="http://localhost:31416"
+									 Type="url" />
+			  <RemoveFolder Id="RemoveStartMenuForBrowser" Directory="STARTMENUFOLDER" On="uninstall" />
+			  <RegistryValue Root="HKCU" Key="Software\GreenSwamp\AlpacaServer" Name="BrowserShortcutInstalled" Type="integer" Value="1" KeyPath="yes" />
+		  </Component>
+
 		</Directory>
 	</StandardDirectory>
 
-    <!-- Windows Service registration -->
-    <!-- Explicit GUID required: no file KeyPath (WIX0230) -->
-    <Component Id="ServiceComponent" Directory="INSTALLDIR" Guid="818DF99D-267F-4FFA-B3A7-E5F578372A8A">
-	    <File Id="ServiceExe"
-	          Name="GreenSwamp.Alpaca.Server.exe"
-	          Source="$(PublishDir)GreenSwamp.Alpaca.Server.exe"
-	          KeyPath="yes" />
-	    <ServiceInstall
-		    Id="GreenSwampAlpacaService"
-		    Name="GreenSwampAlpacaServer"
-		    DisplayName="GreenSwamp Alpaca Server"
-		    Description="ASCOM Alpaca telescope mount control server"
-		    Type="ownProcess"
-		    Start="auto"
-		    ErrorControl="normal"
-		    Account="LocalSystem" />
-	    <ServiceControl
-		    Id="StartGreenSwampAlpacaService"
-		    Name="GreenSwampAlpacaServer"
-		    Start="install"
-		    Stop="both"
-		    Remove="uninstall"
-		    Wait="yes" />
-    </Component>
+	<!-- Service registration: two components conditioned on SERVICESTART.
+		 SERVICESTART="auto"   → automatic start, service started on install.
+		 SERVICESTART="demand" → manual start, service not started automatically.
+		 The EXE file KeyPath lives only in ServiceAutoComponent; ServiceManualComponent
+		 references the same installed file via a companion component that carries only
+		 the ServiceInstall/ServiceControl elements. The Condition child element is valid
+		 on Component in WiX v4 and gates the whole component at install time. -->
+	<Component Id="ServiceAutoComponent" Directory="INSTALLDIR" Guid="818DF99D-267F-4FFA-B3A7-E5F578372A8A"
+			   Condition="SERVICESTART = &quot;auto&quot; OR NOT SERVICESTART">
+		<File Id="ServiceExe"
+			  Name="GreenSwamp.Alpaca.Server.exe"
+			  Source="$(PublishDir)GreenSwamp.Alpaca.Server.exe"
+			  KeyPath="yes" />
+		<ServiceInstall
+			Id="GreenSwampAlpacaServiceAuto"
+			Name="GreenSwampAlpacaServer"
+			DisplayName="GreenSwamp Alpaca Server"
+			Description="ASCOM Alpaca telescope mount control server"
+			Type="ownProcess"
+			Start="auto"
+			ErrorControl="normal"
+			Account="LocalSystem" />
+		<ServiceControl
+			Id="ControlServiceAuto"
+			Name="GreenSwampAlpacaServer"
+			Start="install"
+			Stop="both"
+			Remove="uninstall"
+			Wait="yes" />
+	</Component>
 
-    <!-- Firewall exception for the Alpaca server port -->
-    <!-- Explicit GUID required: no file KeyPath (WIX0230) -->
-    <Component Id="FirewallComponent" Directory="INSTALLDIR" Guid="C4C0CD8D-200A-4035-9DB6-ABB9EFCBCEC3">
-	    <fw:FirewallException
-		    Id="AlpacaServerFirewall"
+	<Component Id="ServiceManualComponent" Directory="INSTALLDIR" Guid="9A1EF00E-368A-50AB-C4B8-F6A689483B9B"
+			   Condition="SERVICESTART = &quot;demand&quot;">
+		<File Id="ServiceExeManual"
+			  Name="GreenSwamp.Alpaca.Server.exe"
+			  Source="$(PublishDir)GreenSwamp.Alpaca.Server.exe"
+			  KeyPath="yes" />
+		<ServiceInstall
+			Id="GreenSwampAlpacaServiceManual"
+			Name="GreenSwampAlpacaServer"
+			DisplayName="GreenSwamp Alpaca Server"
+			Description="ASCOM Alpaca telescope mount control server"
+			Type="ownProcess"
+			Start="demand"
+			ErrorControl="normal"
+			Account="LocalSystem" />
+		<ServiceControl
+			Id="ControlServiceManual"
+			Name="GreenSwampAlpacaServer"
+			Stop="both"
+			Remove="uninstall"
+			Wait="yes" />
+	</Component>
+
+	<!-- Firewall exception for the Alpaca server port -->
+	<!-- Explicit GUID required: no file KeyPath (WIX0230) -->
+	<Component Id="FirewallComponent" Directory="INSTALLDIR" Guid="C4C0CD8D-200A-4035-9DB6-ABB9EFCBCEC3">
+		<fw:FirewallException
+			Id="AlpacaServerFirewall"
 			Name="GreenSwamp Alpaca Server"
-		    Port="31416"
-		    Protocol="tcp"
-		    Scope="any"
-		    IgnoreFailure="yes" />
-    </Component>
+			Port="31416"
+			Protocol="tcp"
+			Scope="any"
+			IgnoreFailure="yes" />
+	</Component>
 
-    <Feature Id="GreenSwampAlpacaServer" Title="GreenSwamp Alpaca Server" Description="Installs all the files needed for GreenSwamp Alpaca Server" Level="1" AllowAdvertise="no" ConfigurableDirectory="INSTALLDIR">
-      <ComponentGroupRef Id="GreenSwampAlpacaServerFiles"/>
-      <ComponentRef Id="ServiceComponent"/>
-      <ComponentRef Id="FirewallComponent"/>
-      <ComponentRef Id="StartMenuFolderCleanup"/>
-    </Feature>
+	<Feature Id="GreenSwampAlpacaServer" Title="GreenSwamp Alpaca Server" Description="Installs all the files needed for GreenSwamp Alpaca Server" Level="1" AllowAdvertise="no" ConfigurableDirectory="INSTALLDIR">
+	  <ComponentGroupRef Id="GreenSwampAlpacaServerFiles"/>
+	  <ComponentRef Id="ServiceAutoComponent"/>
+	  <ComponentRef Id="ServiceManualComponent"/>
+	  <ComponentRef Id="FirewallComponent"/>
+	  <ComponentRef Id="StartMenuFolderCleanup"/>
+	  <ComponentRef Id="AppShortcutComponent"/>
+	  <ComponentRef Id="BrowserShortcutComponent"/>
+	</Feature>
   </Package>
 </Wix>
