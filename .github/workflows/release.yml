@@ -45,7 +45,7 @@ jobs:
             nuget-${{ runner.os }}-
 
       - name: Restore
-        run: dotnet restore GreenSwampAlpaca.sln
+        run: dotnet restore GreenSwampAlpaca.slnx
 
       - name: Publish ${{ matrix.rid }}
         run: >
