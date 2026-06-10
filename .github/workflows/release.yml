@@ -225,7 +225,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4.3.0
         with:
           path: release-assets
           merge-multiple: true
@@ -234,13 +234,18 @@ jobs:
         run: find release-assets -type f | sort
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: "GreenSwamp Alpaca Server ${{ github.ref_name }}"
-          tag_name: ${{ github.ref_name }}
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
-          files: |
-            release-assets/**/*.msi
-            release-assets/**/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PRERELEASE_FLAG=""
+          if [[ "${{ github.ref_name }}" == *"-"* ]]; then
+          PRERELEASE_FLAG="--prerelease"
+          fi
+
+          gh release create "${{ github.ref_name }}" \
+            --title "GreenSwamp Alpaca Server ${{ github.ref_name }}" \
+            --generate-notes \
+          $PRERELEASE_FLAG \
+          release-assets/**/*.msi \
+          release-assets/**/*.deb
+          
