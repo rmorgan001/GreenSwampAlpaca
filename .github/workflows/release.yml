@@ -242,10 +242,11 @@ jobs:
           PRERELEASE_FLAG="--prerelease"
           fi
 
+          ASSETS=$(find release-assets -type f \( -name "*.msi" -o -name "*.deb" \))
+
           gh release create "${{ github.ref_name }}" \
             --title "GreenSwamp Alpaca Server ${{ github.ref_name }}" \
             --generate-notes \
           $PRERELEASE_FLAG \
-          release-assets/**/*.msi \
-          release-assets/**/*.deb
+          $ASSETS
           
