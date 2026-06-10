@@ -236,6 +236,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           name: "GreenSwamp Alpaca Server ${{ github.ref_name }}"
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
