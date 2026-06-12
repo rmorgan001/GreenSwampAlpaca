@@ -760,8 +760,37 @@ public partial class SettingsExplorer : IDisposable
 
                 case SettingsNodeSource.Device:
                     var deviceNumber = _selectedNode.DeviceNumber;
-                    await SettingsService.SaveDeviceSettingsAsync(deviceNumber, _deviceWork[deviceNumber]);
-                    _deviceOrigJson[deviceNumber] = Serialize(_deviceWork[deviceNumber]);
+                    var incoming     = _deviceWork[deviceNumber];
+
+                    // Detect breaking changes by comparing to the persisted original.
+                    var original = DeserializeOrDefault<SkySettings>(
+                        _deviceOrigJson.GetValueOrDefault(deviceNumber, string.Empty));
+
+                    var breakingChanges = BuildBreakingChangeList(original, incoming);
+                    if (breakingChanges.Count > 0 && DeviceRegistry.IsMountRunning(deviceNumber))
+                    {
+                        var clientCount = DeviceRegistry.GetConnectedClientCount(deviceNumber);
+                        bool confirmed  = await ConfirmBreakingChangeAsync(
+                            incoming.DeviceName, clientCount, breakingChanges);
+                        if (!confirmed)
+                        {
+                            _saving = false;
+                            return;
+                        }
+
+                        // Save first so in-memory settings match disk before recreating the instance.
+                        await SettingsService.SaveDeviceSettingsAsync(deviceNumber, incoming);
+                        _deviceOrigJson[deviceNumber] = Serialize(incoming);
+                        // Tear down the old instance and recreate from disk with the new settings.
+                        // ASCOM clients must reconnect after this point.
+                        await DeviceRegistry.ReplaceDeviceAsync(deviceNumber);
+                    }
+                    else
+                    {
+                        // Device is stopped or no breaking change: file write only.
+                        await SettingsService.SaveDeviceSettingsAsync(deviceNumber, incoming);
+                        _deviceOrigJson[deviceNumber] = Serialize(incoming);
+                    }
                     break;
             }
 
@@ -784,6 +813,55 @@ public partial class SettingsExplorer : IDisposable
         {
             _saving = false;
         }
+    }
+
+    /// <summary>
+    /// Compares the original persisted settings to the working copy and returns a
+    /// human-readable description for each breaking field that has changed.
+    /// Breaking fields: Mount type, COM Port, Baud Rate, Alignment Mode.
+    /// </summary>
+    private static List<string> BuildBreakingChangeList(SkySettings original, SkySettings incoming)
+    {
+        var changes = new List<string>();
+
+        if (!string.Equals(original.Mount, incoming.Mount, StringComparison.Ordinal))
+            changes.Add($"Mount Type: {original.Mount} → {incoming.Mount}");
+
+        if (!string.Equals(original.Port, incoming.Port, StringComparison.OrdinalIgnoreCase))
+            changes.Add($"COM Port: {original.Port} → {incoming.Port}");
+
+        if (original.BaudRate != incoming.BaudRate)
+            changes.Add($"Baud Rate: {original.BaudRate} → {incoming.BaudRate}");
+
+        if (!string.Equals(original.AlignmentMode, incoming.AlignmentMode, StringComparison.Ordinal))
+            changes.Add($"Alignment Mode: {original.AlignmentMode} → {incoming.AlignmentMode}");
+
+        return changes;
+    }
+
+    /// <summary>
+    /// Opens <see cref="BreakingSettingsChangeDialog"/> when connected clients exist.
+    /// Returns true if the change may proceed (confirmed or no clients connected).
+    /// </summary>
+    private async Task<bool> ConfirmBreakingChangeAsync(
+        string deviceName, int clientCount, List<string> changedFields)
+    {
+        if (clientCount == 0)
+            return true;
+
+        var parameters = new DialogParameters<BreakingSettingsChangeDialog>
+        {
+            { d => d.DeviceName,    deviceName    },
+            { d => d.ClientCount,   clientCount   },
+            { d => d.ChangedFields, changedFields }
+        };
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small };
+        var dialog  = await DialogService.ShowAsync<BreakingSettingsChangeDialog>(
+            "Breaking Settings Change", parameters, options);
+        var result  = await dialog.Result;
+
+        return result is { Canceled: false };
     }
 
     // ── Reset ──────────────────────────────────────────────────────────────

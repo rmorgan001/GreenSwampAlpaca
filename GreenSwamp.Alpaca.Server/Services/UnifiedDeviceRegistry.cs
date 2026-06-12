@@ -19,6 +19,8 @@ using GreenSwamp.Alpaca.MountControl;
 using GreenSwamp.Alpaca.Server.TelescopeDriver;
 using GreenSwamp.Alpaca.Settings.Services;
 using Microsoft.Extensions.Logging;
+using MountSkySettings = GreenSwamp.Alpaca.MountControl.SkySettings;
+using ModelSkySettings = GreenSwamp.Alpaca.Settings.Models.SkySettings;
 
 namespace GreenSwamp.Alpaca.Server.Services
 {
@@ -43,6 +45,7 @@ namespace GreenSwamp.Alpaca.Server.Services
             ArgumentNullException.ThrowIfNull(logger);
             _settingsService = settingsService;
             _logger = logger;
+            _settingsService.DeviceSettingsChanged += OnDeviceSettingsChanged;
         }
 
 
@@ -58,7 +61,7 @@ namespace GreenSwamp.Alpaca.Server.Services
             int deviceNumber,
             string deviceName,
             string uniqueId,
-            SkySettings settings)
+            MountSkySettings settings)
         {
             // 1. Register with MountRegistry (internal control).
             MountRegistry.CreateInstance(deviceNumber, settings, deviceName);
@@ -194,6 +197,85 @@ namespace GreenSwamp.Alpaca.Server.Services
                 _logger.LogError(ex, "Hot reload failed");
                 return new DeviceReloadResult(false, 0, ex.Message);
             }
+        }
+
+        /// <summary>
+        /// Returns the number of ASCOM/Alpaca clients currently connected to the given device,
+        /// or 0 if the device is not registered.
+        /// </summary>
+        public int GetConnectedClientCount(int deviceNumber)
+        {
+            var mount = MountRegistry.GetInstance(deviceNumber);
+            return mount?.ConnectedClientCount ?? 0;
+        }
+
+        /// <summary>
+        /// Returns true if the mount hardware for the given device is currently running
+        /// (queues started, serial port open). False if never started or stopped.
+        /// </summary>
+        public bool IsMountRunning(int deviceNumber)
+        {
+            var mount = MountRegistry.GetInstance(deviceNumber);
+            return mount?.IsMountRunning ?? false;
+        }
+
+        /// <summary>
+        /// Performs a full instance replacement of a single device after a breaking settings change.
+        /// Clears all ASCOM client connections, tears down the existing mount instance, then
+        /// creates a fresh instance from the settings now on disk. ASCOM clients must reconnect.
+        /// </summary>
+        /// <param name="deviceNumber">Device to replace.</param>
+        public Task ReplaceDeviceAsync(int deviceNumber)
+        {
+            var existingMount = MountRegistry.GetInstance(deviceNumber);
+            if (existingMount is null)
+            {
+                _logger.LogWarning("ReplaceDevice: device {Number} not found in registry", deviceNumber);
+                return Task.CompletedTask;
+            }
+
+            _logger.LogInformation("ReplaceDevice: tearing down device {Number} for instance recreation", deviceNumber);
+
+            // Capture the unique ID before teardown.
+            var alpacaDevices = _settingsService.GetAlpacaDevices();
+            string uniqueId = alpacaDevices.FirstOrDefault(d => d.DeviceNumber == deviceNumber)?.UniqueId
+                              ?? Guid.NewGuid().ToString();
+
+            // Tear down: clear clients, stop hardware, remove from both registries.
+            existingMount.ClearAllConnections();
+            MountRegistry.RemoveInstance(deviceNumber);
+            DeviceManager.UnloadTelescope(deviceNumber);
+
+            // Reload settings from disk so the fresh instance starts with the saved values.
+            var allDevices = _settingsService.GetAllDeviceSettings();
+            var deviceModel = allDevices.FirstOrDefault(d => d.DeviceNumber == deviceNumber);
+            if (deviceModel is null)
+            {
+                _logger.LogError("ReplaceDevice: no settings found on disk for device {Number}", deviceNumber);
+                return Task.CompletedTask;
+            }
+
+            // Recreate from disk.
+            var freshSettings = new GreenSwamp.Alpaca.MountControl.SkySettings(deviceModel, _settingsService);
+            RegisterDevice(deviceNumber, deviceModel.DeviceName ?? $"device-{deviceNumber}", uniqueId, freshSettings);
+            MountRegistry.GetInstance(deviceNumber)?.InitializeSettings();
+
+            _logger.LogInformation("ReplaceDevice: device {Number} recreated from disk", deviceNumber);
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Handles DeviceSettingsChanged from the settings service.
+        /// Applies the updated settings to the live mount instance.
+        /// </summary>
+        private void OnDeviceSettingsChanged(object? sender, ModelSkySettings incoming)
+        {
+            var mount = MountRegistry.GetInstance(incoming.DeviceNumber);
+            if (mount is null)
+                return;
+
+            mount.Settings.ApplySettings(incoming);
+            _logger.LogDebug("Applied settings to device {Number}", incoming.DeviceNumber);
         }
     }
 }
