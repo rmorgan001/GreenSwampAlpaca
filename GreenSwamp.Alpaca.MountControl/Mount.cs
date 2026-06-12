@@ -212,6 +212,12 @@ namespace GreenSwamp.Alpaca.MountControl
         public int ConnectedClientCount => _connectStates.Count;
 
         /// <summary>
+        /// Returns true if the given client ID is currently in the connected-client set.
+        /// Used by the UI to check whether the internal UI client (key 0) is connected.
+        /// </summary>
+        public bool IsClientConnected(long clientId) => _connectStates.ContainsKey(clientId);
+
+        /// <summary>
         /// Gets or sets the target RA/Dec position
         /// </summary>
         public Vector TargetRaDec

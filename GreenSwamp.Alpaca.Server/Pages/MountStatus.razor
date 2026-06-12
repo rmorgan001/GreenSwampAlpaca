@@ -7,9 +7,11 @@
 @using GreenSwamp.Alpaca.Settings.Services
 @using GreenSwamp.Alpaca.Settings.Models
 @using ASCOM.Common.DeviceInterfaces
+@using ASCOM.Alpaca
 @using System.Globalization
 @inject TelescopeStateService StateService
 @inject IVersionedSettingsService SettingsService
+@inject ISnackbar Snackbar
 @implements IDisposable
 
 <PageTitle>Mount Status</PageTitle>
@@ -151,7 +153,31 @@
                     </MudPaper>
                 </MudItem>
 
-                                @* -- Row 3: Axis Dials ---------------------------------- *@
+                @* -- Row 3: Control Buttons ------------------------------ *@
+
+                <MudItem xs="12">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MudStack Row="true" Spacing="2">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       Disabled="@(!IsUiClientConnected(dn) || s.AtPark || !(MountRegistry.GetInstance(dn)?.Settings.CanFindHome ?? false))"
+                                       OnClick="@(() => OnHomeAsync(dn))">Home</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       Disabled="@(!IsUiClientConnected(dn) || s.AtPark || !(MountRegistry.GetInstance(dn)?.Settings.CanPark ?? false))"
+                                       OnClick="@(() => OnParkAsync(dn))">Park</MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="@(s.Tracking ? Color.Success : Color.Default)"
+                                       Size="Size.Small"
+                                       Disabled="@(!IsUiClientConnected(dn))"
+                                       OnClick="@(() => OnTrackingToggleAsync(dn))">@(s.Tracking ? "Tracking On" : "Tracking Off")</MudButton>
+                        </MudStack>
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="@(IsUiClientConnected(dn) ? Color.Error : Color.Success)"
+                                   Size="Size.Small"
+                                   OnClick="@(() => OnConnectToggleAsync(dn))">@(IsUiClientConnected(dn) ? "Disconnect" : "Connect")</MudButton>
+                    </MudStack>
+                </MudItem>
+
+                                @* -- Row 4: Axis Dials ---------------------------------- *@
 
                                 <MudItem xs="12">
                                     <MudPaper Elevation="0" Class="pa-3">
@@ -208,6 +234,68 @@
     {
         StateService.StateChanged -= OnStateChanged;
         SettingsService.DeviceSettingsChanged -= OnDeviceSettingsChanged;
+    }
+
+    // Client key 0 is the "all-zeroes GUID" used by the internal UI client.
+    // AlpacaRequestContext.ClientId is AsyncLocal<uint> and defaults to 0 in the Blazor context,
+    // so telescope.Connected = value from UI code naturally uses this same key.
+    private const long UiClientId = 0L;
+
+    /// <summary>Returns true when the UI's internal client (key 0) is registered as connected.</summary>
+    private bool IsUiClientConnected(int dn) =>
+        MountRegistry.GetInstance(dn)?.IsClientConnected(UiClientId) ?? false;
+
+    private async Task OnConnectToggleAsync(int dn)
+    {
+        try
+        {
+            var telescope = DeviceManager.GetTelescope((uint)dn);
+            var connect = !IsUiClientConnected(dn);
+            await Task.Run(() => telescope.Connected = connect);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Connect/Disconnect failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnHomeAsync(int dn)
+    {
+        try
+        {
+            var telescope = DeviceManager.GetTelescope((uint)dn);
+            await Task.Run(() => telescope.FindHome());
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Home failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnParkAsync(int dn)
+    {
+        try
+        {
+            var telescope = DeviceManager.GetTelescope((uint)dn);
+            await Task.Run(() => telescope.Park());
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Park failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task OnTrackingToggleAsync(int dn)
+    {
+        try
+        {
+            var telescope = DeviceManager.GetTelescope((uint)dn);
+            await Task.Run(() => telescope.Tracking = !telescope.Tracking);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Tracking toggle failed: {ex.Message}", Severity.Error);
+        }
     }
 
     private string TabLabel(int deviceNumber)
