@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 set -e
 
 # Create dedicated system user; add to dialout group for serial port access
@@ -32,6 +32,16 @@ if command -v update-menus >/dev/null 2>&1; then
     update-menus >/dev/null 2>&1 || true
 fi
 
+final_message="GreenSwamp Alpaca Server installed successfully
+
+The service has been enabled and will start automatically on the next boot.
+
+To start it now without rebooting, run:
+  sudo systemctl start greenswamp-alpaca.service
+
+Once running, the management UI is available at:
+  http://localhost:31416"
+
 echo ""
 echo "================================================"
 echo " GreenSwamp Alpaca Server installed successfully"
@@ -46,3 +56,7 @@ echo ""
 echo " Once running, the management UI is available at:"
 echo "   http://localhost:31416"
 echo ""
+
+if command -v zenity >/dev/null 2>&1 && { [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; }; then
+    zenity --info --title="GreenSwamp Alpaca Server" --width=500 --text="$final_message" >/dev/null 2>&1 || true
+fi
