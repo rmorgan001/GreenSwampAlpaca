@@ -7,15 +7,25 @@
 
     <MudExpansionPanel Text="Location" Icon="@Icons.Material.Filled.MyLocation" Expanded="false">
         <MudStack Spacing="3">
-            @if (Observatory is not null)
+            @if (Observatory?.Observatories is { Count: > 0 })
             {
-                <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Copy Latitude, Longitude and Elevation from Observatory Settings to this device." Placement="Placement.Right" Arrow="true">
-                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.CopyAll"
-                               OnClick="CopyFromObservatory">
-                        Copy from Observatory Settings
-                    </MudButton>
-                </MudTooltip>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudSelect T="string" @bind-Value="_selectedObservatoryId"
+                               Label="Copy from observatory" Dense="true"
+                               Style="max-width:240px"
+                               AnchorOrigin="Origin.BottomLeft">
+                        @foreach (var obs in Observatory.Observatories)
+                        {
+                            <MudSelectItem Value="@obs.Id">@obs.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Copy Latitude, Longitude and Elevation from the selected observatory to this device." Placement="Placement.Right" Arrow="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.CopyAll"
+                                       Color="Color.Secondary" Size="Size.Small"
+                                       Disabled="@string.IsNullOrEmpty(_selectedObservatoryId)"
+                                       OnClick="CopyFromSelectedObservatory" />
+                    </MudTooltip>
+                </MudStack>
             }
             <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Geographic latitude of the device site in decimal degrees (-90 to +90)." Placement="Placement.Right" Arrow="true">
                 <MudNumericField T="double" @bind-Value="Device!.Latitude" @bind-Value:after="NotifyChanged"
@@ -76,23 +86,30 @@
     [Parameter] public ObservatorySettings? Observatory { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private async Task CopyFromObservatory()
-    {
-        if (Device is null || Observatory is null) return;
-        Device.Latitude  = Observatory.Latitude;
-        Device.Longitude = Observatory.Longitude;
-        Device.Elevation = Observatory.Elevation;
-        Snackbar.Add("Lat/Long/Elevation copied from Observatory Settings.", MudBlazor.Severity.Success);
-        await NotifyChanged();
-    }
-
-    private double _utcHours;
+    private string _selectedObservatoryId = string.Empty;
 
     protected override void OnParametersSet()
     {
         if (Device is not null)
             _utcHours = Device.UTCOffset.TotalHours;
+        // Pre-select the first observatory if none selected yet
+        if (string.IsNullOrEmpty(_selectedObservatoryId) && Observatory?.Observatories is { Count: > 0 })
+            _selectedObservatoryId = Observatory.Observatories[0].Id;
     }
+
+    private async Task CopyFromSelectedObservatory()
+    {
+        if (Device is null || Observatory is null) return;
+        var source = Observatory.Observatories.FirstOrDefault(o => o.Id == _selectedObservatoryId);
+        if (source is null) return;
+        Device.Latitude  = source.Latitude;
+        Device.Longitude = source.Longitude;
+        Device.Elevation = source.Elevation;
+        Snackbar.Add($"Lat/Long/Elevation copied from '{source.Name}'.", MudBlazor.Severity.Success);
+        await NotifyChanged();
+    }
+
+    private double _utcHours;
 
     private async Task OnUtcChanged()
     {

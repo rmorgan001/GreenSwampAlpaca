@@ -19,13 +19,17 @@ using System.ComponentModel.DataAnnotations;
 namespace GreenSwamp.Alpaca.Settings.Models
 {
     /// <summary>
-    /// Observatory physical properties — content of observatory.settings.json.
-    /// This is the single source of truth for observatory properties at device-creation
-    /// time (Behaviour B1). Changes here do not automatically propagate to existing
-    /// device-nn.settings.json files (v1; see TODO in SaveObservatorySettingsAsync).
+    /// A single named observatory site with its physical properties.
     /// </summary>
-    public class ObservatorySettings
+    public class ObservatoryInfo
     {
+        /// <summary>Stable GUID used as a dictionary key and tree-node identity.</summary>
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+
+        /// <summary>User-defined display name shown in the Settings Explorer tree.</summary>
+        [Required, MaxLength(100)]
+        public string Name { get; set; } = "Default Observatory";
+
         [Range(-90, 90)]
         public double Latitude { get; set; } = 51.476852;
 
@@ -36,5 +40,14 @@ namespace GreenSwamp.Alpaca.Settings.Models
         public double Elevation { get; set; } = 10.0;
 
         public TimeSpan UTCOffset { get; set; } = TimeSpan.Zero;
+    }
+
+    /// <summary>
+    /// Collection of observatory sites — content of observatory.settings.json.
+    /// Replaces the previous single-observatory model (no backwards compatibility).
+    /// </summary>
+    public class ObservatorySettings
+    {
+        public List<ObservatoryInfo> Observatories { get; set; } = [];
     }
 }

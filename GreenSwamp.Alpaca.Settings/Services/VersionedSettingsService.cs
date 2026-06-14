@@ -255,7 +255,8 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 return;
             }
 
-            var observatory = GetObservatorySettings();
+            var observatorySettings = GetObservatorySettings();
+            var observatory = observatorySettings.Observatories.FirstOrDefault() ?? new ObservatoryInfo();
             foreach (var stub in stubs)
             {
                 if (string.IsNullOrEmpty(stub.AlignmentMode) || !Enum.TryParse<AlignmentMode>(stub.AlignmentMode, out _))
@@ -759,8 +760,8 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 try
                 {
                     var json = File.ReadAllText(observatoryPath);
-                    var saved = JsonSerializer.Deserialize<ObservatorySettings>(json);
-                    if (saved != null)
+                    var saved = JsonSerializer.Deserialize<ObservatorySettings>(json, _jsonReadOptions);
+                    if (saved?.Observatories is { Count: > 0 })
                     {
                         LogSafe("INFO", "Loaded observatory settings from observatory.settings.json");
                         return saved;
@@ -768,13 +769,16 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 }
                 catch (Exception ex)
                 {
-                    LogSafe("WARNING", $"Failed to read observatory.settings.json: {ex.Message} — using ObservatoryDefaults");
+                    LogSafe("WARNING", $"Failed to read observatory.settings.json: {ex.Message} — using defaults");
                 }
             }
 
-            // First run (B4): bind from ObservatoryDefaults and write the file
-            var defaults = new ObservatorySettings();
-            _configuration.GetSection("ObservatoryDefaults").Bind(defaults);
+            // First run: create a single default observatory from ObservatoryDefaults config section.
+            var firstObs = new ObservatoryInfo();
+            _configuration.GetSection("ObservatoryDefaults").Bind(firstObs);
+            firstObs.Name = "Default Observatory";
+            var defaults = new ObservatorySettings { Observatories = [firstObs] };
+
             LogSafe("INFO", "observatory.settings.json not found — first-run write from ObservatoryDefaults.");
             try
             {
@@ -793,10 +797,10 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
         public async Task SaveObservatorySettingsAsync(ObservatorySettings settings)
         {
-            // TODO: Future feature — optionally push updated observatory settings to all registered
-            // device-nn.settings.json files. This would iterate GetAllDeviceSettings(), update
-            // observatory properties in each, and call SaveDeviceSettingsAsync(). Deferred to v2;
-            // requires explicit user confirmation in UI to avoid accidental overwrites.
+            ArgumentNullException.ThrowIfNull(settings);
+            if (settings.Observatories.Count == 0)
+                throw new InvalidOperationException("Cannot save an empty observatory list. At least one observatory is required.");
+
             var observatoryPath = Path.Combine(_currentVersionPath, "observatory.settings.json");
 
             if (!await _observatoryFileLock.WaitAsync(TimeSpan.FromSeconds(5)))
@@ -826,8 +830,9 @@ namespace GreenSwamp.Alpaca.Settings.Services
             var device = new SkySettings();
             _configuration.GetSection($"DeviceTemplates:{modeName}").Bind(device);
 
-            // B1: Override observatory properties with current observatory.settings.json values
-            var observatory = GetObservatorySettings();
+            // B1: Override observatory properties with the first observatory in the collection
+            var observatorySettings = GetObservatorySettings();
+            var observatory = observatorySettings.Observatories.FirstOrDefault() ?? new ObservatoryInfo();
             device.Latitude = observatory.Latitude;
             device.Longitude = observatory.Longitude;
             device.Elevation = observatory.Elevation;

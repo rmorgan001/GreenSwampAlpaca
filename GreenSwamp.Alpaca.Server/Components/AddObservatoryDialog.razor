@@ -1,0 +1,93 @@
+﻿@using GreenSwamp.Alpaca.Settings.Models
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIcon Icon="@Icons.Material.Filled.AddLocationAlt" Color="Color.Primary" />
+            <MudText Typo="Typo.h6">Add Observatory</MudText>
+        </MudStack>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Spacing="3" Class="mt-2">
+            <MudTextField @bind-Value="_name"
+                          @bind-Value:after="ValidateName"
+                          Label="Observatory Name"
+                          Placeholder="e.g. Backyard Observatory"
+                          Required="true"
+                          RequiredError="Name is required."
+                          Immediate="true"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.LocationOn"
+                          Error="@_nameError"
+                          ErrorText="@_nameErrorText" />
+
+            <MudNumericField T="double" @bind-Value="_latitude"
+                             Label="Latitude (°)" Format="F6" Min="-90" Max="90" Immediate="true" />
+            <MudNumericField T="double" @bind-Value="_longitude"
+                             Label="Longitude (°)" Format="F6" Min="-180" Max="180" Immediate="true" />
+            <MudNumericField T="double" @bind-Value="_elevation"
+                             Label="Elevation (m)" Format="F1" Min="-500" Max="9000" Immediate="true" />
+            <MudNumericField T="double" @bind-Value="_utcOffsetHours"
+                             Label="UTC Offset (h)" Format="F1" Min="-14" Max="14" Immediate="true" />
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled"
+                   Disabled="@(!CanConfirm)"
+                   OnClick="Confirm"
+                   StartIcon="@Icons.Material.Filled.Add">
+            Add Observatory
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    /// <summary>Existing observatory names used for uniqueness validation.</summary>
+    [Parameter] public IReadOnlyList<string> ExistingNames { get; set; } = [];
+
+    private string _name = string.Empty;
+    private double _latitude = 51.476852;
+    private double _longitude;
+    private double _elevation = 10.0;
+    private double _utcOffsetHours;
+
+    private bool _nameError;
+    private string _nameErrorText = string.Empty;
+
+    private bool CanConfirm => !string.IsNullOrWhiteSpace(_name) && !_nameError;
+
+    private void ValidateName()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _nameError = true;
+            _nameErrorText = "Name is required.";
+            return;
+        }
+        var isDuplicate = ExistingNames.Any(n => string.Equals(n, _name.Trim(), StringComparison.OrdinalIgnoreCase));
+        _nameError = isDuplicate;
+        _nameErrorText = isDuplicate ? "An observatory with this name already exists." : string.Empty;
+    }
+
+    private void Confirm()
+    {
+        ValidateName();
+        if (!CanConfirm) return;
+
+        var result = new ObservatoryInfo
+        {
+            Name      = _name.Trim(),
+            Latitude  = _latitude,
+            Longitude = _longitude,
+            Elevation = _elevation,
+            UTCOffset = TimeSpan.FromHours(_utcOffsetHours)
+        };
+        MudDialog.Close(DialogResult.Ok(result));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

@@ -1,0 +1,105 @@
+﻿@using GreenSwamp.Alpaca.Settings.Models
+
+<MudStack Spacing="3">
+    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="User-defined name for this observatory site." Placement="Placement.Right" Arrow="true">
+        <MudTextField @bind-Value="Observatory!.Name"
+                      @bind-Value:after="NotifyChanged"
+                      Label="Name" Immediate="true"
+                      Error="@_nameError"
+                      ErrorText="@_nameErrorText" />
+    </MudTooltip>
+
+    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Geographic latitude of the observatory in decimal degrees (-90 to +90)." Placement="Placement.Right" Arrow="true">
+        <MudNumericField T="double" @bind-Value="Observatory!.Latitude"
+                         @bind-Value:after="NotifyChanged"
+                         Label="Latitude (°)" Format="F6" Min="-90" Max="90" Immediate="true" />
+    </MudTooltip>
+
+    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Geographic longitude of the observatory in decimal degrees (-180 to +180)." Placement="Placement.Right" Arrow="true">
+        <MudNumericField T="double" @bind-Value="Observatory!.Longitude"
+                         @bind-Value:after="NotifyChanged"
+                         Label="Longitude (°)" Format="F6" Min="-180" Max="180" Immediate="true" />
+    </MudTooltip>
+
+    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Elevation above sea level in metres." Placement="Placement.Right" Arrow="true">
+        <MudNumericField T="double" @bind-Value="Observatory!.Elevation"
+                         @bind-Value:after="NotifyChanged"
+                         Label="Elevation (m)" Format="F1" Min="-500" Max="9000" Immediate="true" />
+    </MudTooltip>
+
+    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="UTC offset for the observatory site (hours). Use negative values for west." Placement="Placement.Right" Arrow="true">
+        <MudNumericField T="double" @bind-Value="_utcOffsetHours"
+                         @bind-Value:after="OnUtcOffsetChanged"
+                         Label="UTC Offset (h)" Format="F1" Min="-14" Max="14" Immediate="true" />
+    </MudTooltip>
+
+    @if (DeviceSettings is { Count: > 0 })
+    {
+        <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Copy Latitude, Longitude and Elevation from this observatory to all telescope devices." Placement="Placement.Right" Arrow="true">
+            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.CopyAll"
+                       OnClick="CopyToAllDevices">
+                Copy to all devices
+            </MudButton>
+        </MudTooltip>
+    }
+</MudStack>
+
+@code {
+    /// <summary>The individual observatory being edited (working copy).</summary>
+    [Parameter] public ObservatoryInfo? Observatory { get; set; }
+
+    /// <summary>All observatories in the working copy — used for name-uniqueness validation.</summary>
+    [Parameter] public ObservatorySettings? AllObservatories { get; set; }
+
+    [Parameter] public Dictionary<int, SkySettings>? DeviceSettings { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public EventCallback<ObservatoryInfo> OnCopyToAllDevices { get; set; }
+
+    private double _utcOffsetHours;
+    private bool _nameError;
+    private string _nameErrorText = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        if (Observatory is not null)
+            _utcOffsetHours = Observatory.UTCOffset.TotalHours;
+    }
+
+    private async Task OnUtcOffsetChanged()
+    {
+        if (Observatory is not null)
+            Observatory.UTCOffset = TimeSpan.FromHours(_utcOffsetHours);
+        await NotifyChanged();
+    }
+
+    private async Task NotifyChanged()
+    {
+        ValidateName();
+        await OnChanged.InvokeAsync();
+    }
+
+    private void ValidateName()
+    {
+        if (Observatory is null) return;
+        if (string.IsNullOrWhiteSpace(Observatory.Name))
+        {
+            _nameError = true;
+            _nameErrorText = "Name is required.";
+            return;
+        }
+        var isDuplicate = AllObservatories?.Observatories
+            .Any(o => o.Id != Observatory.Id
+                      && string.Equals(o.Name, Observatory.Name, StringComparison.OrdinalIgnoreCase))
+            ?? false;
+        _nameError = isDuplicate;
+        _nameErrorText = isDuplicate ? "An observatory with this name already exists." : string.Empty;
+    }
+
+    private async Task CopyToAllDevices()
+    {
+        if (Observatory is null) return;
+        await OnCopyToAllDevices.InvokeAsync(Observatory);
+        await OnChanged.InvokeAsync();
+    }
+}

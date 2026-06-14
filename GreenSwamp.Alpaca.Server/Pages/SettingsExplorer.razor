@@ -7,6 +7,7 @@
 @using MonitorSettingsModel = GreenSwamp.Alpaca.Settings.Models.MonitorSettings
 @using ServerConfig = GreenSwamp.Alpaca.Settings.Models.ServerConfig
 @using ObservatorySettings = GreenSwamp.Alpaca.Settings.Models.ObservatorySettings
+@using ObservatoryInfo = GreenSwamp.Alpaca.Settings.Models.ObservatoryInfo
 @using SkySettings = GreenSwamp.Alpaca.Settings.Models.SkySettings
 @inject IVersionedSettingsService SettingsService
 @inject IDialogService DialogService
@@ -101,6 +102,18 @@
                                OnDelete="DeleteDeviceAsync"
                                OnHotReload="HotReloadDevicesAsync" />
         }
+        else if (IsObservatoriesSectionNode(_selectedNode))
+        {
+            <ObservatorySectionCard Observatories="_observatoryWork"
+                                    IsDirty="@_selectedNode.IsDirty"
+                                    IsLoading="@_saving"
+                                    DeviceSettings="_deviceWork"
+                                    OnAdd="AddObservatoryAsync"
+                                    OnDelete="DeleteObservatoryAsync"
+                                    OnCopyToAllDevices="HandleCopyObservatoryToAllDevicesAsync"
+                                    OnSave="SaveSelectedGroupAsync"
+                                    OnReset="ResetSelectedGroup" />
+        }
         else if (IsMonitorLoggingSectionNode(_selectedNode))
         {
             <MonitorLoggingSettingsCard IsDirty="@_selectedNode.IsDirty"
@@ -142,6 +155,7 @@
                                         Monitor="_monitorWork"
                                         DeviceSettings="_deviceWork"
                                         ShowHidden="_showHidden"
+                                        OnCopyObservatoryToAllDevices="HandleCopyObservatoryToAllDevicesAsync"
                                         OnSettingChanged="HandleSettingChanged" />
                 </MudCardContent>
 

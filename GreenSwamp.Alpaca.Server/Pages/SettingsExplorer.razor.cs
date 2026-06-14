@@ -8,6 +8,7 @@ using MudBlazor;
 using System.Text.Json;
 // Alias required: MonitorSettings page class exists in this namespace and shadows the model.
 using MonitorSettingsModel = GreenSwamp.Alpaca.Settings.Models.MonitorSettings;
+using ObservatoryInfo = GreenSwamp.Alpaca.Settings.Models.ObservatoryInfo;
 using ObservatorySettings = GreenSwamp.Alpaca.Settings.Models.ObservatorySettings;
 using ServerConfig = GreenSwamp.Alpaca.Settings.Models.ServerConfig;
 using SkySettings = GreenSwamp.Alpaca.Settings.Models.SkySettings;
@@ -80,6 +81,10 @@ public partial class SettingsExplorer : IDisposable
     private static bool IsMonitorLoggingSectionNode(SettingsNode? node) =>
         node is { Level: SettingsNodeLevel.Section, Source: SettingsNodeSource.Monitor, Label: "Logging" };
 
+    /// <summary>True when the selected node is the Observatories section (shows the observatory list card).</summary>
+    private static bool IsObservatoriesSectionNode(SettingsNode? node) =>
+        node is { Level: SettingsNodeLevel.Section, Source: SettingsNodeSource.Observatory };
+
     // ── Hidden-group definitions ────────────────────────────────────────────
     private static readonly HashSet<string> _allHiddenGroups = new(StringComparer.Ordinal)
     {
@@ -103,19 +108,19 @@ public partial class SettingsExplorer : IDisposable
     private static readonly Dictionary<string, string> NodeDescriptions = new()
     {
         // Section descriptions
-        ["Observatory"]       = "Physical observatory site properties — latitude, longitude, elevation and UTC offset.",
+        ["Observatories"]     = "Named observatory sites — latitude, longitude, elevation and UTC offset per site.",
         ["Server Configuration"] = "Alpaca HTTP server behaviour, network binding, authentication and identity.",
         ["Logging"] = "Logging filter settings — device, category and message type filters.",
         ["Telescope Devices"] = "Per-device telescope mount settings.",
+
+        // Observatory leaf (shared key for all individual observatory nodes)
+        ["Observatory"]       = "Latitude, longitude, elevation and UTC offset for this observatory site.",
 
         // Server Config group descriptions
         ["Network"]           = "TCP port, remote access and Alpaca UDP discovery settings.",
         ["Alpaca Behaviour"]  = "Strict mode, remote disconnects and image-bytes download options.",
         ["Identity & UI"]     = "Location label, browser auto-start and Swagger UI options.",
         ["Authentication"]    = "HTTP Basic authentication settings (username only — use Server Settings to change the password).",
-
-        // Observatory group
-        ["Observatory Settings"] = "Latitude, longitude, elevation and UTC offset for the observatory site.",
 
         // Monitor groups
         ["Configuration Presets"] = "Apply preset configurations for different logging scenarios (Development, Production, Troubleshooting, Profile Debug).",
@@ -254,20 +259,17 @@ public partial class SettingsExplorer : IDisposable
         };
         root.Add(deviceSection);
 
-        // Observatory
-        root.Add(new SettingsNode
+        // Observatories
+        var observatorySection = new SettingsNode
         {
-            Label    = "Observatory",
+            Label    = "Observatories",
             Icon     = Icons.Material.Filled.LocationOn,
-            Description = NodeDescriptions["Observatory"],
+            Description = NodeDescriptions["Observatories"],
             Level    = SettingsNodeLevel.Section,
             Source   = SettingsNodeSource.Observatory,
-            Children =
-            [
-                Leaf("Observatory Settings", Icons.Material.Filled.Terrain,
-                     SettingsNodeSource.Observatory, "Observatory Settings"),
-            ]
-        });
+            Children = BuildObservatoryNodes()
+        };
+        root.Add(observatorySection);
 
         // Logging
         root.Add(new SettingsNode
@@ -351,6 +353,19 @@ public partial class SettingsExplorer : IDisposable
         return nodes;
     }
 
+    private List<SettingsNode> BuildObservatoryNodes() =>
+        _observatoryWork.Observatories.Select(obs => new SettingsNode
+        {
+            Label         = obs.Name,
+            Icon          = Icons.Material.Filled.Terrain,
+            Description   = NodeDescriptions.GetValueOrDefault("Observatory", $"Observatory site: {obs.Name}"),
+            Level         = SettingsNodeLevel.Group,
+            Source        = SettingsNodeSource.Observatory,
+            GroupKey      = "Observatory",
+            ObservatoryId = obs.Id,
+            DeviceNumber  = -1
+        }).ToList();
+
     private static SettingsNode Leaf(string label, string icon,
         SettingsNodeSource source, string groupKey) => new()
     {
@@ -380,7 +395,7 @@ public partial class SettingsExplorer : IDisposable
         if (node is null)
             return;
 
-        var selectable = node.Level == SettingsNodeLevel.Group || IsDeviceManagerNode(node) || IsMonitorLoggingSectionNode(node);
+        var selectable = node.Level == SettingsNodeLevel.Group || IsDeviceManagerNode(node) || IsMonitorLoggingSectionNode(node) || IsObservatoriesSectionNode(node);
         if (!selectable)
             return;
 
@@ -744,7 +759,6 @@ public partial class SettingsExplorer : IDisposable
                 case SettingsNodeSource.Observatory:
                     await SettingsService.SaveObservatorySettingsAsync(_observatoryWork);
                     _observatoryOrigJson = Serialize(_observatoryWork);
-                    await OfferLocationPropagationAsync();
                     break;
 
                 case SettingsNodeSource.ServerConfig:
@@ -878,6 +892,7 @@ public partial class SettingsExplorer : IDisposable
         {
             case SettingsNodeSource.Observatory:
                 _observatoryWork = DeserializeOrDefault<ObservatorySettings>(_observatoryOrigJson);
+                BuildTree(); // Structural changes (add/delete) are reversed by rebuilding from restored working copy
                 break;
             case SettingsNodeSource.ServerConfig:
                 _serverConfigWork = DeserializeOrDefault<ServerConfig>(_serverConfigOrigJson);
@@ -900,34 +915,146 @@ public partial class SettingsExplorer : IDisposable
     }
 
     // ── Observatory location propagation dialog (Q7) ───────────────────────
-    private async Task OfferLocationPropagationAsync()
+    // ── Observatory CRUD ──────────────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Presents the Add Observatory dialog, appends the result to the working copy, rebuilds
+    /// the tree, and marks all observatory nodes dirty. No data is persisted until the user saves.
+    /// </summary>
+    private async Task AddObservatoryAsync()
     {
-        if (!_deviceWork.Any()) return;
+        var existingNames = _observatoryWork.Observatories.Select(o => o.Name).ToList();
+        var parameters = new DialogParameters<AddObservatoryDialog>
+        {
+            { d => d.ExistingNames, existingNames }
+        };
+        var dialog = await DialogService.ShowAsync<AddObservatoryDialog>(
+            "Add Observatory",
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result.Canceled || result.Data is not ObservatoryInfo newObs) return;
+
+        _observatoryWork.Observatories.Add(newObs);
+        BuildTree();
+        MarkObservatoryNodesDirty();
+
+        // Auto-navigate to the new observatory leaf node
+        var newNode = Flatten(_treeItems)
+            .FirstOrDefault(n => n.Source == SettingsNodeSource.Observatory
+                                 && n.ObservatoryId == newObs.Id);
+        if (newNode is not null)
+        {
+            _selectedNode      = newNode;
+            _treeSelectedValue = newNode;
+        }
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Shows a confirmation dialog and, if confirmed, removes the observatory from the working copy.
+    /// Rebuilds the tree and marks observatory nodes dirty. No data is persisted until the user saves.
+    /// </summary>
+    private async Task DeleteObservatoryAsync(string id)
+    {
+        if (_observatoryWork.Observatories.Count <= 1) return; // guard — UI disables the button
+
+        var obs = _observatoryWork.Observatories.FirstOrDefault(o => o.Id == id);
+        if (obs is null) return;
 
         var parameters = new DialogParameters<ConfirmDialog>
         {
-            { d => d.ContentText, "Do you want to update all telescope devices with the new observatory location values (Latitude, Longitude, Elevation, UTCOffset)?" },
-            { d => d.ConfirmText, "Update all devices" },
-            { d => d.CancelText,  "Observatory only" }
+            { d => d.ContentText, $"Delete observatory \"{obs.Name}\"? This change will not be persisted until you click Save." },
+            { d => d.ConfirmText, "Delete" },
+            { d => d.CancelText,  "Cancel" }
         };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small };
-        var dialog   = await DialogService.ShowAsync<ConfirmDialog>("Propagate Location?", parameters, options);
-        var result   = await dialog.Result;
-        if (result is { Canceled: false })
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>(
+            "Delete Observatory", parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small });
+        var result = await dialog.Result;
+        if (result.Canceled) return;
+
+        _observatoryWork.Observatories.RemoveAll(o => o.Id == id);
+
+        // If the deleted node was selected, clear selection before rebuild
+        if (_selectedNode?.ObservatoryId == id)
         {
-            foreach (var (num, dev) in _deviceWork)
-            {
-                dev.Latitude  = _observatoryWork.Latitude;
-                dev.Longitude = _observatoryWork.Longitude;
-                dev.Elevation = _observatoryWork.Elevation;
-                dev.UTCOffset = _observatoryWork.UTCOffset;
-                await SettingsService.SaveDeviceSettingsAsync(num, dev);
-                _deviceOrigJson[num] = Serialize(dev);
-                foreach (var n in Flatten(_treeItems).Where(n => n.Source == SettingsNodeSource.Device && n.DeviceNumber == num))
-                    n.IsDirty = false;
-            }
-            ShowSuccess("Observatory location propagated to all devices.");
+            _selectedNode      = null;
+            _treeSelectedValue = null;
         }
+
+        BuildTree();
+        MarkObservatoryNodesDirty();
+        SelectObservatoriesSectionNode();
+    }
+
+    /// <summary>
+    /// Confirms with the user then immediately persists the observatory's Lat/Long/Elevation
+    /// to every device settings file. Updates both working copies and JSON baselines so no
+    /// device node shows a dirty indicator afterwards.
+    /// </summary>
+    private async Task HandleCopyObservatoryToAllDevicesAsync(ObservatoryInfo obs)
+    {
+        if (_deviceWork.Count == 0) return;
+
+        var parameters = new DialogParameters<ConfirmDialog>
+        {
+            { d => d.ContentText, $"Copy Latitude, Longitude and Elevation from '{obs.Name}' to all {_deviceWork.Count} telescope device(s) and save immediately?" },
+            { d => d.ConfirmText, "Copy & Save" },
+            { d => d.CancelText,  "Cancel" }
+        };
+        var dialog = await DialogService.ShowAsync<ConfirmDialog>(
+            "Copy Observatory to All Devices", parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result.Canceled) return;
+
+        _saving = true;
+        try
+        {
+            foreach (var (deviceNumber, dev) in _deviceWork)
+            {
+                dev.Latitude  = obs.Latitude;
+                dev.Longitude = obs.Longitude;
+                dev.Elevation = obs.Elevation;
+
+                await SettingsService.SaveDeviceSettingsAsync(deviceNumber, dev);
+
+                // Update the JSON baseline so dirty detection sees no change.
+                _deviceOrigJson[deviceNumber] = Serialize(dev);
+            }
+
+            // Ensure all device nodes are marked clean.
+            foreach (var node in Flatten(_treeItems).Where(n => n.Source == SettingsNodeSource.Device))
+                node.IsDirty = false;
+
+            ShowSuccess($"Lat/Long/Elevation from '{obs.Name}' saved to {_deviceWork.Count} device(s).");
+        }
+        catch (Exception ex)
+        {
+            ShowError($"Error copying observatory to devices: {ex.Message}");
+        }
+        finally
+        {
+            _saving = false;
+            StateHasChanged();
+        }
+    }
+
+    private void MarkObservatoryNodesDirty()
+    {
+        foreach (var node in Flatten(_treeItems).Where(n => n.Source == SettingsNodeSource.Observatory))
+            node.IsDirty = IsNodeDirty(node);
+    }
+
+    private void SelectObservatoriesSectionNode()
+    {
+        var node = Flatten(_treeItems).FirstOrDefault(IsObservatoriesSectionNode);
+        if (node is null) return;
+        _selectedNode      = node;
+        _treeSelectedValue = node;
+        StateHasChanged();
     }
 
     // ── Unsaved-changes guard dialog (Q4) ──────────────────────────────────

@@ -26,8 +26,15 @@
         break;
 
     // ── Observatory ────────────────────────────────────────────────────────
-    case "Observatory Settings":
-        <ObservatoryEditor Settings="Observatory" ShowHidden="ShowHidden" DeviceSettings="DeviceSettings" OnChanged="OnSettingChanged" />
+    case "Observatory":
+        if (Observatory?.Observatories.FirstOrDefault(o => o.Id == Node.ObservatoryId) is { } obsInfo)
+        {
+            <ObservatorySingleEditor Observatory="obsInfo"
+                                     AllObservatories="Observatory"
+                                     DeviceSettings="DeviceSettings"
+                                     OnCopyToAllDevices="OnCopyObservatoryToAllDevices"
+                                     OnChanged="OnSettingChanged" />
+        }
         break;
 
     // ── Logging ──────────────────────────────────────────────────
@@ -99,6 +106,7 @@
     [Parameter] public Dictionary<int, SkySettings>? DeviceSettings { get; set; }
     [Parameter] public bool ShowHidden { get; set; }
     [Parameter] public EventCallback OnSettingChanged { get; set; }
+    [Parameter] public EventCallback<ObservatoryInfo> OnCopyObservatoryToAllDevices { get; set; }
 
     private async Task OnChanged() => await OnSettingChanged.InvokeAsync();
 }

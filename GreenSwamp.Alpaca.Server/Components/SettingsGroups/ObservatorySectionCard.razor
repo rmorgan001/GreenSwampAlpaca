@@ -1,0 +1,105 @@
+﻿@using GreenSwamp.Alpaca.Settings.Models
+
+<MudCard Elevation="2">
+    <MudCardHeader>
+        <CardHeaderAvatar>
+            <MudIcon Icon="@Icons.Material.Filled.LocationOn" Color="Color.Primary" />
+        </CardHeaderAvatar>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Observatories</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                Manage observatory sites. Each telescope device can copy its location from any site listed here.
+            </MudText>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            @if (IsDirty)
+            {
+                <MudChip T="string" Color="Color.Warning" Size="Size.Small"
+                         Icon="@Icons.Material.Filled.Edit">Unsaved</MudChip>
+            }
+        </CardHeaderActions>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (Observatories?.Observatories is { Count: > 0 } list)
+        {
+            <MudTable Items="list" Hover="true" Dense="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>Latitude (°)</MudTh>
+                    <MudTh>Longitude (°)</MudTh>
+                    <MudTh>Elevation (m)</MudTh>
+                    <MudTh>UTC Offset (h)</MudTh>
+                    <MudTh Style="text-align:right">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name"><MudText Typo="Typo.body2"><strong>@context.Name</strong></MudText></MudTd>
+                    <MudTd DataLabel="Latitude">@context.Latitude.ToString("F6")</MudTd>
+                    <MudTd DataLabel="Longitude">@context.Longitude.ToString("F6")</MudTd>
+                    <MudTd DataLabel="Elevation">@context.Elevation.ToString("F1")</MudTd>
+                    <MudTd DataLabel="UTC Offset">@context.UTCOffset.TotalHours.ToString("F1")</MudTd>
+                    <MudTd Style="text-align:right">
+                        <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="0">
+                            @if (DeviceSettings is { Count: > 0 })
+                            {
+                                <MudTooltip Text="Copy Lat/Long/Elevation to all telescope devices" Placement="Placement.Left">
+                                    <MudIconButton Icon="@Icons.Material.Filled.CopyAll"
+                                                   Size="Size.Small" Color="Color.Secondary"
+                                                   OnClick="@(() => CopyToAllDevices(context))" />
+                                </MudTooltip>
+                            }
+                            <MudTooltip Text="@(list.Count <= 1 ? "Cannot delete the last observatory" : "Delete this observatory")" Placement="Placement.Left">
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Size="Size.Small" Color="Color.Error"
+                                               Disabled="@(list.Count <= 1)"
+                                               OnClick="@(() => RequestDelete(context.Id))" />
+                            </MudTooltip>
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudCardContent>
+
+    <MudCardActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.AddLocationAlt"
+                   OnClick="RequestAdd">
+            Add Observatory
+        </MudButton>
+        <MudSpacer />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Save"
+                   Disabled="@(!IsDirty || IsLoading)"
+                   OnClick="@(() => OnSave.InvokeAsync())">
+            @if (IsLoading)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="me-2" />
+            }
+            Save
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                   StartIcon="@Icons.Material.Filled.RestartAlt"
+                   Disabled="@(!IsDirty)"
+                   OnClick="@(() => OnReset.InvokeAsync())">
+            Reset
+        </MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter] public ObservatorySettings? Observatories { get; set; }
+    [Parameter] public bool IsDirty { get; set; }
+    [Parameter] public bool IsLoading { get; set; }
+    [Parameter] public Dictionary<int, SkySettings>? DeviceSettings { get; set; }
+
+    [Parameter] public EventCallback OnAdd { get; set; }
+    [Parameter] public EventCallback<string> OnDelete { get; set; }
+    [Parameter] public EventCallback<ObservatoryInfo> OnCopyToAllDevices { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+
+    private Task RequestAdd() => OnAdd.InvokeAsync();
+    private Task RequestDelete(string id) => OnDelete.InvokeAsync(id);
+    private Task CopyToAllDevices(ObservatoryInfo obs) => OnCopyToAllDevices.InvokeAsync(obs);
+}

@@ -37,6 +37,12 @@ public class SettingsNode
     public int DeviceNumber { get; init; } = -1;
 
     /// <summary>
+    /// Observatory Id (GUID string) when Source == Observatory and Level == Group.
+    /// Empty for all non-observatory leaf nodes.
+    /// </summary>
+    public string ObservatoryId { get; init; } = string.Empty;
+
+    /// <summary>
     /// Matches the Group column in SETTINGS-REFERENCE.md.
     /// Used as a key to load the correct sub-component editor.
     /// </summary>
