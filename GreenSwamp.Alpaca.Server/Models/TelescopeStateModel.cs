@@ -46,6 +46,8 @@ namespace GreenSwamp.Alpaca.Server.Models
         public bool IsMountRunning { get; set; }
         public string ComPort { get; set; } = string.Empty;
         public int ConnectedClientCount { get; set; }
+        /// <summary>True once any client has connected since the server started. Never reset on disconnect.</summary>
+        public bool HasEverBeenConnected { get; set; }
 
         // Park positions
         public string? ParkSelectedName { get; set; }

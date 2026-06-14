@@ -1,6 +1,7 @@
 ﻿@page "/mount-status"
 @page "/mount-status/{DeviceNumber:int}"
 @using GreenSwamp.Alpaca.Server.Components
+@using GreenSwamp.Alpaca.Server.Models
 @using GreenSwamp.Alpaca.Server.Services
 @using GreenSwamp.Alpaca.MountControl
 @using GreenSwamp.Alpaca.Settings.Services
@@ -75,7 +76,7 @@ else
                             @StatusRowWithDetail("Mount Connected", s.IsMountRunning,
                                 mountSettings?.Mount == "SkyWatcher" ? (s.ComPort ?? string.Empty) : string.Empty,
                                 Color.Success)
-                            @ActiveClientsRow(s.ConnectedClientCount)
+                            @ActiveClientsRow(s.ConnectedClientCount, s.HasEverBeenConnected)
                             @StatusRow("Slewing",           s.Slewing,           Color.Warning)
                             @StatusRow("Pulse Guiding", s.IsPulseGuidingRa || s.IsPulseGuidingDec, Color.Warning)
                             @StatusRow("Pulse Guide RA", s.IsPulseGuidingRa, Color.Warning)
@@ -197,7 +198,7 @@ else
                                        Disabled="@(!IsUiClientConnected(dn))"
                                        OnClick="@(() => OnTrackingToggleAsync(dn))">@(s.Tracking ? "Tracking Off" : "Tracking On")</MudButton>
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                                       Disabled="@(!IsUiClientConnected(dn))"
+                                       Disabled="@(!CanEmergencyStop(dn, s))"
                                        OnClick="@(() => OnStopAsync(dn))">Stop</MudButton>
                         </MudStack>
                         <MudButton Variant="Variant.Outlined"
@@ -268,14 +269,18 @@ else
         SettingsService.DeviceSettingsChanged -= OnDeviceSettingsChanged;
     }
 
-    // Client key 0 is the "all-zeroes GUID" used by the internal UI client.
-    // AlpacaRequestContext.ClientId is AsyncLocal<uint> and defaults to 0 in the Blazor context,
-    // so telescope.Connected = value from UI code naturally uses this same key.
-    private const long UiClientId = 0L;
+    // UI client ID delegates to the canonical constant defined on Mount
+    // (ASCOM Alpaca default ClientId; AlpacaRequestContext.ClientId defaults to 0 in the Blazor context)
+    private const long UiClientId = Mount.UiInternalClientId;
 
     /// <summary>Returns true when the UI's internal client (key 0) is registered as connected.</summary>
     private bool IsUiClientConnected(int dn) =>
         MountRegistry.GetInstance(dn)?.IsClientConnected(UiClientId) ?? false;
+
+    /// <summary>Returns true when the Stop button should be enabled: any client has connected
+    /// at least once this session, or the UI client is currently connected.</summary>
+    private bool CanEmergencyStop(int dn, TelescopeStateModel s) =>
+        s.HasEverBeenConnected || IsUiClientConnected(dn);
 
     private async Task OnConnectToggleAsync(int dn)
     {
@@ -308,8 +313,13 @@ else
     {
         try
         {
-            var telescope = DeviceManager.GetTelescope((uint)dn);
-            await Task.Run(() => telescope.AbortSlew());
+            var mount = MountRegistry.GetInstance(dn);
+            if (mount == null)
+            {
+                Snackbar.Add($"Mount device {dn} not found", Severity.Error);
+                return;
+            }
+            await Task.Run(() => mount.EmergencyStopAll());
         }
         catch (Exception ex)
         {
@@ -414,14 +424,15 @@ else
         </MudStack>;
     };
 
-    private RenderFragment ActiveClientsRow(int count) => __builder =>
+    private RenderFragment ActiveClientsRow(int count, bool hasEverBeenConnected) => __builder =>
     {
+        var countColor = count > 0 ? Color.Success : (hasEverBeenConnected ? Color.Warning : Color.Default);
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
             <MudIcon Icon="@Icons.Material.Filled.People"
                      Color="@(count > 0 ? Color.Success : Color.Default)"
                      Size="Size.Small" />
             <MudText Typo="Typo.body2">Active clients</MudText>
-            <MudText Typo="Typo.body2" Class="gs-font-mono" Color="Color.Success">@count</MudText>
+            <MudText Typo="Typo.body2" Class="gs-font-mono" Color="@countColor">@count</MudText>
         </MudStack>;
     };
 

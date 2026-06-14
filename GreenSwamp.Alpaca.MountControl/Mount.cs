@@ -181,6 +181,14 @@ namespace GreenSwamp.Alpaca.MountControl
         private Exception? _serialError;
         private readonly ConcurrentDictionary<long, bool> _connectStates = new();
         public bool Connecting { get; private set; }
+        // Set on first ever connection; cleared only by server restart (in-memory)
+        private volatile bool _hasEverBeenConnected;
+
+        // Well-known internal client IDs
+        // 0 is the ASCOM Alpaca default ClientId for the internal Blazor UI (AlpacaRequestContext.ClientId defaults to 0)
+        public const long UiInternalClientId = 0L;
+        // -1 is used only as a temporary synthetic entry during EmergencyStopAll reconnect; never a real ASCOM client
+        private const long InternalEmergencyClientId = -1L;
 
         #endregion
 
@@ -210,6 +218,13 @@ namespace GreenSwamp.Alpaca.MountControl
         /// Gets the number of Alpaca clients currently connected to this mount instance.
         /// </summary>
         public int ConnectedClientCount => _connectStates.Count;
+
+        /// <summary>
+        /// True once any client has connected since the server started.
+        /// Remains true for the lifetime of the process; never reset on disconnect.
+        /// Used to enable the emergency-stop button even when no clients are connected.
+        /// </summary>
+        public bool HasEverBeenConnected => _hasEverBeenConnected;
 
         /// <summary>
         /// Returns true if the given client ID is currently in the connected-client set.
@@ -558,6 +573,75 @@ namespace GreenSwamp.Alpaca.MountControl
         {
             LogMount($"EmergencyStop() called on mount {Id}");
             AbortSlewAsync(speak: false);
+        }
+
+        /// <summary>
+        /// Emergency stop with full client management.
+        /// Immediately removes all external clients to prevent further commands being queued or
+        /// executed. Reconnects the hardware if it is not already running, issues AbortSlew, then
+        /// disconnects every client and stops the mount — UNLESS the UI client (id 0) was the only
+        /// connection before the stop, in which case it is preserved so the user can continue
+        /// operating without reconnecting.
+        /// </summary>
+        public void EmergencyStopAll()
+        {
+            // Snapshot connection state before any modifications
+            bool onlyUiClientConnected = _connectStates.Count == 1
+                                         && _connectStates.ContainsKey(UiInternalClientId);
+
+            LogMount($"EmergencyStopAll | Running:{IsMountRunning} | Clients:{_connectStates.Count} | OnlyUiClient:{onlyUiClientConnected}");
+            MonitorLog.LogToMonitor(new MonitorEntry
+            {
+                Datetime = HiResDateTime.UtcNow,
+                Device = MonitorDevice.Server,
+                Category = MonitorCategory.Server,
+                Type = MonitorType.Warning,
+                Method = nameof(EmergencyStopAll),
+                Thread = Environment.CurrentManagedThreadId,
+                Message = $"Mount:{Id} | Running:{IsMountRunning} | Clients:{_connectStates.Count} | OnlyUiClient:{onlyUiClientConnected}"
+            });
+
+            // Step 1: Immediately cut off all external clients so no further commands
+            // can enter the hardware queues while the stop sequence runs
+            foreach (var key in _connectStates.Keys.Where(k => k != UiInternalClientId).ToList())
+                _connectStates.TryRemove(key, out _);
+
+            // Step 2: Ensure mount hardware is running so the stop command can reach the controller.
+            // Only add the synthetic emergency entry when _connectStates is completely empty;
+            // if UiInternalClientId (0) is still present it satisfies MountStart()'s IsEmpty guard.
+            if (!IsMountRunning)
+            {
+                bool addedEmergencyClient = false;
+                if (_connectStates.IsEmpty)
+                {
+                    _connectStates.TryAdd(InternalEmergencyClientId, true);
+                    addedEmergencyClient = true;
+                }
+                try
+                {
+                    MountStart();
+                }
+                finally
+                {
+                    if (addedEmergencyClient)
+                        _connectStates.TryRemove(InternalEmergencyClientId, out _);
+                }
+            }
+
+            // Step 3: Issue hardware stop
+            if (IsMountRunning)
+                AbortSlewAsync(speak: false);
+
+            // Step 4: Post-stop cleanup
+            // Only-UI-client case: preserve guid 0 and leave hardware running so the
+            // user can continue operating without an explicit reconnect.
+            // All other cases (external clients were present, or nothing was connected):
+            // clear all remaining connections and fully stop the mount hardware.
+            if (!onlyUiClientConnected)
+            {
+                _connectStates.Clear();
+                MountStop();
+            }
         }
 
         /// <summary>

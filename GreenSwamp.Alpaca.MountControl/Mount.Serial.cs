@@ -50,6 +50,8 @@ namespace GreenSwamp.Alpaca.MountControl
             {
                 if (_connectStates.IsEmpty) { Connecting = true; }
                 var notAlreadyPresent = _connectStates.TryAdd(id, true);
+                // Record that this mount has been connected at least once this session
+                _hasEverBeenConnected = true;
 
                 if (!_connectStates.IsEmpty && !IsMountRunning)
                 {
