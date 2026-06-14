@@ -46,7 +46,11 @@ namespace GreenSwamp.Alpaca.Server.Models
         public bool IsMountRunning { get; set; }
         public string ComPort { get; set; } = string.Empty;
         public int ConnectedClientCount { get; set; }
-        
+
+        // Park positions
+        public string? ParkSelectedName { get; set; }
+        public List<string> ParkPositionNames { get; set; } = [];
+
         // Target information
         public double TargetRightAscension { get; set; }
         public double TargetDeclination { get; set; }
@@ -100,6 +104,8 @@ namespace GreenSwamp.Alpaca.Server.Models
             IsMountRunning = false;
             ComPort = string.Empty;
             ConnectedClientCount = 0;
+            ParkSelectedName = null;
+            ParkPositionNames = [];
             TargetRightAscension = double.NaN;
             TargetDeclination = double.NaN;
             ActualAxisX = double.NaN;

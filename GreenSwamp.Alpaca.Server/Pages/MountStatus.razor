@@ -2,11 +2,8 @@
 @page "/mount-status/{DeviceNumber:int}"
 @using GreenSwamp.Alpaca.Server.Components
 @using GreenSwamp.Alpaca.Server.Services
-@using GreenSwamp.Alpaca.Server.Models
 @using GreenSwamp.Alpaca.MountControl
 @using GreenSwamp.Alpaca.Settings.Services
-@using GreenSwamp.Alpaca.Settings.Models
-@using ASCOM.Common.DeviceInterfaces
 @using ASCOM.Alpaca
 @using System.Globalization
 @inject TelescopeStateService StateService
@@ -167,11 +164,33 @@ else
                             <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
                                        Disabled="@(!IsUiClientConnected(dn) || s.AtPark || !(MountRegistry.GetInstance(dn)?.Settings.CanFindHome ?? false))"
                                        OnClick="@(() => OnHomeAsync(dn))">Home</MudButton>
-                            <MudButton Variant="Variant.Outlined"
-                                       Color="@(s.AtPark ? Color.Warning : Color.Primary)"
-                                       Size="Size.Small"
-                                       Disabled="@(!IsUiClientConnected(dn) || (s.AtPark ? !(MountRegistry.GetInstance(dn)?.Settings.CanUnPark ?? false) : !(MountRegistry.GetInstance(dn)?.Settings.CanPark ?? false)))"
-                                       OnClick="@(() => OnParkToggleAsync(dn))">@(s.AtPark ? "Unpark" : "Park")</MudButton>
+                            <MudButtonGroup Variant="Variant.Outlined"
+                                           Color="@(s.AtPark ? Color.Warning : Color.Primary)"
+                                           Size="Size.Small"
+                                           DropShadow="false">
+                                <MudButton Disabled="@(!IsUiClientConnected(dn) || (s.AtPark ? !(MountRegistry.GetInstance(dn)?.Settings.CanUnPark ?? false) : !(MountRegistry.GetInstance(dn)?.Settings.CanPark ?? false)))"
+                                           OnClick="@(() => OnParkToggleAsync(dn))">
+                                    @if (s.AtPark)
+                                    {
+                                        @(string.IsNullOrEmpty(s.ParkSelectedName) ? "UNPARK" : $"UNPARK: {s.ParkSelectedName}")
+                                    }
+                                    else
+                                    {
+                                        @(string.IsNullOrEmpty(s.ParkSelectedName) ? "PARK" : $"PARK: {s.ParkSelectedName}")
+                                    }
+                                </MudButton>
+                                <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown"
+                                         Style="align-self: auto;"
+                                         Disabled="@(s.AtPark || !IsUiClientConnected(dn) || !(MountRegistry.GetInstance(dn)?.Settings.CanPark ?? false))">
+                                    @if (s.ParkPositionNames?.Count > 0)
+                                    {
+                                        @foreach (var posName in s.ParkPositionNames)
+                                        {
+                                            <MudMenuItem OnClick="@(() => OnParkPositionSelected(dn, posName))">@posName</MudMenuItem>
+                                        }
+                                    }
+                                </MudMenu>
+                            </MudButtonGroup>
                             <MudButton Variant="Variant.Outlined"
                                        Color="@(s.Tracking ? Color.Success : Color.Default)"
                                        Size="Size.Small"
@@ -311,6 +330,33 @@ else
         catch (Exception ex)
         {
             Snackbar.Add($"Park/Unpark failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void OnParkPositionSelected(int dn, string positionName)
+    {
+        try
+        {
+            var mount = MountRegistry.GetInstance(dn);
+            if (mount == null)
+            {
+                Snackbar.Add($"Mount device {dn} not found", Severity.Error);
+                return;
+            }
+
+            var position = mount.Settings.ParkPositions?.Find(p => p.Name == positionName);
+            if (position == null)
+            {
+                Snackbar.Add($"Park position '{positionName}' not found", Severity.Warning);
+                return;
+            }
+
+            mount.ParkSelected = position;
+            Snackbar.Add($"Park position set to: {positionName}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to set park position: {ex.Message}", Severity.Error);
         }
     }
 

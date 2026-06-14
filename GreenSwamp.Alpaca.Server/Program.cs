@@ -283,7 +283,6 @@ namespace GreenSwamp.Alpaca.Server
                 GreenSwamp.Alpaca.Shared.Settings.Load();
                 Logger.LogInformation("Settings.Load() completed");
 
-#pragma warning disable CS4014
                 // Fire-and-forget environment log — written once at startup, never blocks the server
                 GreenSwamp.Alpaca.Shared.EnvironmentLog.EnvironmentHelper.LogToDefaultLocationAsync()
                     .ContinueWith(t =>
@@ -293,7 +292,6 @@ namespace GreenSwamp.Alpaca.Server
                         else
                             Logger.LogInformation("Environment log written to: {Path}", t.Result ?? "(unknown)");
                     }, System.Threading.Tasks.TaskContinuationOptions.ExecuteSynchronously);
-#pragma warning restore CS4014
 
                 // Populate filter checklists (now that Settings properties have values)
                 GreenSwamp.Alpaca.Shared.MonitorLog.Load_Settings();
