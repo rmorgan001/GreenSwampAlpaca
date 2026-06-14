@@ -247,11 +247,15 @@ namespace GreenSwamp.Alpaca.Server
 
             var app = builder.Build();
 
-            // Enable response compression middleware to serve pre-compressed static files (.gz, .br) when supported by the client
-            app.UseResponseCompression();
-
-            app.UsePreCompressedStaticFiles();
-
+            // Only enable response compression in non-Development environments.
+            // Browser Link and Hot Reload browser refresh require uncompressed HTML
+            // responses to inject their scripts; Brotli/gzip encoding blocks that.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseResponseCompression();
+                app.UsePreCompressedStaticFiles();
+            }
+            
             // Replace bootstrap logger with the DI-resolved logger so the host's configured
             // log levels (from appsettings.json "Logging" section) take effect from this point.
             Logger = app.Services.GetRequiredService<ILogger<Program>>();

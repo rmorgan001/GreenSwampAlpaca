@@ -11,7 +11,7 @@
 
 <MudText Typo="Typo.h5" GutterBottom="true">Mount Settings</MudText>
 
-@if (ASCOM.Alpaca.DeviceManager.Telescopes.Count == 0)
+@if (_alpacaDevices.Count == 0)
 {
     <MudAlert Severity="Severity.Info">No mount devices registered.</MudAlert>
 }
@@ -20,7 +20,7 @@ else
     <MudTabs Rounded="true" Elevation="1" Class="gs-tabs-no-transform"
              ActivePanelIndex="@_activeDeviceTabIndex"
              ActivePanelIndexChanged="OnDeviceTabChanged">
-    @foreach (var device in ASCOM.Alpaca.DeviceManager.Telescopes.Keys.OrderBy(k => k))
+    @foreach (var device in GetConfiguredDeviceNumbers())
         {
             <MudTabPanel Text="@TabLabel(device)">
                 @* Inline: reuse TelescopeSetup component/page UI for read-only view *@
@@ -57,17 +57,24 @@ else
 
     protected override void OnParametersSet()
     {
-        var keys = ASCOM.Alpaca.DeviceManager.Telescopes.Keys.OrderBy(k => k).ToList();
+        _alpacaDevices = SettingsService.GetAlpacaDevices();
+        var keys = GetConfiguredDeviceNumbers();
         var idx = keys.IndexOf(DeviceNumber);
         _activeDeviceTabIndex = idx >= 0 ? idx : 0;
     }
 
     private void OnDeviceTabChanged(int index)
     {
-        var keys = ASCOM.Alpaca.DeviceManager.Telescopes.Keys.OrderBy(k => k).ToList();
+        var keys = GetConfiguredDeviceNumbers();
         if (index >= 0 && index < keys.Count)
             NavManager.NavigateTo($"/mount-settings/{keys[index]}");
     }
+
+    private List<int> GetConfiguredDeviceNumbers() =>
+        _alpacaDevices
+            .Select(d => d.DeviceNumber)
+            .OrderBy(d => d)
+            .ToList();
 
     private string TabLabel(int deviceNumber)
     {

@@ -18,8 +18,14 @@
 
 <MudText Typo="Typo.h5" GutterBottom="true">Mount Status</MudText>
 
+@if (_alpacaDevices.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">No mount devices registered.</MudAlert>
+}
+else
+{
 <MudTabs Rounded="true" Elevation="1" @bind-ActivePanelIndex="ActiveTabIndex" Class="mb-4 gs-tabs-no-transform">
-    @foreach (var dn in MountRegistry.GetAllInstances().Select(kvp => kvp.Key).OrderBy(k => k))
+    @foreach (var dn in GetConfiguredDeviceNumbers())
     {
         <MudTabPanel Text="@TabLabel(dn)">
             @{
@@ -170,7 +176,10 @@
                                        Color="@(s.Tracking ? Color.Success : Color.Default)"
                                        Size="Size.Small"
                                        Disabled="@(!IsUiClientConnected(dn))"
-                                       OnClick="@(() => OnTrackingToggleAsync(dn))">@(s.Tracking ? "Tracking On" : "Tracking Off")</MudButton>
+                                       OnClick="@(() => OnTrackingToggleAsync(dn))">@(s.Tracking ? "Tracking Off" : "Tracking On")</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       Disabled="@(!IsUiClientConnected(dn))"
+                                       OnClick="@(() => OnStopAsync(dn))">Stop</MudButton>
                         </MudStack>
                         <MudButton Variant="Variant.Outlined"
                                    Color="@(IsUiClientConnected(dn) ? Color.Error : Color.Success)"
@@ -198,6 +207,7 @@
                                 </MudTabPanel>
                     }
 </MudTabs>
+}
 
 @code {
     [Parameter] public int DeviceNumber { get; set; }
@@ -218,7 +228,8 @@
     protected override void OnParametersSet()
     {
         base.OnParametersSet();
-        var keys = MountRegistry.GetAllInstances().Select(kvp => kvp.Key).OrderBy(k => k).ToList();
+        _alpacaDevices = SettingsService.GetAlpacaDevices();
+        var keys = GetConfiguredDeviceNumbers();
         var idx = keys.IndexOf(DeviceNumber);
         ActiveTabIndex = idx >= 0 ? idx : 0;
     }
@@ -274,6 +285,19 @@
         }
     }
 
+    private async Task OnStopAsync(int dn)
+    {
+        try
+        {
+            var telescope = DeviceManager.GetTelescope((uint)dn);
+            await Task.Run(() => telescope.AbortSlew());
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Stop failed: {ex.Message}", Severity.Error);
+        }
+    }
+
     private async Task OnParkToggleAsync(int dn)
     {
         try
@@ -302,6 +326,12 @@
             Snackbar.Add($"Tracking toggle failed: {ex.Message}", Severity.Error);
         }
     }
+
+    private List<int> GetConfiguredDeviceNumbers() =>
+        _alpacaDevices
+            .Select(d => d.DeviceNumber)
+            .OrderBy(d => d)
+            .ToList();
 
     private string TabLabel(int deviceNumber)
     {

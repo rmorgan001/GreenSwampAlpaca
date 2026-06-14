@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using GreenSwamp.Alpaca.Settings.Models
 
 <PageTitle>Home – Green Swamp Alpaca Server</PageTitle>
 
@@ -8,7 +9,7 @@
 
     <div class="gs-home-content">
         <h1 class="gs-home-title">
-            Welcome to <span>Green Swamp Alpaca</span> Server
+            Welcome to <span>Green Swamp Alpaca</span> Server <small>(v@(ServerConfig.GetVersion()))</small>
         </h1>
 
         <ul class="gs-home-bullets">
