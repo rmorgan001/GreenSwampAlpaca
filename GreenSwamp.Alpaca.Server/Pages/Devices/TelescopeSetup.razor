@@ -74,6 +74,11 @@
                                         }
                                     </td>
                                 </tr>
+                                @if (!string.IsNullOrWhiteSpace(settings.GpsComPort))
+                                {
+                                    <tr><th>GPS Port</th><td>@settings.GpsComPort</td></tr>
+                                    <tr><th>GPS Baud Rate</th><td>@((int)settings.GpsBaudRate)</td></tr>
+                                }
                             </tbody>
                         </MudSimpleTable>
                     </MudCardContent>

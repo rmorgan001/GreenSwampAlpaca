@@ -1,4 +1,5 @@
 ﻿@using GreenSwamp.Alpaca.Settings.Models
+@using GreenSwamp.Alpaca.Shared
 
 <MudStack Spacing="3">
     <MudTooltip Inline="false" RootStyle="max-width:260px" Text="User-defined name for this observatory site." Placement="Placement.Right" Arrow="true">
@@ -33,9 +34,44 @@
                          Label="UTC Offset (h)" Format="F1" Min="-14" Max="14" Immediate="true" />
     </MudTooltip>
 
+    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Select or type a serial port name for the GPS receiver at this site (e.g. COM4 or /dev/ttyUSB0)." Placement="Placement.Right" Arrow="true">
+        @if (_availableGpsPorts.Length > 0)
+        {
+            <MudSelect @bind-Value="Observatory!.GpsPort" @bind-Value:after="NotifyChanged"
+                       Label="GPS Port" AnchorOrigin="Origin.BottomLeft">
+                @foreach (var port in _availableGpsPorts)
+                {
+                    <MudSelectItem Value="@port">@port</MudSelectItem>
+                }
+                @if (!string.IsNullOrWhiteSpace(Observatory!.GpsPort) && !_availableGpsPorts.Contains(Observatory!.GpsPort, StringComparer.OrdinalIgnoreCase))
+                {
+                    <MudSelectItem Value="@Observatory!.GpsPort">@Observatory!.GpsPort (manual)</MudSelectItem>
+                }
+            </MudSelect>
+        }
+        else
+        {
+            <MudTextField @bind-Value="Observatory!.GpsPort" @bind-Value:after="NotifyChanged"
+                          Label="GPS Port" Immediate="true"
+                          HelperText="No ports detected — type the port name manually." />
+        }
+    </MudTooltip>
+
+    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="GPS receiver baud rate for this observatory site." Placement="Placement.Right" Arrow="true">
+        <MudSelect T="int" @bind-Value="Observatory!.GpsBaudRate" @bind-Value:after="NotifyChanged"
+                   Label="GPS Baud Rate">
+            <MudSelectItem Value="4800">4800</MudSelectItem>
+            <MudSelectItem Value="9600">9600</MudSelectItem>
+            <MudSelectItem Value="19200">19200</MudSelectItem>
+            <MudSelectItem Value="38400">38400</MudSelectItem>
+            <MudSelectItem Value="57600">57600</MudSelectItem>
+            <MudSelectItem Value="115200">115200</MudSelectItem>
+        </MudSelect>
+    </MudTooltip>
+
     @if (DeviceSettings is { Count: > 0 })
     {
-        <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Copy Latitude, Longitude and Elevation from this observatory to all telescope devices." Placement="Placement.Right" Arrow="true">
+        <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Copy location and GPS settings from this observatory to all telescope devices." Placement="Placement.Right" Arrow="true">
             <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.CopyAll"
                        OnClick="CopyToAllDevices">
@@ -59,6 +95,12 @@
     private double _utcOffsetHours;
     private bool _nameError;
     private string _nameErrorText = string.Empty;
+    private string[] _availableGpsPorts = [];
+
+    protected override void OnInitialized()
+    {
+        _availableGpsPorts = SerialPortDiscovery.GetPortNames();
+    }
 
     protected override void OnParametersSet()
     {

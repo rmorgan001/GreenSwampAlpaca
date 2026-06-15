@@ -1000,7 +1000,7 @@ public partial class SettingsExplorer : IDisposable
 
         var parameters = new DialogParameters<ConfirmDialog>
         {
-            { d => d.ContentText, $"Copy Latitude, Longitude and Elevation from '{obs.Name}' to all {_deviceWork.Count} telescope device(s) and save immediately?" },
+            { d => d.ContentText, $"CCopy Latitude, Longitude, Elevation and GPS settings from '{obs.Name}' to all {_deviceWork.Count} telescope device(s) and save immediately?" },
             { d => d.ConfirmText, "Copy & Save" },
             { d => d.CancelText,  "Cancel" }
         };
@@ -1015,9 +1015,11 @@ public partial class SettingsExplorer : IDisposable
         {
             foreach (var (deviceNumber, dev) in _deviceWork)
             {
-                dev.Latitude  = obs.Latitude;
-                dev.Longitude = obs.Longitude;
-                dev.Elevation = obs.Elevation;
+                dev.Latitude    = obs.Latitude;
+                dev.Longitude   = obs.Longitude;
+                dev.Elevation   = obs.Elevation;
+                dev.GpsPort     = obs.GpsPort;
+                dev.GpsBaudRate = obs.GpsBaudRate;
 
                 await SettingsService.SaveDeviceSettingsAsync(deviceNumber, dev);
 
@@ -1029,7 +1031,7 @@ public partial class SettingsExplorer : IDisposable
             foreach (var node in Flatten(_treeItems).Where(n => n.Source == SettingsNodeSource.Device))
                 node.IsDirty = false;
 
-            ShowSuccess($"Lat/Long/Elevation from '{obs.Name}' saved to {_deviceWork.Count} device(s).");
+            ShowSuccess($"Location and GPS settings from '{obs.Name}' saved to {_deviceWork.Count} device(s).");
         }
         catch (Exception ex)
         {

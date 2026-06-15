@@ -1,4 +1,5 @@
 ﻿@using GreenSwamp.Alpaca.Settings.Models
+@using GreenSwamp.Alpaca.Shared
 @inject MudBlazor.ISnackbar Snackbar
 
 @* Combined editor: Location + Environmental + GPS *@
@@ -19,7 +20,7 @@
                             <MudSelectItem Value="@obs.Id">@obs.Name</MudSelectItem>
                         }
                     </MudSelect>
-                    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Copy Latitude, Longitude and Elevation from the selected observatory to this device." Placement="Placement.Right" Arrow="true">
+                    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Copy Latitude, Longitude, Elevation and GPS settings from the selected observatory to this device." Placement="Placement.Right" Arrow="true">
                         <MudIconButton Icon="@Icons.Material.Filled.CopyAll"
                                        Color="Color.Secondary" Size="Size.Small"
                                        Disabled="@string.IsNullOrEmpty(_selectedObservatoryId)"
@@ -62,21 +63,43 @@
         </MudStack>
     </MudExpansionPanel>
 
-    @if (ShowHidden)
-    {
-        <MudExpansionPanel Text="GPS" Icon="@Icons.Material.Filled.GpsFixed">
-            <MudStack Spacing="3">
-                <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Serial port number for the GPS receiver." Placement="Placement.Right" Arrow="true">
-                    <MudNumericField T="int" @bind-Value="Device!.GpsPort" @bind-Value:after="NotifyChanged"
-                                     Label="GPS Port Number" Min="0" Immediate="true" />
-                </MudTooltip>
-                <MudTooltip Inline="false" RootStyle="max-width:260px" Text="GPS receiver baud rate." Placement="Placement.Right" Arrow="true">
-                    <MudTextField @bind-Value="Device!.GpsBaudRate" @bind-Value:after="NotifyChanged"
-                                  Label="GPS Baud Rate" Immediate="true" />
-                </MudTooltip>
-            </MudStack>
-        </MudExpansionPanel>
-    }
+    <MudExpansionPanel Text="GPS" Icon="@Icons.Material.Filled.GpsFixed">
+        <MudStack Spacing="3">
+            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Select or type a serial port name for the GPS receiver (e.g. COM4 or /dev/ttyUSB0)." Placement="Placement.Right" Arrow="true">
+                @if (_availableGpsPorts.Length > 0)
+                {
+                    <MudSelect @bind-Value="Device!.GpsPort" @bind-Value:after="NotifyChanged"
+                                Label="GPS Port" AnchorOrigin="Origin.BottomLeft">
+                        @foreach (var port in _availableGpsPorts)
+                        {
+                            <MudSelectItem Value="@port">@port</MudSelectItem>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Device!.GpsPort) && !_availableGpsPorts.Contains(Device!.GpsPort, StringComparer.OrdinalIgnoreCase))
+                        {
+                            <MudSelectItem Value="@Device!.GpsPort">@Device!.GpsPort (manual)</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+                else
+                {
+                    <MudTextField @bind-Value="Device!.GpsPort" @bind-Value:after="NotifyChanged"
+                                    Label="GPS Port" Immediate="true"
+                                    HelperText="No ports detected — type the port name manually." />
+                }
+            </MudTooltip>
+            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="GPS receiver baud rate." Placement="Placement.Right" Arrow="true">
+                <MudSelect T="int" @bind-Value="Device!.GpsBaudRate" @bind-Value:after="NotifyChanged"
+                            Label="GPS Baud Rate">
+                    <MudSelectItem Value="4800">4800</MudSelectItem>
+                    <MudSelectItem Value="9600">9600</MudSelectItem>
+                    <MudSelectItem Value="19200">19200</MudSelectItem>
+                    <MudSelectItem Value="38400">38400</MudSelectItem>
+                    <MudSelectItem Value="57600">57600</MudSelectItem>
+                    <MudSelectItem Value="115200">115200</MudSelectItem>
+                </MudSelect>
+            </MudTooltip>
+        </MudStack>
+    </MudExpansionPanel>
 
 </MudExpansionPanels>
 
@@ -87,6 +110,12 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private string _selectedObservatoryId = string.Empty;
+    private string[] _availableGpsPorts = [];
+
+    protected override void OnInitialized()
+    {
+        _availableGpsPorts = SerialPortDiscovery.GetPortNames();
+    }
 
     protected override void OnParametersSet()
     {
@@ -102,10 +131,12 @@
         if (Device is null || Observatory is null) return;
         var source = Observatory.Observatories.FirstOrDefault(o => o.Id == _selectedObservatoryId);
         if (source is null) return;
-        Device.Latitude  = source.Latitude;
-        Device.Longitude = source.Longitude;
-        Device.Elevation = source.Elevation;
-        Snackbar.Add($"Lat/Long/Elevation copied from '{source.Name}'.", MudBlazor.Severity.Success);
+        Device.Latitude    = source.Latitude;
+        Device.Longitude   = source.Longitude;
+        Device.Elevation   = source.Elevation;
+        Device.GpsPort     = source.GpsPort;
+        Device.GpsBaudRate = source.GpsBaudRate;
+        Snackbar.Add($"Location and GPS settings copied from '{source.Name}'.", MudBlazor.Severity.Success);
         await NotifyChanged();
     }
 

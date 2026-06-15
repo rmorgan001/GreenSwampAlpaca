@@ -308,9 +308,9 @@ namespace GreenSwamp.Alpaca.Settings.Models
 
         // GPS Settings
         [CommonSetting]
-        public int GpsPort { get; set; }
+        public string GpsPort { get; set; } = string.Empty;
         [CommonSetting]
-        public string GpsBaudRate { get; set; } = null!;
+        public int GpsBaudRate { get; set; }
 
         // Instrument Info
         [CommonSetting]

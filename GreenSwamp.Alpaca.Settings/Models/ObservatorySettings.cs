@@ -40,6 +40,12 @@ namespace GreenSwamp.Alpaca.Settings.Models
         public double Elevation { get; set; } = 10.0;
 
         public TimeSpan UTCOffset { get; set; } = TimeSpan.Zero;
+
+        /// <summary>Serial port name for a GPS receiver at this site (e.g. COM4 or /dev/ttyUSB0). Empty when not configured.</summary>
+        public string GpsPort { get; set; } = string.Empty;
+
+        /// <summary>Baud rate for the GPS receiver serial port.</summary>
+        public int GpsBaudRate { get; set; } = 9600;
     }
 
     /// <summary>

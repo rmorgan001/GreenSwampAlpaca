@@ -1662,11 +1662,10 @@ namespace GreenSwamp.Alpaca.MountControl
                 _atPark = settings.AtPark;
                 if (Enum.TryParse<DriveRate>(settings.TrackingRate, true, out var trackRate))
                     _trackingRate = trackRate;
-                _gpsComPort = settings.GpsPort.ToString() ?? string.Empty;
-                if (Enum.TryParse<SerialSpeed>(settings.GpsBaudRate, true, out var gpsBaud))
-                    _gpsBaudRate = gpsBaud;
-                else
-                    _gpsBaudRate = SerialSpeed.ps9600;
+                _gpsComPort = settings.GpsPort ?? string.Empty;
+                _gpsBaudRate = Enum.IsDefined(typeof(SerialSpeed), settings.GpsBaudRate)
+                    ? (SerialSpeed)settings.GpsBaudRate
+                    : SerialSpeed.ps9600;
 
                 if (Enum.TryParse<SlewSpeed>(settings.HcSpeed, true, out var hcSpd))
                     _hcSpeed = hcSpd;
@@ -1883,9 +1882,8 @@ namespace GreenSwamp.Alpaca.MountControl
                 settings.EquatorialCoordinateType = _equatorialCoordinateType.ToString();
                 settings.AtPark = _atPark;
                 settings.TrackingRate = _trackingRate.ToString();
-                // AWW ToDo check for correct type
-                // settings.GpsPort = _gpsComPort;
-                settings.GpsBaudRate = ((int)_gpsBaudRate).ToString();
+                settings.GpsPort = _gpsComPort;
+                settings.GpsBaudRate = (int)_gpsBaudRate;
                 settings.HcSpeed = _hcSpeed.ToString();
                 settings.HcMode = _hcMode.ToString();
                 settings.PecMode = _pecMode.ToString();
