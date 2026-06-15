@@ -146,7 +146,7 @@
                      "SiderealRate":  15.0410671787,
                      "SolarRate":  15.0,
                      "St4Guiderate":  2,
-                     "SyncLimit":  30,
+                     "SyncLimit":  45,
                      "SyncLimitOn":  true,
                      "Temperature":  20.0,
                      "TrackingRate":  "Sidereal",

@@ -131,7 +131,7 @@ namespace GreenSwamp.Alpaca.MountControl
         private bool _hzLimitTracking = false;
         private bool _hzLimitPark = false;
         private string _parkHzLimitName = string.Empty;
-        private int _syncLimit = 5;
+        private int _syncLimit = 45;
 
         // PPEC
         private bool _pPecOn = false;
