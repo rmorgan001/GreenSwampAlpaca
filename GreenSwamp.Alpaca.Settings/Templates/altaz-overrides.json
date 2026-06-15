@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "./settings-override.schema.json",
   "Description": "Alt-Azimuth mount-specific settings",
   "AlignmentMode": "AltAz",
@@ -10,7 +10,7 @@
     "AxisHzTrackingLimit": 0.0,
     "AxisLimitX": 210.0,
     "AxisLowerLimitY": -10.0,
-    "AxisTrackingLimit": 0.0,
+    "AxisTrackingLimit": 5.0,
     "AxisUpperLimitY": 80.0,
     "CanSetPierSide": false,
     "HomeAxisX": 0.0,

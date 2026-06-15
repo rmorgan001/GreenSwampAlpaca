@@ -81,8 +81,8 @@ namespace GreenSwamp.Alpaca.MountControl
         private double _lunarRate = 14.511415534643;
         private double _solarRate = 15.0;
         private double _kingRate = 15.0369;
-        private double _axisTrackingLimit = 180.0;
-        private double _axisHzTrackingLimit = 180.0;
+        private double _axisTrackingLimit = 5.0;
+        private double _axisHzTrackingLimit = 0.0;
         private int _checkInterval = 2000;
         private int _altAzTrackingUpdateInterval = 2500;
 

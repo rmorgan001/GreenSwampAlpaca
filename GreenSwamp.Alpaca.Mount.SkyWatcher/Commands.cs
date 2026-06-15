@@ -466,7 +466,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
             MonitorLog.LogToMonitor(monitorItem);
         }
 
-        private static readonly Version AzgTiAdvancedSetSupportedVersion = new Version(3, 40);
+        private static readonly Version AzgTiAdvancedSetSupportedVersion = new(3, 40);
 
         /// <summary>
         /// e or X0005 Gets version of the axis
@@ -980,7 +980,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
 
             if (!SupportAdvancedCommandSet || !AllowAdvancedCommandSet) return response;
 
-            var szCmd = "0F" + pp.Substring(0, 8);
+            var szCmd = "0F" + pp[..8];
             response = CmdToMount(Axis.Axis1, 'X', szCmd);
 
             if (raw) { return response; }
@@ -1447,18 +1447,12 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         /// <example>CmdToMount(1,"X","0003","true")</example>
         internal string CmdToMount(int axis, string cmd, string cmdData, string ignoreWarnings)
         {
-            Axis a;
-            switch (axis)
+            var a = axis switch
             {
-                case 1:
-                    a = Axis.Axis1;
-                    break;
-                case 2:
-                    a = Axis.Axis2;
-                    break;
-                default:
-                    throw new Exception("Invalid axis parameter");
-            }
+                1 => Axis.Axis1,
+                2 => Axis.Axis2,
+                _ => throw new Exception("Invalid axis parameter"),
+            };
             var b = bool.Parse(ignoreWarnings.Trim());
             var c = char.Parse(cmd.Trim());
             var d = cmdData == null ? string.Empty : cmdData.Trim();
@@ -1596,7 +1590,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
         private string SendRequest(Axis axis, char command, string cmdDataStr)
         {
             const char startCharOut = ':';
-            if (cmdDataStr == null) cmdDataStr = "";
+            cmdDataStr ??= "";
             const int bufferSize = 20;
             var commandStr = new StringBuilder(bufferSize);
             commandStr.Append(startCharOut);                    // 0: Leading char
@@ -1642,7 +1636,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
                                 throw new ArgumentOutOfRangeException(nameof(axis), axis, null);
                         }
                     }
-                    if (cmdDataStr.Substring(0, 2) == "02")
+                    if (cmdDataStr[..2] == "02")
                     {
                         switch (axis)
                         {
@@ -2004,7 +1998,7 @@ namespace GreenSwamp.Alpaca.Mount.SkyWatcher
             try
             {
                 if (parseFirst && response.Length > 0)
-                { response = response.Substring(1, response.Length - 1); }
+                { response = response[1..]; }
                 var parsed = int.Parse(response, NumberStyles.HexNumber);
                 var a = parsed / divFactor;
 

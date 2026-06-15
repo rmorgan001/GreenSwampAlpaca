@@ -1154,7 +1154,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
 
                 if (string.IsNullOrWhiteSpace(command)) { throw new MethodNotImplementedException("CommandString"); }
 
-                if (_mCommandStrings == null) { _mCommandStrings = new CommandStrings(); }
+                _mCommandStrings ??= new CommandStrings();
                 return CommandStrings.ProcessCommand(_mount, command, raw);
             }
             catch (Exception ex)
@@ -1330,7 +1330,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             MonitorLog.LogToMonitor(monitorItem);
 
             CheckRate(Axis, Rate);
-            if (!CanMoveAxis(Axis)){throw new MethodNotImplementedException("CanMoveAxis " + Enum.GetName(typeof(TelescopeAxis), Axis));}
+            if (!CanMoveAxis(Axis)){throw new MethodNotImplementedException("CanMoveAxis " + Enum.GetName(Axis));}
             CheckParked("MoveAxis");
 
             switch (Axis)
@@ -1676,7 +1676,6 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
 
             _mount.TargetDec = Declination;
             _mount.TargetRa = RightAscension;
-            var a = Transforms.CoordTypeToInternal(RightAscension, Declination, settings: _mount.Settings);
 
             _mount.AtPark = false;
             _mount.SyncToTargetRaDec();
@@ -1715,7 +1714,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
 
         private static void CheckTrackingRate(string propertyOrMethod, DriveRate enumValue)
         {
-            var success = Enum.IsDefined(typeof(DriveRate), enumValue);
+            var success = Enum.IsDefined(enumValue);
             if (success) return;
             var monitorItem = new MonitorEntry
             { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Warning, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = FormattableString.Invariant($"{propertyOrMethod}|{enumValue}") };
@@ -1923,7 +1922,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             }
             // Only check for polar alignment mode
             if (_mount.Settings.AlignmentMode != AlignmentMode.Polar ||
-                _mount.IsTargetReachable(new[] { axisX, axisY }, slewType)) return;
+                _mount.IsTargetReachable([axisX, axisY], slewType)) return;
 
             var monitorItem = new MonitorEntry
             { Datetime = HiResDateTime.UtcNow, Device = MonitorDevice.Telescope, Category = MonitorCategory.Driver, Type = MonitorType.Warning, Method = MethodBase.GetCurrentMethod()?.Name, Thread = Environment.CurrentManagedThreadId, Message = FormattableString.Invariant($"{axisX}|{axisY}|{slewType}") };
