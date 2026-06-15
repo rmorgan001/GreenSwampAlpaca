@@ -51,7 +51,7 @@ cp "${SCRIPT_DIR}/systemd/greenswamp-alpaca.service" "${SYSTEMD_DIR}/"
 cp "${SCRIPT_DIR}/greenswamp-alpaca.desktop" "${APPLICATIONS_DIR}/"
 
 # Stage desktop directory file (for application menu organization)
-cp "${SCRIPT_DIR}/greenswamp.directory" "${DIRECTORIES_DIR}/"
+cp "${SCRIPT_DIR}/astronomy.directory" "${DIRECTORIES_DIR}/"
 
 # Stage application icon for desktop environments
 cp "${SCRIPT_DIR}/greenswamp1.png" "${ICONS_DIR}/greenswamp-alpaca.png"
