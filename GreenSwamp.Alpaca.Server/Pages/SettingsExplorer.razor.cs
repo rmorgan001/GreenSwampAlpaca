@@ -271,21 +271,14 @@ public partial class SettingsExplorer : IDisposable
         };
         root.Add(observatorySection);
 
-        // Logging
+        // Logging — single non-expandable section; rendered by MonitorSettingsCombinedPanel
         root.Add(new SettingsNode
         {
             Label    = "Logging",
             Icon     = Icons.Material.Filled.ListAlt,
             Description = NodeDescriptions["Logging"],
             Level    = SettingsNodeLevel.Section,
-            Source   = SettingsNodeSource.Monitor,
-            Children =
-            [
-                Leaf("Device Filters",       Icons.Material.Filled.Devices,         SettingsNodeSource.Monitor, "Device Filters"),
-                Leaf("Category Filters",     Icons.Material.Filled.Category,         SettingsNodeSource.Monitor, "Category Filters"),
-                Leaf("Message Type Filters", Icons.Material.Filled.FilterList,       SettingsNodeSource.Monitor, "Message Type Filters"),
-                Leaf("Logging Control",      Icons.Material.Filled.FolderOpen,       SettingsNodeSource.Monitor, "Logging Control"),
-            ]
+            Source   = SettingsNodeSource.Monitor
         });
 
         // Server Configuration

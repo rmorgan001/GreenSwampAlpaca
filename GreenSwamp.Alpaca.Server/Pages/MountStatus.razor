@@ -22,8 +22,8 @@
         Variant="Variant.Outlined" 
         Size="Size.Small"
         StartIcon="@Icons.Material.Filled.Download"
-        OnClick="OpenBackupDialog">
-        Backup Settings & Logs
+        OnClick="OpenExportDialog">
+        Export Settings & Logs
     </MudButton>
 </MudStack>
 
@@ -436,12 +436,12 @@ else
         }
     }
 
-    private async Task OpenBackupDialog()
+    private async Task OpenExportDialog()
     {
         var parameters = new DialogParameters();
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
 
-        await DialogService.ShowAsync<SettingsBackupDialog>("", parameters, options);
+        await DialogService.ShowAsync<SettingsExportDialog>("", parameters, options);
     }
 
     private List<int> GetConfiguredDeviceNumbers() =>

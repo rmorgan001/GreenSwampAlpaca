@@ -137,7 +137,7 @@
                      "PecOffSet":  0,
                      "PecOn":  false,
                      "PecWormFile":  "",
-                     "Port":  "COM1",
+                     "Port":  "COM or /dev/tty",
                      "PpecOn":  false,
                      "RaBacklash":  0,
                      "RATrackingOffset":  0,

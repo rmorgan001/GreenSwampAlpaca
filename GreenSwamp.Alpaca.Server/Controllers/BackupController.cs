@@ -26,9 +26,9 @@ namespace GreenSwamp.Alpaca.Server.Controllers
     [Route("api/[controller]")]
     public class BackupController : ControllerBase
     {
-        private readonly ISettingsBackupService _backupService;
+        private readonly ISettingsExportService _backupService;
 
-        public BackupController(ISettingsBackupService backupService)
+        public BackupController(ISettingsExportService backupService)
         {
             _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
         }
@@ -41,7 +41,7 @@ namespace GreenSwamp.Alpaca.Server.Controllers
         {
             try
             {
-                var info = await _backupService.GetBackupInfoAsync(cancellationToken);
+                var info = await _backupService.GetExportInfoAsync(cancellationToken);
                 return Ok(info);
             }
             catch (OperationCanceledException)
@@ -63,7 +63,7 @@ namespace GreenSwamp.Alpaca.Server.Controllers
         {
             try
             {
-                var backupStream = await _backupService.GenerateBackupZipAsync(
+                var backupStream = await _backupService.GenerateExportZipAsync(
                     progressCallback: null,
                     cancellationToken: cancellationToken);
 

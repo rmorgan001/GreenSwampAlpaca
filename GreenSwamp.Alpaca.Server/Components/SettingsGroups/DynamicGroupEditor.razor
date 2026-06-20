@@ -1,4 +1,4 @@
-﻿@using GreenSwamp.Alpaca.Server.Models
+@using GreenSwamp.Alpaca.Server.Models
 @using GreenSwamp.Alpaca.Settings.Models
 @using GreenSwamp.Alpaca.Server.Components.SettingsGroups
 
@@ -35,20 +35,6 @@
                                      OnCopyToAllDevices="OnCopyObservatoryToAllDevices"
                                      OnChanged="OnSettingChanged" />
         }
-        break;
-
-    // ── Logging ──────────────────────────────────────────────────
-    case "Device Filters":
-        <DeviceFiltersEditor Settings="Monitor" OnChanged="OnSettingChanged" />
-        break;
-    case "Category Filters":
-        <CategoryFiltersEditor Settings="Monitor" OnChanged="OnSettingChanged" />
-        break;
-    case "Message Type Filters":
-        <MessageTypeFiltersEditor Settings="Monitor" OnChanged="OnSettingChanged" />
-        break;
-    case "Logging Control":
-        <LoggingControlEditor Settings="Monitor" ShowHidden="ShowHidden" OnChanged="OnSettingChanged" />
         break;
 
     // ── Telescope Device groups ────────────────────────────────────────────

@@ -29,7 +29,8 @@ namespace GreenSwamp.Alpaca.Server
         // Driver information
         internal const string Manufacturer = "Green Swamp Software";
         internal const string ServerName = "Green Swamp Alpaca Server";
-        internal const string ServerVersion = "1.0";
+
+        internal static readonly string serverVersion = FileVersionInfo.GetVersionInfo(Environment.ProcessPath).FileVersion.ToString();
 
         internal static ILogger? Logger;
 
@@ -37,6 +38,8 @@ namespace GreenSwamp.Alpaca.Server
 
         /// <summary>Bootstrap server configuration read before the DI container is built.</summary>
         internal static ServerConfig BootstrapConfig { get; private set; } = new ServerConfig();
+
+        internal static string ServerVersion => serverVersion;
 
         public static async Task Main(string[] args)
         {
@@ -209,8 +212,8 @@ namespace GreenSwamp.Alpaca.Server
             });
 
             // Register Settings Backup Service
-            builder.Services.AddScoped<GreenSwamp.Alpaca.Settings.Services.ISettingsBackupService, 
-                GreenSwamp.Alpaca.Settings.Services.SettingsBackupService>();
+            builder.Services.AddScoped<GreenSwamp.Alpaca.Settings.Services.ISettingsExportService, 
+                GreenSwamp.Alpaca.Settings.Services.SettingsExportService>();
             Logger.LogInformation("SkySettings registered in DI container");
             Logger.LogInformation("Settings services registered: VersionedSettings, Template");
             #endregion Startup and Logging

@@ -23,7 +23,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
     /// Collects JSON settings from the versioned appsettings folder and all files
     /// from the user's Documents/GreenSwamp folder recursively.
     /// </summary>
-    public interface ISettingsBackupService
+    public interface ISettingsExportService
     {
         /// <summary>
         /// Generates a ZIP stream containing all settings and user documents.
@@ -32,20 +32,20 @@ namespace GreenSwamp.Alpaca.Settings.Services
         /// <param name="progressCallback">Optional callback to report progress (0-100)</param>
         /// <param name="cancellationToken">Cancellation token for the operation</param>
         /// <returns>Memory stream containing the ZIP file</returns>
-        Task<MemoryStream> GenerateBackupZipAsync(
+        Task<MemoryStream> GenerateExportZipAsync(
             Action<int>? progressCallback = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Gets information about the backup (estimated size and file count).
+        /// Gets information about the export (estimated size and file count).
         /// </summary>
-        Task<BackupInfo> GetBackupInfoAsync(CancellationToken cancellationToken = default);
+        Task<ExportInfo> GetExportInfoAsync(CancellationToken cancellationToken = default);
     }
 
     /// <summary>
     /// Information about the backup contents.
     /// </summary>
-    public class BackupInfo
+    public class ExportInfo
     {
         public int FileCount { get; set; }
         public long EstimatedSizeBytes { get; set; }
@@ -61,18 +61,18 @@ namespace GreenSwamp.Alpaca.Settings.Services
     }
 
     /// <summary>
-    /// Implementation of ISettingsBackupService.
+    /// Implementation of ISettingsExportService.
     /// </summary>
-    public class SettingsBackupService : ISettingsBackupService
+    public class SettingsExportService : ISettingsExportService
     {
         private readonly IVersionedSettingsService _settingsService;
 
-        public SettingsBackupService(IVersionedSettingsService settingsService)
+        public SettingsExportService(IVersionedSettingsService settingsService)
         {
             _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         }
 
-        public async Task<MemoryStream> GenerateBackupZipAsync(
+        public async Task<MemoryStream> GenerateExportZipAsync(
             Action<int>? progressCallback = null,
             CancellationToken cancellationToken = default)
         {
@@ -83,7 +83,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, leaveOpen: true))
                 {
                     var compressionLevel = CompressionLevel.Optimal;
-                    var filesToBackup = new List<(string filePath, string entryPath)>();
+                    var filesToExport = new List<(string filePath, string entryPath)>();
                     var totalFiles = 0;
                     var processedFiles = 0;
 
@@ -95,7 +95,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                         foreach (var file in jsonFiles)
                         {
                             var fileName = Path.GetFileName(file);
-                            filesToBackup.Add((file, $"settings/{fileName}"));
+                            filesToExport.Add((file, $"settings/{fileName}"));
                         }
                     }
 
@@ -111,13 +111,13 @@ namespace GreenSwamp.Alpaca.Settings.Services
                         {
                             var relativePath = Path.GetRelativePath(documentsPath, file);
                             var zipEntryPath = relativePath.Replace('\\', '/');
-                            filesToBackup.Add((file, $"GreenSwamp/{zipEntryPath}"));
+                            filesToExport.Add((file, $"GreenSwamp/{zipEntryPath}"));
                         }
                     }
 
-                    totalFiles = filesToBackup.Count;
+                    totalFiles = filesToExport.Count;
 
-                    foreach (var (filePath, entryPath) in filesToBackup)
+                    foreach (var (filePath, entryPath) in filesToExport)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
 
@@ -158,9 +158,9 @@ namespace GreenSwamp.Alpaca.Settings.Services
             }
         }
 
-        public async Task<BackupInfo> GetBackupInfoAsync(CancellationToken cancellationToken = default)
+        public async Task<ExportInfo> GetExportInfoAsync(CancellationToken cancellationToken = default)
         {
-            var backupInfo = new BackupInfo
+            var exportInfo = new ExportInfo
             {
                 FileCount = 0,
                 EstimatedSizeBytes = 0
@@ -175,10 +175,10 @@ namespace GreenSwamp.Alpaca.Settings.Services
                     var jsonFiles = Directory.GetFiles(versionedSettingsPath, "*.json", SearchOption.TopDirectoryOnly);
                     foreach (var file in jsonFiles)
                     {
-                        backupInfo.FileCount++;
+                        exportInfo.FileCount++;
                         try
                         {
-                            backupInfo.EstimatedSizeBytes += new FileInfo(file).Length;
+                            exportInfo.EstimatedSizeBytes += new FileInfo(file).Length;
                         }
                         catch (IOException)
                         {
@@ -199,10 +199,10 @@ namespace GreenSwamp.Alpaca.Settings.Services
                         var allFiles = Directory.GetFiles(documentsPath, "*", SearchOption.AllDirectories);
                         foreach (var file in allFiles)
                         {
-                            backupInfo.FileCount++;
+                            exportInfo.FileCount++;
                             try
                             {
-                                backupInfo.EstimatedSizeBytes += new FileInfo(file).Length;
+                                exportInfo.EstimatedSizeBytes += new FileInfo(file).Length;
                             }
                             catch (IOException)
                             {
@@ -217,7 +217,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
                 }
             }, cancellationToken);
 
-            return backupInfo;
+            return exportInfo;
         }
     }
 }

@@ -5,30 +5,30 @@
 <MudDialog>
     <DialogContent>
         <MudStack Spacing="3">
-            <MudText Typo="Typo.h6">Download Settings & Logs Backup</MudText>
+            <MudText Typo="Typo.h6">Download Settings & Logs Export</MudText>
 
-            @if (_state == BackupState.Initial)
+            @if (_state == ExportState.Initial)
             {
                 <MudText Typo="Typo.body2" Color="Color.Default">
-                    Preparing backup of all settings and user logs...
+                    Preparing export of all settings and user logs...
                 </MudText>
 
-                @if (_backupInfo != null)
+                @if (_exportInfo != null)
                 {
                     <MudStack Spacing="1" Class="mud-paper pa-3" Style="background-color: rgba(63, 81, 181, 0.1);">
                         <MudText Typo="Typo.caption">
-                            <strong>Files:</strong> @_backupInfo.FileCount
+                            <strong>Files:</strong> @_exportInfo.FileCount
                         </MudText>
                         <MudText Typo="Typo.caption">
-                            <strong>Estimated size:</strong> @_backupInfo.EstimatedSizeFormatted
+                            <strong>Estimated size:</strong> @_exportInfo.EstimatedSizeFormatted
                         </MudText>
                     </MudStack>
                 }
             }
-            else if (_state == BackupState.InProgress)
+            else if (_state == ExportState.InProgress)
             {
                 <MudText Typo="Typo.body2" Color="Color.Default">
-                    Creating backup file...
+                    Creating export file...
                 </MudText>
 
                 <MudProgressLinear
@@ -43,17 +43,17 @@
                     @_progress%
                 </MudText>
             }
-            else if (_state == BackupState.Success)
+            else if (_state == ExportState.Success)
             {
                 <MudAlert Severity="Severity.Success" Class="my-2">
                     Backup created successfully! Download started.
                 </MudAlert>
 
                 <MudText Typo="Typo.body2" Color="Color.Default">
-                    Your backup file contains all settings JSON files and user documents.
+                    Your export file contains all JSON settings files and logs.
                 </MudText>
             }
-            else if (_state == BackupState.Error)
+            else if (_state == ExportState.Error)
             {
                 <MudAlert Severity="Severity.Error" Class="my-2">
                     @_errorMessage
@@ -63,24 +63,24 @@
     </DialogContent>
 
     <DialogActions>
-        @if (_state == BackupState.Initial)
+        @if (_state == ExportState.Initial)
         {
             <MudButton OnClick="Cancel">Cancel</MudButton>
-            <MudButton Color="Color.Primary" OnClick="CreateBackup" Variant="Variant.Filled">
-                Create Backup
+            <MudButton Color="Color.Primary" OnClick="CreateExport" Variant="Variant.Filled">
+                Create Export
             </MudButton>
         }
-        else if (_state == BackupState.InProgress)
+        else if (_state == ExportState.InProgress)
         {
             <MudButton OnClick="Cancel" Disabled="true">Cancel</MudButton>
         }
-        else if (_state == BackupState.Success)
+        else if (_state == ExportState.Success)
         {
             <MudButton Color="Color.Primary" OnClick="Cancel" Variant="Variant.Filled">
                 Close
             </MudButton>
         }
-        else if (_state == BackupState.Error)
+        else if (_state == ExportState.Error)
         {
             <MudButton OnClick="Cancel">Close</MudButton>
             <MudButton Color="Color.Primary" OnClick="Retry" Variant="Variant.Filled">
@@ -95,12 +95,12 @@
     private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Inject]
-    private ISettingsBackupService BackupService { get; set; } = null!;
+    private ISettingsExportService ExportService { get; set; } = null!;
 
     [Inject]
     private IJSRuntime JSRuntime { get; set; } = null!;
 
-    private enum BackupState
+    private enum ExportState
     {
         Initial,
         InProgress,
@@ -108,37 +108,37 @@
         Error
     }
 
-    private BackupState _state = BackupState.Initial;
+    private ExportState _state = ExportState.Initial;
     private int _progress = 0;
     private string _errorMessage = string.Empty;
-    private BackupInfo? _backupInfo;
+    private ExportInfo? _exportInfo;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadBackupInfo();
+        await LoadExportInfo();
     }
 
-    private async Task LoadBackupInfo()
+    private async Task LoadExportInfo()
     {
         try
         {
-            _backupInfo = await BackupService.GetBackupInfoAsync();
+            _exportInfo = await ExportService.GetExportInfoAsync();
         }
         catch (Exception ex)
         {
             _errorMessage = $"Failed to load backup information: {ex.Message}";
-            _state = BackupState.Error;
+            _state = ExportState.Error;
         }
     }
 
-    private async Task CreateBackup()
+    private async Task CreateExport()
     {
-        _state = BackupState.InProgress;
+        _state = ExportState.InProgress;
         _progress = 0;
 
         try
         {
-            using var blob = await BackupService.GenerateBackupZipAsync(
+            using var blob = await ExportService.GenerateExportZipAsync(
                 progress =>
                 {
                     _progress = progress;
@@ -146,7 +146,7 @@
                 });
 
             _progress = 100;
-            _state = BackupState.Success;
+            _state = ExportState.Success;
 
             // Trigger browser download using JavaScript
             await using var module = await JSRuntime.InvokeAsync<IJSObjectReference>(
@@ -161,8 +161,8 @@
         }
         catch (Exception ex)
         {
-            _errorMessage = $"Error creating backup: {ex.Message}";
-            _state = BackupState.Error;
+            _errorMessage = $"Error creating export: {ex.Message}";
+            _state = ExportState.Error;
         }
     }
 
@@ -173,7 +173,7 @@
 
     private async Task Retry()
     {
-        await LoadBackupInfo();
-        _state = BackupState.Initial;
+        await LoadExportInfo();
+        _state = ExportState.Initial;
     }
 }

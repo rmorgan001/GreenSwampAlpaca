@@ -46,7 +46,7 @@ namespace GreenSwamp.Alpaca.MountControl
 
         // Connection & Mount Settings (20 fields)
         private MountType _mount = MountType.Simulator;
-        private string _port = "COM3";
+        private string _port = "COM1";
         private SerialSpeed _baudRate = SerialSpeed.ps9600;
         private Handshake _handShake = Handshake.None;
         private int _dataBits = 8;
@@ -266,7 +266,7 @@ namespace GreenSwamp.Alpaca.MountControl
             {
                 if (_port != value)
                 {
-                    _port = value ?? "COM3";
+                    _port = value ?? "COM1";
                     OnPropertyChanged();
                 }
             }
@@ -1594,7 +1594,7 @@ namespace GreenSwamp.Alpaca.MountControl
                 // Batch 1: Connection & Mount
                 if (Enum.TryParse<MountType>(settings.Mount, true, out var mountType))
                     _mount = mountType;
-                _port = settings.Port ?? "COM3";
+                _port = settings.Port ?? "COM1";
                 _baudRate = (SerialSpeed)settings.BaudRate;
                 if (Enum.TryParse<AlignmentMode>(settings.AlignmentMode, true, out var alignMode))
                     _alignmentMode = alignMode;
