@@ -13,9 +13,6 @@
 <PageTitle>Monitor Settings</PageTitle>
 
 <MudText Typo="Typo.h5" GutterBottom="true">Monitor</MudText>
-<MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-4">
-	Live monitor output. Filter settings saved to: <code>@SettingsService.MonitorSettingsPath</code>
-</MudText>
 
 <MudCard Class="mb-4">
 	<MudCardHeader>
@@ -24,7 +21,7 @@
 				<MudIcon Icon="@Icons.Material.Filled.Terminal" Color="Color.Primary" />
 				<MudText Typo="Typo.h6">Monitor Records</MudText>
 				<MudSpacer />
-				<MudText Typo="Typo.caption" Color="Color.Secondary">@_lines.Count / @GreenSwamp.Alpaca.Server.Services.MonitorDisplayService.Capacity records</MudText>
+				<MudText Typo="Typo.caption">@_lines.Count / @GreenSwamp.Alpaca.Server.Services.MonitorDisplayService.Capacity records</MudText>
 			</MudStack>
 		</CardHeaderContent>
 		<CardHeaderActions>
@@ -64,7 +61,11 @@
 	</MudCardActions>
 </MudCard>
 
-<MonitorLoggingSettingsCard IsDirty="_isDirty" IsLoading="_saving"
+<MonitorSettingsCombinedPanel Settings="_settings"
+	ShowHidden="false"
+	IsDirty="_isDirty"
+	IsLoading="_saving"
+	OnChanged="OnSettingValueChanged"
 	OnPresetSelected="ApplyPreset"
 	OnQuickActionTriggered="HandleQuickAction"
 	OnSave="SaveSettings"
@@ -148,6 +149,11 @@
 			RefreshDisplay();
 			StateHasChanged();
 		});
+	}
+
+	private void OnSettingValueChanged()
+	{
+		_isDirty = true;
 	}
 
 	private void LoadSettings()
