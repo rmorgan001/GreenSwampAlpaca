@@ -60,16 +60,19 @@
 		}
 	</MudCardActions>
 </MudCard>
-
-<MonitorSettingsCombinedPanel Settings="_settings"
-	ShowHidden="false"
-	IsDirty="_isDirty"
-	IsLoading="_saving"
-	OnChanged="OnSettingValueChanged"
-	OnPresetSelected="ApplyPreset"
-	OnQuickActionTriggered="HandleQuickAction"
-	OnSave="SaveSettings"
-	OnReset="ResetToDefaults" />
+<MudExpansionPanels>
+	<MudExpansionPanel Text="Monitor Settings" Elevation="0" Square="true" DisableRipple="true" Expanded="false">
+		<MonitorSettingsCombinedPanel Settings="_settings"
+			ShowHidden="false"
+			IsDirty="_isDirty"
+			IsLoading="_saving"
+			OnChanged="OnSettingValueChanged"
+			OnPresetSelected="ApplyPreset"
+			OnQuickActionTriggered="HandleQuickAction"
+			OnSave="SaveSettings"
+			OnReset="ResetToDefaults" />
+    </MudExpansionPanel>
+</MudExpansionPanels>
 
 @code {
 	private GreenSwamp.Alpaca.Settings.Models.MonitorSettings _settings = new();
@@ -108,11 +111,11 @@
 		{
 			var clipboardText = string.Join('\n', _lines.Select(FormatClipboardLine));
 			await JS.InvokeVoidAsync("navigator.clipboard.writeText", clipboardText);
-			Snackbar.Add("Monitor records copied to clipboard.", MudBlazor.Severity.Success);
+			ShowSuccess("Monitor records copied to clipboard.");
 		}
 		catch
 		{
-			Snackbar.Add("Copy failed — clipboard access may be blocked.", MudBlazor.Severity.Error);
+			ShowError("Copy failed — clipboard access may be blocked.");
 		}
 	}
 
@@ -171,12 +174,12 @@
 			await SettingsService.SaveMonitorSettingsAsync(_settings);
 			GreenSwamp.Alpaca.Shared.MonitorLog.Load_Settings();
 			GreenSwamp.Alpaca.Shared.Settings.Load();
-			Snackbar.Add("Monitor settings saved successfully! Changes applied immediately.", MudBlazor.Severity.Success);
+			ShowSuccess("Monitor settings saved successfully! Changes applied immediately.");
 			_isDirty = false;
 		}
 		catch (Exception ex)
 		{
-			Snackbar.Add($"Error saving settings: {ex.Message}", MudBlazor.Severity.Error);
+			ShowError($"Error saving settings: {ex.Message}");
 		}
 		finally
 		{
@@ -193,11 +196,11 @@
 		try
 		{
 			await Task.Run(() => GreenSwamp.Alpaca.Shared.MonitorQueue.WriteBuffer());
-			Snackbar.Add($"Fast monitor buffer written to file at {DateTime.Now:HH:mm:ss}", MudBlazor.Severity.Success);
+			ShowSuccess($"Fast monitor buffer written to file at {DateTime.Now:HH:mm:ss}");
 		}
 		catch (Exception ex)
 		{
-			Snackbar.Add($"Error writing buffer: {ex.Message}", MudBlazor.Severity.Error);
+			ShowError($"Error writing buffer: {ex.Message}");
 		}
 		finally
 		{
@@ -208,7 +211,7 @@
 	private void ResetToDefaults()
 	{
 		LoadSettings();
-		Snackbar.Add("Settings reset to last saved state.", MudBlazor.Severity.Info);
+		ShowSuccess("Logging settings reset to last saved state.");
 	}
 
 	private void ReloadSettings()
@@ -216,7 +219,7 @@
 		LoadSettings();
 		GreenSwamp.Alpaca.Shared.Settings.Load();
 		GreenSwamp.Alpaca.Shared.MonitorLog.Load_Settings();
-		Snackbar.Add("Settings reloaded from file", MudBlazor.Severity.Info);
+		ShowInfo("Settings reloaded from file");
 	}
 
 	private void ApplyPreset(GreenSwamp.Alpaca.Settings.Models.MonitorSettings preset)
@@ -233,7 +236,7 @@
 			presetName = "Troubleshooting";
 		else
 			presetName = "Profile Debug";
-		Snackbar.Add($"{presetName} preset applied (not saved yet)", MudBlazor.Severity.Info);
+		ShowInfo($"{presetName} preset applied (not saved yet)");
 	}
 
 	private void HandleQuickAction(string actionName)
@@ -244,7 +247,7 @@
 				_settings.ServerDevice = true;
 				_settings.Telescope = true;
 				_settings.Ui = true;
-				Snackbar.Add("All devices selected", MudBlazor.Severity.Info);
+				ShowInfo("All devices selected");
 				break;
 			case "SelectAllCategories":
 				_settings.Other = true;
@@ -253,7 +256,7 @@
 				_settings.Server = true;
 				_settings.Mount = true;
 				_settings.Alignment = true;
-				Snackbar.Add("All categories selected", MudBlazor.Severity.Info);
+				ShowInfo("All categories selected");
 				break;
 			case "SelectAllTypes":
 				_settings.Information = true;
@@ -261,7 +264,7 @@
 				_settings.Warning = true;
 				_settings.Error = true;
 				_settings.Debug = true;
-				Snackbar.Add("All types selected", MudBlazor.Severity.Info);
+				ShowInfo("All types selected");
 				break;
 			case "ClearAllFilters":
 				_settings.ServerDevice = false;
@@ -278,7 +281,7 @@
 				_settings.Warning = false;
 				_settings.Error = false;
 				_settings.Debug = false;
-				Snackbar.Add("All filters cleared", MudBlazor.Severity.Info);
+				ShowInfo("All filters cleared");
 				break;
 		}
 
@@ -294,6 +297,12 @@
 		_isDirty = false;
 		InvokeAsync(StateHasChanged);
 	}
+
+	private void ShowSuccess(string msg) => Snackbar.Add(msg, Severity.Success);
+
+	private void ShowInfo(string msg) => Snackbar.Add(msg, Severity.Info);
+
+	private void ShowError(string msg) => Snackbar.Add(msg, Severity.Error);
 
 	public void Dispose()
 	{
