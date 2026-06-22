@@ -221,9 +221,9 @@ else
                                        OnClick="@(() => OnStopAsync(dn))">Stop</MudButton>
                         </MudStack>
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudTooltip Text="@(s.VoiceActive ? "Voice announcements on" : "Voice announcements off")" Placement="Placement.Top" Arrow="true">
+                            <MudTooltip Text="@(_deviceSettings.GetValueOrDefault(dn)?.VoiceActive == true ? "Voice on" : "Voice off")" Placement="Placement.Top" Arrow="true">
                                 <MudCheckBox T="bool"
-                                             Checked="@(s.VoiceActive)"
+                                             Checked="@(_deviceSettings.GetValueOrDefault(dn)?.VoiceActive ?? false)"
                                              CheckedChanged="@(() => OnVoiceActiveToggleAsync(dn))"
                                              Color="Color.Primary"
                                              Size="Size.Small"
@@ -315,7 +315,11 @@ else
             var wasSlewing = _lastSlewingState.GetValueOrDefault(dn);
             if (!wasSlewing && state.Slewing)
             {
-                if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Slewing", state.VoiceName, state.VoiceVolume));
+                if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Started Slewing", state.VoiceName, state.VoiceVolume));
+            }
+            else if (wasSlewing && !state.Slewing)
+            {
+                if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Finished Slewing", state.VoiceName, state.VoiceVolume));
             }
 
             var wasHome = _lastHomeState.GetValueOrDefault(dn);
@@ -330,15 +334,15 @@ else
                 if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Mount Connected", state.VoiceName, state.VoiceVolume));
             }
 
-            var wasTracking = _lastTrackingState.GetValueOrDefault(dn);
-            if (!wasTracking && state.Tracking)
-            {
-                if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Tracking On", state.VoiceName, state.VoiceVolume));
-            }
-            else if (wasTracking && !state.Tracking)
-            {
-                if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Tracking Off", state.VoiceName, state.VoiceVolume));
-            }
+            // var wasTracking = _lastTrackingState.GetValueOrDefault(dn);
+            // if (!wasTracking && state.Tracking)
+            // {
+            //     if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Tracking On", state.VoiceName, state.VoiceVolume));
+            // }
+            // else if (wasTracking && !state.Tracking)
+            // {
+            //     if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Tracking Off", state.VoiceName, state.VoiceVolume));
+            // }
 
             _lastAtParkState[dn] = state.AtPark;
             _lastSlewingState[dn] = state.Slewing;
