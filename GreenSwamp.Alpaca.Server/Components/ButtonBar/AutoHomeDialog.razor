@@ -1,4 +1,8 @@
 ﻿@using GreenSwamp.Alpaca.MountControl
+@using GreenSwamp.Alpaca.Server.Services
+@inject TelescopeStateService StateService
+@inject ISnackbar Snackbar
+@implements IDisposable
 
 <MudDialog>
     <TitleContent>
@@ -10,21 +14,16 @@
     <DialogContent>
         <MudStack Spacing="3" Class="mt-2">
 
-            @if (IsAutoHomeRunning)
+            <MudProgressLinear Value="@_progress" Color="Color.Secondary"
+                               Rounded="true" Size="Size.Medium" Class="mb-2" />
+            @if (_running)
             {
-                <MudProgressLinear Value="@AutoHomeProgress" Color="Color.Secondary"
-                                   Rounded="true" Size="Size.Medium" Class="mb-2" />
                 <MudText Typo="Typo.body2" Align="Align.Center">Searching for home sensor…</MudText>
-            }
-            else
-            {
-                <MudProgressLinear Value="0" Color="Color.Secondary"
-                                   Rounded="true" Size="Size.Medium" Class="mb-2" />
             }
 
             <MudSelect T="int" Label="Degree limit" @bind-Value="_degreeLimit"
                        Variant="Variant.Outlined" Dense="true"
-                       Disabled="@IsAutoHomeRunning"
+                       Disabled="@_running"
                        HelperText="Maximum degrees to travel when searching for the home sensor">
                 @foreach (var limit in _autoHomeLimits)
                 {
@@ -36,7 +35,7 @@
             {
                 <MudSelect T="int" Label="Dec offset" @bind-Value="_decOffset"
                            Variant="Variant.Outlined" Dense="true"
-                           Disabled="@IsAutoHomeRunning"
+                           Disabled="@_running"
                            HelperText="Dec axis offset applied after home is found">
                     @foreach (var offset in _decOffsets)
                     {
@@ -49,7 +48,7 @@
 
                 <MudSelect T="double" Label="RA sensor position" @bind-Value="_axisX"
                            Variant="Variant.Outlined" Dense="true"
-                           Disabled="@IsAutoHomeRunning"
+                           Disabled="@_running"
                            ToStringFunc="@(v => v.ToString("F1") + "°")"
                            HelperText="Expected RA axis position at home sensor">
                     @foreach (var val in _axisValues)
@@ -60,7 +59,7 @@
 
                 <MudSelect T="double" Label="Dec sensor position" @bind-Value="_axisY"
                            Variant="Variant.Outlined" Dense="true"
-                           Disabled="@IsAutoHomeRunning"
+                           Disabled="@_running"
                            ToStringFunc="@(v => v.ToString("F1") + "°")"
                            HelperText="Expected Dec axis position at home sensor">
                     @foreach (var val in _axisValues)
@@ -70,7 +69,7 @@
                 </MudSelect>
 
                 <MudButton Variant="Variant.Text" Color="Color.Secondary"
-                           Disabled="@IsAutoHomeRunning"
+                           Disabled="@_running"
                            OnClick="ResetSensorPositions">
                     Reset sensor positions to 90°
                 </MudButton>
@@ -79,12 +78,15 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled"
-                   Disabled="@IsAutoHomeRunning"
-                   OnClick="Start">
-            Start
-        </MudButton>
+        @if (_running)
+        {
+            <MudButton Color="Color.Error" Variant="Variant.Text" OnClick="StopAutoHome">Stop</MudButton>
+        }
+        else
+        {
+            <MudButton OnClick="Cancel" Variant="Variant.Text">Cancel</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="Start">Start</MudButton>
+        }
     </DialogActions>
 </MudDialog>
 
@@ -92,15 +94,16 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public bool IsGermanPolarMode { get; set; }
-    [Parameter] public bool IsAutoHomeRunning { get; set; }
-    [Parameter] public int AutoHomeProgress { get; set; }
     [Parameter] public double InitialAxisX { get; set; } = 90.0;
     [Parameter] public double InitialAxisY { get; set; } = 90.0;
+    [Parameter] public int DeviceNumber { get; set; }
 
     private int _degreeLimit = 100;
     private int _decOffset = 0;
     private double _axisX;
     private double _axisY;
+    private bool _running;
+    private int _progress;
 
     // Option lists matching the WPF reference: Range(20,160) = 20..179
     private static readonly List<int> _autoHomeLimits = Enumerable.Range(20, 160).ToList();
@@ -115,16 +118,73 @@
         _axisY = _axisValues.Contains(InitialAxisY) ? InitialAxisY : 90.0;
     }
 
+    protected override void OnInitialized() =>
+        StateService.StateChanged += OnStateChanged;
+
+    private void OnStateChanged(object? sender, EventArgs e)
+    {
+        if (!_running) return;
+
+        var state = StateService.GetCurrentState(DeviceNumber);
+        _progress = state.AutoHomeProgressBar;
+
+        if (!state.IsAutoHomeRunning)
+        {
+            // AutoHome has finished — read error from mount directly
+            var mount = MountRegistry.GetInstance(DeviceNumber);
+            var error = mount?.LastAutoHomeError;
+            _running = false;
+
+            InvokeAsync(() =>
+            {
+                if (error != null)
+                    Snackbar.Add($"AutoHome failed: {error.Message}", Severity.Error);
+                else
+                    Snackbar.Add("AutoHome complete", Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            });
+        }
+        else
+        {
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
     private void ResetSensorPositions()
     {
         _axisX = 90.0;
         _axisY = 90.0;
     }
 
-    private void Start() =>
-        MudDialog.Close(DialogResult.Ok(new AutoHomeRequest(_degreeLimit, _decOffset, _axisX, _axisY)));
+    private void Start()
+    {
+        var mount = MountRegistry.GetInstance(DeviceNumber);
+        if (mount == null)
+        {
+            Snackbar.Add("Mount not found", Severity.Error);
+            return;
+        }
+
+        // Persist sensor positions
+        mount.Settings.AutoHomeAxisX = _axisX;
+        mount.Settings.AutoHomeAxisY = _axisY;
+
+        _running = true;
+        _progress = 0;
+
+        // AutoHomeAsync is fire-and-forget by design (async void on the backend)
+        mount.AutoHomeAsync(_degreeLimit, _decOffset);
+    }
+
+    private void StopAutoHome()
+    {
+        var mount = MountRegistry.GetInstance(DeviceNumber);
+        mount?.RequestAutoHomeStop();
+    }
 
     private void Cancel() => MudDialog.Cancel();
 
-    public record AutoHomeRequest(int DegreeLimit, int DecOffset, double AxisX, double AxisY);
+    public void Dispose() =>
+        StateService.StateChanged -= OnStateChanged;
 }
+

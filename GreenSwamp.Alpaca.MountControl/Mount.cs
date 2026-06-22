@@ -464,6 +464,9 @@ namespace GreenSwamp.Alpaca.MountControl
             internal set => _lastAutoHomeError = value;
         }
 
+        /// <summary>Requests an in-progress AutoHome operation to stop.</summary>
+        public void RequestAutoHomeStop() => _autoHomeStop = true;
+
         #endregion
 
         #region Internal State Exposure (for other MountControl classes)

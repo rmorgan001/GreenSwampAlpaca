@@ -31,6 +31,7 @@
         </MudTooltip>
         <MudTooltip Text="Select park position" Placement="Placement.Top" Arrow="true">
             <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown"
+                     Size="Size.Small"
                      Style="align-self: auto;"
                      Disabled="@(State.AtPark || !IsConnected || !(Mount?.Settings.CanPark ?? false))">
                 @if (State.ParkPositionNames.Count > 0)
@@ -65,7 +66,7 @@
                    Size="Size.Small"
                    Disabled="@(!IsConnected)"
                    OnClick="OnTrackingClickAsync">
-            @(State.Tracking ? "Tracking Off" : "Tracking On")
+            Tracking
         </MudButton>
     </MudTooltip>
 
@@ -109,7 +110,7 @@
                    Size="Size.Small"
                    Disabled="@(!IsConnected)"
                    OnClick="OnLimitsClickAsync">
-            @(State.LimitsOn ? "Limits Off" : "Limits On")
+            Limits
         </MudButton>
     </MudTooltip>
 
@@ -136,7 +137,6 @@
     private static readonly DialogOptions _confirmOptions = new()
     {
         MaxWidth = MaxWidth.ExtraSmall,
-        FullWidth = true,
         CloseOnEscapeKey = true
     };
 
@@ -200,9 +200,6 @@
 
     private async Task OnTrackingClickAsync()
     {
-        var action = State.Tracking ? "off" : "on";
-        var confirmed = await ConfirmAsync($"Turn tracking {action}?", State.Tracking ? "Tracking Off" : "Tracking On");
-        if (!confirmed) return;
         await ExecuteAsync(() =>
         {
             var telescope = DeviceManager.GetTelescope((uint)DeviceNumber);
@@ -281,37 +278,19 @@
 
         var parameters = new DialogParameters<AutoHomeDialog>
         {
-            { x => x.IsGermanPolarMode,    State.IsGermanPolarMode },
-            { x => x.IsAutoHomeRunning,    State.IsAutoHomeRunning },
-            { x => x.AutoHomeProgress,     State.AutoHomeProgressBar },
-            { x => x.InitialAxisX,         State.AutoHomeAxisX },
-            { x => x.InitialAxisY,         State.AutoHomeAxisY }
+            { x => x.IsGermanPolarMode, State.IsGermanPolarMode },
+            { x => x.InitialAxisX,      State.AutoHomeAxisX },
+            { x => x.InitialAxisY,      State.AutoHomeAxisY },
+            { x => x.DeviceNumber,      DeviceNumber }
         };
 
-        var dialog = await DialogService.ShowAsync<AutoHomeDialog>("AutoHome", parameters, _configOptions);
-        var result = await dialog.Result;
-        if (result is null || result.Canceled) return;
-
-        if (result.Data is not AutoHomeDialog.AutoHomeRequest req) return;
-
-        // Persist sensor position settings before starting
-        mount.Settings.AutoHomeAxisX = req.AxisX;
-        mount.Settings.AutoHomeAxisY = req.AxisY;
-
-        await ExecuteAsync(
-            () => mount.AutoHomeAsync(req.DegreeLimit, req.DecOffset),
-            "AutoHome failed");
+        await DialogService.ShowAsync<AutoHomeDialog>("AutoHome", parameters, _configOptions);
     }
 
     // ── Limits ────────────────────────────────────────────────────────────
 
     private async Task OnLimitsClickAsync()
     {
-        var action = State.LimitsOn ? "disable" : "enable";
-        var confirmed = await ConfirmAsync($"Are you sure you want to {action} hour angle limits?",
-            State.LimitsOn ? "Disable Limits" : "Enable Limits");
-        if (!confirmed) return;
-
         var mount = Mount;
         if (mount == null) { Snackbar.Add($"Mount device {DeviceNumber} not found", Severity.Error); return; }
 
