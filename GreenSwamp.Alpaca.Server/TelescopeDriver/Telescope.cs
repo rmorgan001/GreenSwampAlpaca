@@ -1612,7 +1612,7 @@ namespace GreenSwamp.Alpaca.Server.TelescopeDriver
             MonitorLog.LogToMonitor(monitorItem);
 
             _mount.AtPark = false;
-            _mount.ApplyTracking(AlignmentMode != AlignmentMode.AltAz);
+            _mount.ApplyTracking(_mount.Settings.TrackAfterUnpark && AlignmentMode != AlignmentMode.AltAz);
 
             monitorItem = new MonitorEntry
             {

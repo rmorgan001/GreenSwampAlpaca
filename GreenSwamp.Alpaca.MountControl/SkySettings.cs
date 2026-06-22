@@ -26,6 +26,8 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Handshake = System.IO.Ports.Handshake;
+using Parity = System.IO.Ports.Parity;
+using StopBits = System.IO.Ports.StopBits;
 using Range = GreenSwamp.Alpaca.Principles.Range;
 
 namespace GreenSwamp.Alpaca.MountControl
@@ -59,6 +61,12 @@ namespace GreenSwamp.Alpaca.MountControl
         private DriveRate _trackingRate = DriveRate.Sidereal;
         private string _gpsComPort = string.Empty;
         private SerialSpeed _gpsBaudRate = SerialSpeed.ps9600;
+        private Parity _gpsParity = Parity.None;
+        private StopBits _gpsStopBits = StopBits.One;
+        private int _gpsDataBits = 8;
+        private int _gpsTimeout = 2000;
+        private Handshake _gpsHandshake = Handshake.None;
+        private bool _trackAfterUnpark = false;
         private SlewSpeed _hcSpeed = SlewSpeed.Eight;
         private HcMode _hcMode = HcMode.Guiding;
         private PolarMode _polarMode = PolarMode.Left;
@@ -380,6 +388,84 @@ namespace GreenSwamp.Alpaca.MountControl
                 if (_gpsBaudRate != value)
                 {
                     _gpsBaudRate = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public Parity GpsParity
+        {
+            get => _gpsParity;
+            set
+            {
+                if (_gpsParity != value)
+                {
+                    _gpsParity = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public StopBits GpsStopBits
+        {
+            get => _gpsStopBits;
+            set
+            {
+                if (_gpsStopBits != value)
+                {
+                    _gpsStopBits = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public int GpsDataBits
+        {
+            get => _gpsDataBits;
+            set
+            {
+                if (_gpsDataBits != value)
+                {
+                    _gpsDataBits = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public int GpsTimeout
+        {
+            get => _gpsTimeout;
+            set
+            {
+                if (_gpsTimeout != value)
+                {
+                    _gpsTimeout = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public Handshake GpsHandshake
+        {
+            get => _gpsHandshake;
+            set
+            {
+                if (_gpsHandshake != value)
+                {
+                    _gpsHandshake = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public bool TrackAfterUnpark
+        {
+            get => _trackAfterUnpark;
+            set
+            {
+                if (_trackAfterUnpark != value)
+                {
+                    _trackAfterUnpark = value;
                     OnPropertyChanged();
                 }
             }
@@ -1656,6 +1742,12 @@ namespace GreenSwamp.Alpaca.MountControl
                 _gpsBaudRate = Enum.IsDefined(typeof(SerialSpeed), settings.GpsBaudRate)
                     ? (SerialSpeed)settings.GpsBaudRate
                     : SerialSpeed.ps9600;
+                _gpsParity = Enum.TryParse<Parity>(settings.GpsParity, true, out var gpsPar) ? gpsPar : Parity.None;
+                _gpsStopBits = Enum.TryParse<StopBits>(settings.GpsStopBits, true, out var gpsStop) ? gpsStop : StopBits.One;
+                _gpsDataBits = settings.GpsDataBits > 0 ? settings.GpsDataBits : 8;
+                _gpsTimeout = settings.GpsTimeout > 0 ? settings.GpsTimeout : 2000;
+                _gpsHandshake = Enum.TryParse<Handshake>(settings.GpsHandshake, true, out var gpsHs) ? gpsHs : Handshake.None;
+                _trackAfterUnpark = settings.TrackAfterUnpark;
 
                 if (Enum.TryParse<SlewSpeed>(settings.HcSpeed, true, out var hcSpd))
                     _hcSpeed = hcSpd;
@@ -1874,6 +1966,12 @@ namespace GreenSwamp.Alpaca.MountControl
                 settings.TrackingRate = _trackingRate.ToString();
                 settings.GpsPort = _gpsComPort;
                 settings.GpsBaudRate = (int)_gpsBaudRate;
+                settings.GpsParity = _gpsParity.ToString();
+                settings.GpsStopBits = _gpsStopBits.ToString();
+                settings.GpsDataBits = _gpsDataBits;
+                settings.GpsTimeout = _gpsTimeout;
+                settings.GpsHandshake = _gpsHandshake.ToString();
+                settings.TrackAfterUnpark = _trackAfterUnpark;
                 settings.HcSpeed = _hcSpeed.ToString();
                 settings.HcMode = _hcMode.ToString();
                 settings.PolarMode = _polarMode.ToString();

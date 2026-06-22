@@ -125,7 +125,11 @@ namespace GreenSwamp.Alpaca.MountControl.AutoHome
             HomeSensorCapabilityCheck();
             if (!HasHomeSensor) return AutoHomeResult.HomeCapabilityCheckFailed;
             _ = new CmdAxisStop(_mountQueue.NewId, _mountQueue, axis);
-            if (_mount.Tracking) _mount.ApplyTracking(false);
+            if (_mount.Tracking)
+            {
+                _mount.EnableVoice = false;
+                _mount.ApplyTracking(false);
+            }
             //StartCount = GetEncoderCount(axis);
             var totalMove = 0.0;
             // ReSharper disable once RedundantAssignment

@@ -120,6 +120,7 @@
                      "ParkHzLimitName":  "Default",
                      "ParkLimitName":  "Default",
                      "ParkName":  "Default",
+                     "TrackAfterUnpark":  false,
                      "ParkPositions":  [
                                            {
                                                "Name":  "Default",
@@ -181,6 +182,11 @@
                      "FullCurrent": true,
                      "GotoPrecision":  0.001,
                      "GpsBaudRate":  "ps4800",
+                     "GpsParity":  "None",
+                     "GpsStopBits":  "One",
+                     "GpsDataBits":  8,
+                     "GpsTimeout":  2000,
+                     "GpsHandshake":  "None",
                      "GpsPort":  1,
                      "MaximumSlewRate":  3.5,
                      "NumMoveAxis":  2,

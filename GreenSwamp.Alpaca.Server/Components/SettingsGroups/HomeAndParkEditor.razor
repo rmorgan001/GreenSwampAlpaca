@@ -37,6 +37,10 @@
                 <MudTextField @bind-Value="Device!.ParkName" @bind-Value:after="NotifyChanged"
                               Label="Active Park Position" Immediate="true" />
             </MudTooltip>
+            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Start tracking automatically when the mount unparks." Placement="Placement.Right" Arrow="true">
+                <MudCheckBox @bind-Value="Device!.TrackAfterUnpark" @bind-Value:after="NotifyChanged"
+                             Label="Track After Unpark" />
+            </MudTooltip>
             @if (Device?.ParkPositions is { Count: > 0 })
             {
                 <MudText Typo="Typo.subtitle2" Class="mt-2">Defined Park Positions</MudText>

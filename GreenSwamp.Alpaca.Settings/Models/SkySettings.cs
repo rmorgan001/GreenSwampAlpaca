@@ -157,6 +157,8 @@ namespace GreenSwamp.Alpaca.Settings.Models
         [UniqueSetting]
         public string ParkName { get; set; } = null!;
         [UniqueSetting]
+        public bool TrackAfterUnpark { get; set; } = false;
+        [UniqueSetting]
         public bool LimitPark { get; set; }
         [UniqueSetting]
         public string ParkLimitName { get; set; } = null!;
@@ -303,6 +305,16 @@ namespace GreenSwamp.Alpaca.Settings.Models
         public string GpsPort { get; set; } = string.Empty;
         [CommonSetting]
         public int GpsBaudRate { get; set; }
+        [CommonSetting]
+        public string GpsParity { get; set; } = "None";
+        [CommonSetting]
+        public string GpsStopBits { get; set; } = "One";
+        [CommonSetting]
+        public int GpsDataBits { get; set; } = 8;
+        [CommonSetting]
+        public int GpsTimeout { get; set; } = 2000;
+        [CommonSetting]
+        public string GpsHandshake { get; set; } = "None";
 
         // Instrument Info
         [CommonSetting]

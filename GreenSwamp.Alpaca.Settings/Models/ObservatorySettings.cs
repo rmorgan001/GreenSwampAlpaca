@@ -46,6 +46,21 @@ namespace GreenSwamp.Alpaca.Settings.Models
 
         /// <summary>Baud rate for the GPS receiver serial port.</summary>
         public int GpsBaudRate { get; set; } = 9600;
+
+        /// <summary>Parity for the GPS receiver serial port (None, Odd, Even, Mark, Space).</summary>
+        public string GpsParity { get; set; } = "None";
+
+        /// <summary>Stop bits for the GPS receiver serial port (One, Two, OnePointFive, None).</summary>
+        public string GpsStopBits { get; set; } = "One";
+
+        /// <summary>Data bits for the GPS receiver serial port (5–8).</summary>
+        public int GpsDataBits { get; set; } = 8;
+
+        /// <summary>Read timeout in milliseconds for the GPS receiver serial port.</summary>
+        public int GpsTimeout { get; set; } = 2000;
+
+        /// <summary>Handshake for the GPS receiver serial port (None, XOnXOff, RequestToSend, RequestToSendXOnXOff).</summary>
+        public string GpsHandshake { get; set; } = "None";
     }
 
     /// <summary>

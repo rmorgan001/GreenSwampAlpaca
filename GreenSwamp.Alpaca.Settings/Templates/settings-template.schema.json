@@ -163,6 +163,40 @@
           "minimum": 0,
           "description": "Telescope focal length in meters"
         },
+        "GpsBaudRate": {
+          "type": "string",
+          "description": "GPS serial port baud rate"
+        },
+        "GpsDataBits": {
+          "type": "integer",
+          "description": "GPS serial port data bits",
+          "enum": [ 5, 6, 7, 8 ]
+        },
+        "GpsHandshake": {
+          "type": "string",
+          "description": "GPS serial port handshake",
+          "enum": [ "None", "XOnXOff", "RequestToSend", "RequestToSendXOnXOff" ]
+        },
+        "GpsParity": {
+          "type": "string",
+          "description": "GPS serial port parity",
+          "enum": [ "None", "Odd", "Even", "Mark", "Space" ]
+        },
+        "GpsPort": {
+          "type": [ "string", "integer" ],
+          "description": "GPS serial port name or number"
+        },
+        "GpsStopBits": {
+          "type": "string",
+          "description": "GPS serial port stop bits",
+          "enum": [ "None", "One", "OnePointFive", "Two" ]
+        },
+        "GpsTimeout": {
+          "type": "integer",
+          "description": "GPS serial port read timeout in milliseconds",
+          "minimum": 100,
+          "maximum": 30000
+        },
         "GuideRateOffsetX": {
           "type": "number",
           "description": "Guide rate offset for X axis"
@@ -300,6 +334,10 @@
         "ParkName": {
           "type": "string",
           "description": "Name of the selected park position"
+        },
+        "TrackAfterUnpark": {
+          "type": "boolean",
+          "description": "Start tracking automatically when the mount unparks"
         },
         "ParkPositions": {
           "type": "array",

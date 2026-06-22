@@ -106,7 +106,7 @@ git diff --stat path/to/file.cs
    - Edit ONLY the specific case/method/block you need to change
 
 2. **Use targeted edits with context:**// ? CORRECT - Minimal context
-case SomeCase:
+   case SomeCase:
     // ...existing code...
     newCode(); // Change here
     // ...existing code...
@@ -218,6 +218,9 @@ get_file "path/to/found/file.cs"
 5. edit_file                           # Make minimal changes
 6. run_build                           # Verify immediately
 ### Fixing a Bug
+
+When I report a bug in code from the current session — read the affected file, find the cause, fix it. No architecture tracing unless the first fix fails
+
 1. run_build                           # Confirm bug exists
 2. code_search "error_method_name"     # Locate all occurrences
 3. file_search "partial_class" 0       # Find all partial files
