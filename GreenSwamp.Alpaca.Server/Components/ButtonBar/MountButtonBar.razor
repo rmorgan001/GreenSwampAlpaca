@@ -15,7 +15,8 @@
                     DropShadow="false">
         <MudTooltip Text="@(State.AtPark ? "Unpark the mount" : "Park the mount at the selected position")"
                     Placement="Placement.Top" Arrow="true">
-            <MudButton Disabled="@(!IsConnected || (State.AtPark
+            <MudButton Size="Size.Small"
+                       Disabled="@(!IsConnected || (State.AtPark
                             ? !(Mount?.Settings.CanUnPark ?? false)
                             :  !(Mount?.Settings.CanPark ?? false)))"
                        OnClick="OnParkClickAsync">
@@ -265,7 +266,18 @@
                 ? ASCOM.Common.DeviceInterfaces.PointingState.ThroughThePole
                 : ASCOM.Common.DeviceInterfaces.PointingState.Normal;
 
-            await ExecuteAsync(() => mount.SetSideOfPier(oppositeSide), "Flip SOP failed");
+            try
+            {
+                await Task.Run(() => mount.SetSideOfPier(oppositeSide));
+            }
+            catch (InvalidOperationException ex)
+            {
+                Snackbar.Add(ex.Message, Severity.Warning);
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"Flip SOP failed: {ex.Message}", Severity.Error);
+            }
         }
     }
 

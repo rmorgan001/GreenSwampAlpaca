@@ -1,55 +1,36 @@
-﻿@using System.Web;
-@using Microsoft.AspNetCore.Components.Authorization;
+﻿@using Microsoft.AspNetCore.Components.Authorization
 
 @inject NavigationManager MyNavigationManager
-<fieldset>
-    <AuthorizeView>
-        <Authorized>
 
-            <b>Logged in as: @context.User.Identity.Name</b>
-
-            <a class="btn btn-primary"
-               href="/logout?returnUrl=/"
-               target="_top"
-               style="float: right;">Logout</a>
-        </Authorized>
-
-        <NotAuthorized>
-
-            <form action=@($"/login?url={Return}") method="post">
-                <label for="fname">Username:</label>
-                <input type="text" id="username" name="username">
-                <label for="lname">Password:</label>
-                <input type="password" id="password" name="password">
-                <input class="btn btn-primary" type="submit" value="Login">
-            </form>
-
-        </NotAuthorized>
-    </AuthorizeView>
-</fieldset>
+<AuthorizeView>
+    <Authorized>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+            <MudText Typo="Typo.body2">
+                Logged in as: <strong>@context.User.Identity?.Name</strong>
+            </MudText>
+            <MudButton Href="/logout?returnUrl=/" Target="_top"
+                       Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small">
+                Logout
+            </MudButton>
+        </MudStack>
+    </Authorized>
+    <NotAuthorized>
+        <form action="@($"/login?url={Return}")" method="post">
+            <MudStack Spacing="3">
+                <MudTextField T="string" Label="Username" Variant="Variant.Outlined"
+                              name="username" autocomplete="username" />
+                <MudTextField T="string" Label="Password" Variant="Variant.Outlined"
+                              InputType="InputType.Password"
+                              name="password" autocomplete="current-password" />
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled"
+                           Color="Color.Primary" FullWidth="true">
+                    Login
+                </MudButton>
+            </MudStack>
+        </form>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
-
-    string Username = "";
-
-    string Password = "";
-
-    string Return
-    {
-        get
-        {
-            return new Uri(MyNavigationManager.Uri).LocalPath;
-        }
-    }
-
-    private string Encode(string param)
-
-    {
-        return HttpUtility.UrlEncode(param);
-    }
-
-    private void NavigateToLogin()
-    {
-        MyNavigationManager.NavigateTo($"/login?paramUsername={Encode(Username)}&paramPassword={Encode(Password)}&paramReturnUrl={Encode(Return)}", true);
-    }
+    private string Return => new Uri(MyNavigationManager.Uri).LocalPath;
 }
