@@ -322,9 +322,6 @@
 
     private async Task OnStopClickAsync()
     {
-        var confirmed = await ConfirmAsync("Emergency stop all axis motion?", "Stop");
-        if (!confirmed) return;
-
         var mount = Mount;
         if (mount == null) { Snackbar.Add($"Mount device {DeviceNumber} not found", Severity.Error); return; }
 
