@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -102,6 +102,13 @@ namespace GreenSwamp.Alpaca.MountControl.Interfaces
         /// <param name="direction">Guide direction</param>
         /// <param name="duration">Duration in milliseconds</param>
         void PulseGuide(GuideDirection direction, int duration);
+
+        /// <summary>
+        /// Apply a hand-controller button press. Speed and mode are read from Settings.
+        /// </summary>
+        /// <param name="speed">HC speed level 1–8</param>
+        /// <param name="direction">Direction of move</param>
+        void HcMoves(SlewSpeed speed, SlewDirection direction);
 
         /// <summary>
         /// Find home position
