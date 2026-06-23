@@ -60,6 +60,7 @@
                     }
                     <MudDivider Class="my-1" />
                     <MudCheckBox @bind-Value="_oneClickStart" @bind-Value:after="OnOneClickStartChanged" T="bool" Dense="true" Label="One Click Start" />
+                    <MudCheckBox @bind-Value="_disableKeysOnGoTo" @bind-Value:after="OnDisableKeysOnGoToChanged" T="bool" Dense="true" Label="Direction Keys Off for Go To" />
                 </MudStack>
             </MudStack>
 
@@ -173,6 +174,7 @@
     private bool _antiRa;
     private bool _antiDec;
     private bool _oneClickStart;
+    private bool _disableKeysOnGoTo;
     private string? _activeOneClickDir;
 
     // Diagonal direction mappings
@@ -415,6 +417,18 @@
         if (persisted != null)
         {
             persisted.HcOneClickStart = _oneClickStart;
+            await SettingsService.SaveDeviceSettingsAsync(DeviceNumber, persisted);
+        }
+    }
+
+    private async Task OnDisableKeysOnGoToChanged()
+    {
+        if (_mount != null)
+            _mount.Settings.DisableKeysOnGoTo = _disableKeysOnGoTo;
+        var persisted = SettingsService.GetDeviceSettings(DeviceNumber);
+        if (persisted != null)
+        {
+            persisted.DisableKeysOnGoTo = _disableKeysOnGoTo;
             await SettingsService.SaveDeviceSettingsAsync(DeviceNumber, persisted);
         }
     }
