@@ -6,112 +6,106 @@
 @inject IVersionedSettingsService SettingsService
 @implements IAsyncDisposable
 
-<MudDialog ContentClass="overflow-visible">
-    <DialogContent>
-        <MudStack Spacing="3">
-            <MudText Typo="Typo.h6">Hand Controller</MudText>
+<div>
+    <MudStack Spacing="3">
+        <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Start">
+            @* 3x3 Direction Grid *@
+            <div class="hc-grid" @ref="_gridElement">
+                @* Row 1: NW, N, NE *@
+                <MudButton class="@(GetButtonClass("NorthWest"))" data-hc-dir="NorthWest" title="North-West" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.NorthWest" />
+                </MudButton>
+                <MudButton class="@(GetButtonClass("North"))" data-hc-dir="North" title="North" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.North" />
+                </MudButton>
+                <MudButton class="@(GetButtonClass("NorthEast"))" data-hc-dir="NorthEast" title="North-East" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.NorthEast" />
+                </MudButton>
 
-            <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Start">
-                @* 3x3 Direction Grid *@
-                <div class="hc-grid" @ref="_gridElement">
-                    @* Row 1: NW, N, NE *@
-                    <button class="@(GetButtonClass("NorthWest"))" data-hc-dir="NorthWest" title="North-West">
-                        <MudIcon Icon="@Icons.Material.Filled.NorthWest" />
-                    </button>
-                    <button class="@(GetButtonClass("North"))" data-hc-dir="North" title="North">
-                        <MudIcon Icon="@Icons.Material.Filled.North" />
-                    </button>
-                    <button class="@(GetButtonClass("NorthEast"))" data-hc-dir="NorthEast" title="North-East">
-                        <MudIcon Icon="@Icons.Material.Filled.NorthEast" />
-                    </button>
+                @* Row 2: W, Stop, E *@
+                <MudButton class="@(GetButtonClass("West"))" data-hc-dir="West" title="West" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.West" />
+                </MudButton>
+                <MudButton class="hc-btn hc-stop" data-hc-stop="true" title="Stop" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.StopCircle" Color="Color.Error" Size="Size.Large" />
+                </MudButton>
+                <MudButton class="@(GetButtonClass("East"))" data-hc-dir="East" title="East" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.East" />
+                </MudButton>
 
-                    @* Row 2: W, Stop, E *@
-                    <button class="@(GetButtonClass("West"))" data-hc-dir="West" title="West">
-                        <MudIcon Icon="@Icons.Material.Filled.West" />
-                    </button>
-                    <button class="hc-btn hc-stop" data-hc-stop="true" title="Stop">
-                        <MudIcon Icon="@Icons.Material.Filled.StopCircle" Color="Color.Error" Size="Size.Large" />
-                    </button>
-                    <button class="@(GetButtonClass("East"))" data-hc-dir="East" title="East">
-                        <MudIcon Icon="@Icons.Material.Filled.East" />
-                    </button>
+                @* Row 3: SW, S, SE *@
+                <MudButton class="@(GetButtonClass("SouthWest"))" data-hc-dir="SouthWest" title="South-West" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.SouthWest" />
+                </MudButton>
+                <MudButton class="@(GetButtonClass("South"))" data-hc-dir="South" title="South" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.South" />
+                </MudButton>
+                <MudButton class="@(GetButtonClass("SouthEast"))" data-hc-dir="SouthEast" title="South-East" disabled="@(!IsEnabled)">
+                    <MudIcon Icon="@Icons.Material.Filled.SouthEast" />
+                </MudButton>
+            </div>
 
-                    @* Row 3: SW, S, SE *@
-                    <button class="@(GetButtonClass("SouthWest"))" data-hc-dir="SouthWest" title="South-West">
-                        <MudIcon Icon="@Icons.Material.Filled.SouthWest" />
-                    </button>
-                    <button class="@(GetButtonClass("South"))" data-hc-dir="South" title="South">
-                        <MudIcon Icon="@Icons.Material.Filled.South" />
-                    </button>
-                    <button class="@(GetButtonClass("SouthEast"))" data-hc-dir="SouthEast" title="South-East">
-                        <MudIcon Icon="@Icons.Material.Filled.SouthEast" />
-                    </button>
-                </div>
-
-                @* Options panel — Flip and Anti-Backlash *@
-                <MudStack Spacing="1">
-                    <MudText Typo="Typo.caption">Options</MudText>
-                    <MudCheckBox @bind-Value="_flipEw"  @bind-Value:after="OnFlipEwChanged"  T="bool" Dense="true" Label="Flip RA/Az" />
-                    <MudCheckBox @bind-Value="_flipNs"  @bind-Value:after="OnFlipNsChanged"  T="bool" Dense="true" Label="Flip Dec/Alt" />
-                    @if (_mode != HcMode.Pulse)
-                    {
-                        <MudCheckBox @bind-Value="_antiRa"  @bind-Value:after="OnAntiRaChanged"  T="bool" Dense="true" Label="Anti-backlash RA/Az" />
-                        <MudCheckBox @bind-Value="_antiDec" @bind-Value:after="OnAntiDecChanged" T="bool" Dense="true" Label="Anti-backlash Dec/Alt" />
-                    }
-                    <MudDivider Class="my-1" />
-                    <MudCheckBox @bind-Value="_oneClickStart" @bind-Value:after="OnOneClickStartChanged" T="bool" Dense="true" Label="One Click Start" />
-                    <MudCheckBox @bind-Value="_disableKeysOnGoTo" @bind-Value:after="OnDisableKeysOnGoToChanged" T="bool" Dense="true" Label="Direction Keys Off for Go To" />
-                </MudStack>
-            </MudStack>
-
-            @* Speed Slider — horizontal, own row *@
-            <MudSlider @bind-Value="_speed"
-                       @bind-Value:after="OnSpeedChanged"
-                       T="int"
-                       Min="1"
-                       Max="8"
-                       Step="1"
-                       TickMarks="true">Speed: @_speed</MudSlider>
-
-            @* Mode Selector *@
+            @* Options panel — Flip and Anti-Backlash *@
             <MudStack Spacing="1">
-                <MudText Typo="Typo.body2">Mode</MudText>
-                <MudToggleGroup @bind-Value="_mode" 
-                                @bind-Value:after="OnModeChanged"
-                                Color="Color.Primary" 
-                                SelectionMode="SelectionMode.SingleSelection">
-                    <MudToggleItem Value="@HcMode.Axes">
-                        <MudText Typo="Typo.body2">Axes</MudText>
-                    </MudToggleItem>
-                    <MudToggleItem Value="@HcMode.Guiding">
-                        <MudText Typo="Typo.body2">Guiding</MudText>
-                    </MudToggleItem>
-                    <MudToggleItem Value="@HcMode.Pulse">
-                        <MudText Typo="Typo.body2">Pulse</MudText>
-                    </MudToggleItem>
-                </MudToggleGroup>
+                <MudText Typo="Typo.caption">Options</MudText>
+                <MudCheckBox @bind-Value="_flipEw"  @bind-Value:after="OnFlipEwChanged"  T="bool" Dense="true" Label="Flip RA/Az" Disabled="@(!IsEnabled)" />
+                <MudCheckBox @bind-Value="_flipNs"  @bind-Value:after="OnFlipNsChanged"  T="bool" Dense="true" Label="Flip Dec/Alt" Disabled="@(!IsEnabled)" />
+                @if (_mode != HcMode.Pulse)
+                {
+                    <MudCheckBox @bind-Value="_antiRa"  @bind-Value:after="OnAntiRaChanged"  T="bool" Dense="true" Label="Anti-backlash RA/Az" Disabled="@(!IsEnabled)" />
+                    <MudCheckBox @bind-Value="_antiDec" @bind-Value:after="OnAntiDecChanged" T="bool" Dense="true" Label="Anti-backlash Dec/Alt" Disabled="@(!IsEnabled)" />
+                }
+                <MudDivider Class="my-1" />
+                <MudCheckBox @bind-Value="_oneClickStart" @bind-Value:after="OnOneClickStartChanged" T="bool" Dense="true" Label="One Click Start" Disabled="@(!IsEnabled)" />
+                <MudCheckBox @bind-Value="_disableKeysOnGoTo" @bind-Value:after="OnDisableKeysOnGoToChanged" T="bool" Dense="true" Label="Direction Keys Off for Go To" Disabled="@(!IsEnabled)" />
             </MudStack>
-
-            @if (!string.IsNullOrEmpty(_statusMessage))
-            {
-                <MudAlert Severity="Severity.Info" Dense="true">@_statusMessage</MudAlert>
-            }
         </MudStack>
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="Close">Close</MudButton>
-    </DialogActions>
-</MudDialog>
+
+        @* Speed Slider — horizontal, own row *@
+        <MudSlider @bind-Value="_speed"
+                   @bind-Value:after="OnSpeedChanged"
+                   T="int"
+                   Min="1"
+                   Max="8"
+                   Step="1"
+                   TickMarks="true"
+                   Disabled="@(!IsEnabled)">Speed: @_speed</MudSlider>
+
+        @* Mode Selector *@
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.body2">Mode</MudText>
+            <MudToggleGroup @bind-Value="_mode"
+                            @bind-Value:after="OnModeChanged"
+                            Color="Color.Primary"
+                            SelectionMode="SelectionMode.SingleSelection"
+                            Disabled="@(!IsEnabled)">
+                <MudToggleItem Value="@HcMode.Axes">
+                    <MudText Typo="Typo.body2">Axes</MudText>
+                </MudToggleItem>
+                <MudToggleItem Value="@HcMode.Guiding">
+                    <MudText Typo="Typo.body2">Guiding</MudText>
+                </MudToggleItem>
+                <MudToggleItem Value="@HcMode.Pulse">
+                    <MudText Typo="Typo.body2">Pulse</MudText>
+                </MudToggleItem>
+            </MudToggleGroup>
+        </MudStack>
+
+        @if (!string.IsNullOrEmpty(_statusMessage))
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">@_statusMessage</MudAlert>
+        }
+
+    </MudStack>
+</div>
 
 @code {
-    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
-
-    [Parameter]
-    public int DeviceNumber { get; set; }
+    [Parameter] public int DeviceNumber { get; set; }
+    [Parameter] public bool IsEnabled { get; set; }
 
     private ElementReference _gridElement;
     private IJSObjectReference? _jsModule;
-    private DotNetObjectReference<HandControllerDialog>? _dotNetRef;
+    private DotNetObjectReference<HandControllerPanel>? _dotNetRef;
 
     private Mount? _mount;
     private int _speed = 4;
@@ -139,17 +133,17 @@
     {
         ["North"] = SlewDirection.SlewNoneDec,
         ["South"] = SlewDirection.SlewNoneDec,
-        ["East"] = SlewDirection.SlewNoneRa,
-        ["West"] = SlewDirection.SlewNoneRa
+        ["East"]  = SlewDirection.SlewNoneRa,
+        ["West"]  = SlewDirection.SlewNoneRa
     };
 
     // Direction name to SlewDirection enum mapping
     private static readonly Dictionary<string, SlewDirection> DirectionMap = new()
     {
-        ["North"] = SlewDirection.SlewNorth,
-        ["South"] = SlewDirection.SlewSouth,
-        ["East"] = SlewDirection.SlewEast,
-        ["West"] = SlewDirection.SlewWest,
+        ["North"]     = SlewDirection.SlewNorth,
+        ["South"]     = SlewDirection.SlewSouth,
+        ["East"]      = SlewDirection.SlewEast,
+        ["West"]      = SlewDirection.SlewWest,
         ["NorthEast"] = SlewDirection.SlewNorthEast,
         ["NorthWest"] = SlewDirection.SlewNorthWest,
         ["SouthEast"] = SlewDirection.SlewSouthEast,
@@ -162,14 +156,13 @@
 
         if (_mount?.Settings != null)
         {
-            // MountControl.SkySettings.HcSpeed is already typed as SlewSpeed
-            _speed = (int)_mount.Settings.HcSpeed;
-            _mode = _mount.Settings.HcMode;
-            _flipEw  = _mount.Settings.HcFlipEw;
-            _flipNs  = _mount.Settings.HcFlipNs;
-            _antiRa  = _mount.Settings.HcAntiRa;
-            _antiDec = _mount.Settings.HcAntiDec;
-            _oneClickStart = _mount.Settings.HcOneClickStart;
+            _speed           = (int)_mount.Settings.HcSpeed;
+            _mode            = _mount.Settings.HcMode;
+            _flipEw          = _mount.Settings.HcFlipEw;
+            _flipNs          = _mount.Settings.HcFlipNs;
+            _antiRa          = _mount.Settings.HcAntiRa;
+            _antiDec         = _mount.Settings.HcAntiDec;
+            _oneClickStart   = _mount.Settings.HcOneClickStart;
         }
     }
 
@@ -179,11 +172,8 @@
         {
             try
             {
-                // Lazy-load JS ESM module
-                _jsModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/handController.js");
+                _jsModule  = await JS.InvokeAsync<IJSObjectReference>("import", "./js/handController.js");
                 _dotNetRef = DotNetObjectReference.Create(this);
-
-                // Initialize pointer event handlers
                 await _jsModule.InvokeVoidAsync("init", _dotNetRef, _gridElement);
             }
             catch (Exception ex)
@@ -197,7 +187,7 @@
     [JSInvokable]
     public void OnButtonDown(string direction)
     {
-        if (_mount == null || !DirectionMap.TryGetValue(direction, out var slewDir))
+        if (!IsEnabled || _mount == null || !DirectionMap.TryGetValue(direction, out var slewDir))
             return;
 
         try
@@ -208,14 +198,12 @@
             {
                 if (_activeOneClickDir == direction)
                 {
-                    // Same button clicked again — stop
                     StopDirection(direction);
                     _activeOneClickDir = null;
                     _statusMessage = "Stopped";
                 }
                 else
                 {
-                    // New direction — stop previous if any, start new
                     if (_activeOneClickDir != null)
                         StopDirection(_activeOneClickDir);
                     _mount.HcMoves(speed, slewDir);
@@ -241,10 +229,9 @@
     [JSInvokable]
     public void OnButtonUp(string direction)
     {
-        if (_mount == null)
+        if (!IsEnabled || _mount == null)
             return;
 
-        // In one-click mode the button release has no effect
         if (_oneClickStart)
             return;
 
@@ -252,14 +239,12 @@
         {
             var speed = (SlewSpeed)_speed;
 
-            // Diagonal directions must stop BOTH axes
             if (DiagonalStops.TryGetValue(direction, out var stops))
             {
                 _mount.HcMoves(speed, stops.RaStop);
                 _mount.HcMoves(speed, stops.DecStop);
                 _statusMessage = "Stopped";
             }
-            // Cardinal directions stop single axis
             else if (CardinalStops.TryGetValue(direction, out var stop))
             {
                 _mount.HcMoves(speed, stop);
@@ -278,7 +263,7 @@
     [JSInvokable]
     public void OnStopPressed()
     {
-        if (_mount == null)
+        if (!IsEnabled || _mount == null)
             return;
 
         try
@@ -297,11 +282,9 @@
 
     private async Task OnSpeedChanged()
     {
-        // Update the runtime mount settings (MountControl.SkySettings — typed enum)
         if (_mount != null)
             _mount.Settings.HcSpeed = (SlewSpeed)_speed;
 
-        // Persist via service using the JSON model (Settings.Models.SkySettings — strings)
         var persisted = SettingsService.GetDeviceSettings(DeviceNumber);
         if (persisted != null)
         {
@@ -312,11 +295,9 @@
 
     private async Task OnModeChanged()
     {
-        // Update the runtime mount settings
         if (_mount != null)
             _mount.Settings.HcMode = _mode;
 
-        // Persist via service
         var persisted = SettingsService.GetDeviceSettings(DeviceNumber);
         if (persisted != null)
         {
@@ -351,7 +332,6 @@
 
     private async Task OnOneClickStartChanged()
     {
-        // If turning off while a direction is active, stop it
         if (!_oneClickStart && _activeOneClickDir != null)
         {
             StopDirection(_activeOneClickDir);
@@ -373,6 +353,7 @@
     {
         if (_mount != null)
             _mount.Settings.DisableKeysOnGoTo = _disableKeysOnGoTo;
+
         var persisted = SettingsService.GetDeviceSettings(DeviceNumber);
         if (persisted != null)
         {
@@ -409,8 +390,6 @@
         persisted.HcAntiDec = _antiDec;
         await SettingsService.SaveDeviceSettingsAsync(DeviceNumber, persisted);
     }
-
-    private void Close() => MudDialog.Close();
 
     public async ValueTask DisposeAsync()
     {

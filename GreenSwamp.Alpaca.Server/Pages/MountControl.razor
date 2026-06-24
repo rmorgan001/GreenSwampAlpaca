@@ -1,0 +1,275 @@
+﻿@page "/mount-control"
+@page "/mount-control/{DeviceNumber:int}"
+@using GreenSwamp.Alpaca.Server.Components
+@using GreenSwamp.Alpaca.Server.Components.ButtonBar
+@using GreenSwamp.Alpaca.Server.Services
+@using GreenSwamp.Alpaca.Settings.Services
+@using GreenSwamp.Alpaca.MountControl
+@using ASCOM.Alpaca
+@inject IVersionedSettingsService SettingsService
+@inject ISnackbar Snackbar
+@inject TelescopeStateService StateService
+@implements IDisposable
+
+<PageTitle>Mount Control</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-3">Mount Control</MudText>
+
+@if (_alpacaDevices.Count == 0)
+{
+    <MudAlert Severity="Severity.Info">No mount devices registered.</MudAlert>
+}
+else
+{
+    <MudTabs Rounded="true" Elevation="1" Class="mb-4 gs-tabs-no-transform"
+             ActivePanelIndex="@_activeDeviceTabIndex"
+             ActivePanelIndexChanged="OnDeviceTabChanged">
+        @foreach (var dn in GetConfiguredDeviceNumbers())
+        {
+            <MudTabPanel Text="@TabLabel(dn)" Class="@GetTabClass(dn)">
+                @{
+                    var s  = StateService.GetCurrentState(dn);
+                    var ms = _deviceSettings.GetValueOrDefault(dn);
+                    var connected = IsUiClientConnected(dn);
+                }
+
+                @* ── Compact position header ─────────────────────────────── *@
+                <MudPaper Elevation="1" Class="pa-2 mb-2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4" Wrap="Wrap.Wrap">
+                        <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Primary">RA</MudText>
+                            <MudText Typo="Typo.body2" Class="gs-font-mono">@FormatHMS(s.RightAscension)</MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Primary">Dec</MudText>
+                            <MudText Typo="Typo.body2" Class="gs-font-mono">@FormatDMS(s.Declination)</MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Primary">Az</MudText>
+                            <MudText Typo="Typo.body2" Class="gs-font-mono">@FormatDMS(s.Azimuth)</MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Primary">Alt</MudText>
+                            <MudText Typo="Typo.body2" Class="gs-font-mono">@FormatDMS(s.Altitude)</MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="1">
+                            <MudText Typo="Typo.caption" Color="Color.Primary">LHA</MudText>
+                            <MudText Typo="Typo.body2" Class="gs-font-mono">@FormatHMS(s.LocalHourAngle)</MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+
+                @* ── State icon row ───────────────────────────────────────── *@
+                <MudPaper Elevation="0" Class="pa-1 mb-2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+
+                        <MudTooltip Text="@(s.AtHome ? "At Home" : "Not at Home")" Placement="Placement.Bottom" Arrow="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Home"
+                                     Color="@(s.AtHome ? Color.Success : Color.Default)"
+                                     Size="Size.Medium" />
+                        </MudTooltip>
+
+                        <MudTooltip Text="@(s.AtPark ? "Parked" : "Not Parked")" Placement="Placement.Bottom" Arrow="true">
+                            <MudIcon Icon="@Icons.Material.Filled.NightShelter"
+                                     Color="@(s.AtPark ? Color.Info : Color.Default)"
+                                     Size="Size.Medium" />
+                        </MudTooltip>
+
+                        <MudTooltip Text="@(s.Slewing ? "Slewing" : "Stationary")" Placement="Placement.Bottom" Arrow="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Moving"
+                                     Color="@(s.Slewing ? Color.Warning : Color.Default)"
+                                     Size="Size.Medium" />
+                        </MudTooltip>
+
+                        <MudTooltip Text="@(s.Tracking ? $"Tracking ({s.TrackingRate})" : "Tracking Off")"
+                                    Placement="Placement.Bottom" Arrow="true">
+                            <MudIcon Icon="@Icons.Material.Filled.TrackChanges"
+                                     Color="@(s.Tracking ? Color.Success : Color.Default)"
+                                     Size="Size.Medium" />
+                        </MudTooltip>
+
+                    </MudStack>
+                </MudPaper>
+
+                @* ── Inline control panels ───────────────────────────────── *@
+                <MudStack Row="true" AlignItems="AlignItems.Start" Spacing="3" Wrap="Wrap.Wrap" Class="mb-3">
+
+                    <MudPaper Elevation="1" Class="pa-3" Style="min-width:420px">
+                        <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">GoTo / Slew</MudText>
+                        <GoToPanel DeviceNumber="@dn" IsEnabled="@connected" />
+                    </MudPaper>
+
+                    <MudPaper Elevation="1" Class="pa-3">
+                        <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Hand Controller</MudText>
+                        <HandControllerPanel DeviceNumber="@dn" IsEnabled="@connected" />
+                    </MudPaper>
+
+                </MudStack>
+
+                @* ── Axis dials ───────────────────────────────────────────────── *@
+                <MudPaper Elevation="0" Class="pa-2 mb-2">
+                    <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Axis Dials</MudText>
+                    <MudStack Row="true" Justify="Justify.FlexStart" Spacing="4" Wrap="Wrap.Wrap" Class="mt-1">
+                        <AxisDial Angle="@s.Azimuth" Label="Azimuth" Size="160" />
+                        <AxisDial Angle="@s.Altitude" Label="Altitude" Size="160" />
+                        <AxisDial Angle="@(s.RightAscension * 15)" Label="Right Ascension"
+                                  DisplayUnits="DialDisplayUnits.Hours" Size="160" />
+                        <AxisDial Angle="@s.Declination" Label="Declination" Size="160" />
+                    </MudStack>
+                </MudPaper>
+
+                @* ── Bottom button bar ─────────────────────────────────────── *@
+                <MudPaper Elevation="0" Class="pa-2">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                        <MountButtonBar State="@s" DeviceNumber="@dn" IsConnected="@connected" />
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudTooltip Text="@(ms?.VoiceActive == true ? "Voice on" : "Voice off")"
+                                        Placement="Placement.Top" Arrow="true">
+                                <MudCheckBox T="bool"
+                                             @bind-Value:get="ms?.VoiceActive ?? false"
+                                             @bind-Value:set="@(v => OnVoiceActiveSetAsync(dn, v))"
+                                             Color="Color.Primary"
+                                             Size="Size.Small"
+                                             Label="Voice" />
+                            </MudTooltip>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="@(connected ? Color.Error : Color.Success)"
+                                       Size="Size.Small"
+                                       OnClick="@(() => OnConnectToggleAsync(dn))">
+                                @(connected ? "Disconnect" : "Connect")
+                            </MudButton>
+                        </MudStack>
+                    </MudStack>
+                </MudPaper>
+
+            </MudTabPanel>
+        }
+    </MudTabs>
+}
+
+@code {
+    [Parameter] public int DeviceNumber { get; set; }
+
+    [Inject] private NavigationManager NavManager { get; set; } = default!;
+
+    private int _activeDeviceTabIndex;
+    private List<AlpacaDevice> _alpacaDevices = [];
+    private Dictionary<int, GreenSwamp.Alpaca.Settings.Models.SkySettings> _deviceSettings = new();
+
+    private const long UiClientId = Mount.UiInternalClientId;
+
+    protected override void OnInitialized()
+    {
+        _alpacaDevices  = SettingsService.GetAlpacaDevices();
+        _deviceSettings = SettingsService.GetAllDeviceSettings()
+            .ToDictionary(d => d.DeviceNumber);
+
+        StateService.StateChanged           += OnStateChanged;
+        SettingsService.DeviceSettingsChanged += OnDeviceSettingsChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _alpacaDevices  = SettingsService.GetAlpacaDevices();
+        var keys = GetConfiguredDeviceNumbers();
+        var idx  = keys.IndexOf(DeviceNumber);
+        _activeDeviceTabIndex = idx >= 0 ? idx : 0;
+    }
+
+    private void OnStateChanged(object? sender, EventArgs e) =>
+        InvokeAsync(StateHasChanged);
+
+    private void OnDeviceSettingsChanged(object? sender, GreenSwamp.Alpaca.Settings.Models.SkySettings updated)
+    {
+        _deviceSettings[updated.DeviceNumber] = updated;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        StateService.StateChanged             -= OnStateChanged;
+        SettingsService.DeviceSettingsChanged -= OnDeviceSettingsChanged;
+    }
+
+    private void OnDeviceTabChanged(int index)
+    {
+        var keys = GetConfiguredDeviceNumbers();
+        if (index >= 0 && index < keys.Count)
+            NavManager.NavigateTo($"/mount-control/{keys[index]}");
+    }
+
+    /// <summary>Returns true when the UI's internal client is registered as connected.</summary>
+    private bool IsUiClientConnected(int dn) =>
+        MountRegistry.GetInstance(dn)?.IsClientConnected(UiClientId) ?? false;
+
+    private async Task OnConnectToggleAsync(int dn)
+    {
+        try
+        {
+            var telescope = DeviceManager.GetTelescope((uint)dn);
+            var connect   = !IsUiClientConnected(dn);
+            await Task.Run(() => telescope.Connected = connect);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Connect/Disconnect failed: {ex.Message}", Severity.Error);
+        }
+    }
+
+    /// <summary>Sets VoiceActive for the given device and persists the change to JSON.</summary>
+    private async Task OnVoiceActiveSetAsync(int dn, bool value)
+    {
+        if (!_deviceSettings.TryGetValue(dn, out var settings)) return;
+        settings.VoiceActive = value;
+        try
+        {
+            await SettingsService.SaveDeviceSettingsAsync(dn, settings);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to save voice setting: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private List<int> GetConfiguredDeviceNumbers() =>
+        _alpacaDevices
+            .Select(d => d.DeviceNumber)
+            .OrderBy(d => d)
+            .ToList();
+
+    private string TabLabel(int deviceNumber)
+    {
+        var device = _alpacaDevices.FirstOrDefault(d => d.DeviceNumber == deviceNumber);
+        return string.IsNullOrWhiteSpace(device?.DeviceName)
+            ? $"Device {deviceNumber}"
+            : device.DeviceName;
+    }
+
+    private string GetTabClass(int deviceNumber)
+    {
+        var mountSettings = _deviceSettings.GetValueOrDefault(deviceNumber);
+        return mountSettings?.Mount == "Simulator" ? "gs-tab-simulator" : string.Empty;
+    }
+
+    private static string FormatHMS(double hours)
+    {
+        if (double.IsNaN(hours) || double.IsInfinity(hours)) return "N/A";
+        var sign = hours < 0 ? "-" : "+";
+        hours = Math.Abs(hours);
+        var h = (int)hours;
+        var m = (int)((hours - h) * 60);
+        var s = ((hours - h) * 60 - m) * 60;
+        return $"{sign}{h:00}h {m:00}m {s:00.00}s";
+    }
+
+    private static string FormatDMS(double degrees)
+    {
+        if (double.IsNaN(degrees) || double.IsInfinity(degrees)) return "N/A";
+        var sign = degrees < 0 ? "-" : "+";
+        degrees = Math.Abs(degrees);
+        var d = (int)degrees;
+        var m = (int)((degrees - d) * 60);
+        var s = ((degrees - d) * 60 - m) * 60;
+        return $"{sign}{d:00}\u00b0 {m:00}\u2032 {s:00.00}\u2033";
+    }
+}

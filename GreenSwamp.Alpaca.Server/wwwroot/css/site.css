@@ -454,3 +454,55 @@ code {
 .blazor-error-boundary::after {
     content: "An error has occurred.";
 }
+
+/* --- Hand Controller grid ---------------------------------- */
+.hc-grid {
+    --hc-cell-size: 50px; /* change only this */
+    --hc-gap: 8px;
+    display: grid;
+    grid-template-columns: repeat(3, var(--hc-cell-size));
+    grid-template-rows: repeat(3, var(--hc-cell-size));
+    gap: var(--hc-gap);
+    user-select: none;
+    touch-action: none;
+}
+
+    /* MudButton root inside the grid */
+    .hc-grid > .mud-button-root.hc-btn {
+        width: 100%;
+        height: 100%;
+        min-width: 0; /* override MudButton min sizing behavior */
+        min-height: 0;
+        padding: 0; /* remove internal spacing */
+        aspect-ratio: 1 / 1;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--mud-palette-primary);
+        border-radius: 8px;
+        background: var(--mud-palette-surface);
+        transition: background-color 0.15s ease, box-shadow 0.15s ease; /* avoid scale overlap */
+        outline: none;
+    }
+
+        /* Optional: keep visual feedback without growth overlap */
+        .hc-grid > .mud-button-root.hc-btn:hover {
+            background: var(--mud-palette-action-default-hover);
+            box-shadow: 0 0 0 1px var(--mud-palette-primary) inset;
+        }
+
+        .hc-grid > .mud-button-root.hc-btn:active {
+            background: var(--mud-palette-action-default);
+        }
+
+        .hc-grid > .mud-button-root.hc-btn.hc-stop {
+            border-color: var(--mud-palette-error);
+        }
+
+        .hc-grid > .mud-button-root.hc-btn.hc-active {
+            background: var(--mud-palette-primary);
+            color: var(--mud-palette-primary-text);
+            border-color: var(--mud-palette-primary-darken);
+        }
+}
