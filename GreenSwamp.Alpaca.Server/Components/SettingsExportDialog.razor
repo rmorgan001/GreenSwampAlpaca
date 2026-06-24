@@ -150,7 +150,7 @@
 
             // Trigger browser download using JavaScript
             await using var module = await JSRuntime.InvokeAsync<IJSObjectReference>(
-                "import", "./js/file-download.js");
+                "import", "./js/fileDownload.js");
             var fileName = $"GreenSwamp_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.zip";
             var bytes = blob.ToArray();
             await module.InvokeVoidAsync("downloadFile", fileName, bytes);

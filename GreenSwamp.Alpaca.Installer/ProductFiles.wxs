@@ -95,7 +95,7 @@
 			<File Source="$(var.PublishDir)\wwwroot\js\handController.js.gz" KeyPath="yes" />
 		</Component>
 		<Component Directory="INSTALLDIR" Subdirectory="wwwroot\js">
-			<File Source="$(var.PublishDir)\wwwroot\js\file-download.js.gz" KeyPath="yes" />
+			<File Source="$(var.PublishDir)\wwwroot\js\fileDownload.js.gz" KeyPath="yes" />
 		</Component>
 		<Component Directory="INSTALLDIR" Subdirectory="wwwroot\js">
 			<File Source="$(var.PublishDir)\wwwroot\js\tts.js.gz" KeyPath="yes" />
