@@ -170,39 +170,7 @@ else
                         </MudPaper>
                     </MudItem>
 
-                    @* -- Row 3: Control Buttons ------------------------------ *@
-
-                    <MudItem xs="12">
-                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-                            <MountButtonBar State="@s"
-                                            DeviceNumber="@dn"
-                                            IsConnected="@IsUiClientConnected(dn)" />
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                                <MudTooltip Text="@(_deviceSettings.GetValueOrDefault(dn)?.VoiceActive == true ? "Voice on" : "Voice off")" Placement="Placement.Top" Arrow="true">
-                                        <MudCheckBox T="bool"
-                                                     @bind-Value:get="_deviceSettings.GetValueOrDefault(dn)?.VoiceActive ?? false"
-                                                     @bind-Value:set="@(v => OnVoiceActiveSetAsync(dn, v))"
-                                                     Color="Color.Primary"
-                                                     Size="Size.Small"
-                                                     Label="Voice" />
-                                    </MudTooltip>
-                                <MudButton Variant="Variant.Outlined"
-                                           Color="Color.Primary"
-                                           Size="Size.Small"
-                                           StartIcon="@Icons.Material.Filled.Gamepad"
-                                           Disabled="@(!s.IsMountRunning)"
-                                           OnClick="@(() => OpenHandControllerDialog(dn))">
-                                    Hand Controller
-                                </MudButton>
-                                <MudButton Variant="Variant.Outlined"
-                                           Color="@(IsUiClientConnected(dn) ? Color.Error : Color.Success)"
-                                           Size="Size.Small"
-                                           OnClick="@(() => OnConnectToggleAsync(dn))">@(IsUiClientConnected(dn) ? "Disconnect" : "Connect")</MudButton>
-                            </MudStack>
-                        </MudStack>
-                    </MudItem>
-
-                    @* -- Row 4: Axis Dials ---------------------------------- *@
+                    @* -- Row 3: Axis Dials ---------------------------------- *@
 
                     <MudItem xs="12">
                         <MudPaper Elevation="0" Class="pa-3">
@@ -348,54 +316,12 @@ else
     private bool IsUiClientConnected(int dn) =>
         MountRegistry.GetInstance(dn)?.IsClientConnected(UiClientId) ?? false;
 
-    private async Task OnConnectToggleAsync(int dn)
-    {
-        try
-        {
-            var telescope = DeviceManager.GetTelescope((uint)dn);
-            var connect = !IsUiClientConnected(dn);
-            await Task.Run(() => telescope.Connected = connect);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Connect/Disconnect failed: {ex.Message}", Severity.Error);
-        }
-    }
-
-    /// <summary>
-    /// Sets VoiceActive for the given device and immediately persists the change to JSON.
-    /// </summary>
-    private async Task OnVoiceActiveSetAsync(int dn, bool value)
-    {
-        if (!_deviceSettings.TryGetValue(dn, out var settings)) return;
-        settings.VoiceActive = value;
-        try
-        {
-            await SettingsService.SaveDeviceSettingsAsync(dn, settings);
-        }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"Failed to save voice setting: {ex.Message}", Severity.Error);
-        }
-    }
-
     private async Task OpenExportDialog()
     {
         var parameters = new DialogParameters();
         var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
 
         await DialogService.ShowAsync<SettingsExportDialog>("", parameters, options);
-    }
-
-    private async Task OpenHandControllerDialog(int deviceNumber)
-    {
-        var parameters = new DialogParameters
-        {
-            { nameof(HandControllerDialog.DeviceNumber), deviceNumber }
-        };
-        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = false };
-
-        await DialogService.ShowAsync<HandControllerDialog>("", parameters, options);
     }
 
     private List<int> GetConfiguredDeviceNumbers() =>
