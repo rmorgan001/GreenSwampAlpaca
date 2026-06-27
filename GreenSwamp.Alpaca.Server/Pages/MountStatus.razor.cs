@@ -14,7 +14,6 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using GreenSwamp.Alpaca.MountControl;
 using GreenSwamp.Alpaca.Server.Components;
 using GreenSwamp.Alpaca.Settings.Services;
 using Microsoft.AspNetCore.Components;
@@ -31,27 +30,12 @@ namespace GreenSwamp.Alpaca.Server.Pages
         private int ActiveTabIndex { get; set; }
         private List<AlpacaDevice> _alpacaDevices = [];
         private Dictionary<int, GreenSwamp.Alpaca.Settings.Models.SkySettings> _deviceSettings = new();
-        private readonly Dictionary<int, long> _lastLimitWarningSequence = new();
-        private readonly Dictionary<int, bool> _lastAtParkState = new();
-        private readonly Dictionary<int, bool> _lastSlewingState = new();
-        private readonly Dictionary<int, bool> _lastHomeState = new();
-        private readonly Dictionary<int, bool> _lastConnectedState = new();
-        private readonly Dictionary<int, bool> _lastTrackingState = new();
 
         protected override void OnInitialized()
         {
             _alpacaDevices = SettingsService.GetAlpacaDevices();
             _deviceSettings = SettingsService.GetAllDeviceSettings()
                 .ToDictionary(d => d.DeviceNumber);
-
-            foreach (var dn in GetConfiguredDeviceNumbers())
-            {
-                _lastAtParkState[dn] = StateService.GetCurrentState(dn).AtPark;
-                _lastSlewingState[dn] = StateService.GetCurrentState(dn).Slewing;
-                _lastHomeState[dn] = StateService.GetCurrentState(dn).AtHome;
-                _lastConnectedState[dn] = IsUiClientConnected(dn);
-                _lastTrackingState[dn] = StateService.GetCurrentState(dn).Tracking;
-            }
 
             StateService.StateChanged += OnStateChanged;
             SettingsService.DeviceSettingsChanged += OnDeviceSettingsChanged;
@@ -66,69 +50,8 @@ namespace GreenSwamp.Alpaca.Server.Pages
             ActiveTabIndex = idx >= 0 ? idx : 0;
         }
 
-        private void OnStateChanged(object? sender, EventArgs e)
-        {
-            foreach (var dn in GetConfiguredDeviceNumbers())
-            {
-                var state = StateService.GetCurrentState(dn);
-                var voiceEnabled = state.EnableVoice && state.VoiceActive;
-
-                var wasAtPark = _lastAtParkState.GetValueOrDefault(dn);
-                if (!wasAtPark && state.AtPark)
-                {
-                    if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Parked", state.VoiceName, state.VoiceVolume));
-                }
-
-                var wasSlewing = _lastSlewingState.GetValueOrDefault(dn);
-                if (!wasSlewing && state.Slewing)
-                {
-                    if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Started Slewing", state.VoiceName, state.VoiceVolume));
-                }
-                else if (wasSlewing && !state.Slewing)
-                {
-                    if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Finished Slewing", state.VoiceName, state.VoiceVolume));
-                }
-
-                var wasHome = _lastHomeState.GetValueOrDefault(dn);
-                if (!wasHome && state.AtHome)
-                {
-                    if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("At Home", state.VoiceName, state.VoiceVolume));
-                }
-
-                var wasConnected = _lastConnectedState.GetValueOrDefault(dn);
-                if (!wasConnected && IsUiClientConnected(dn))
-                {
-                    if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Mount Connected", state.VoiceName, state.VoiceVolume));
-                }
-
-                // var wasTracking = _lastTrackingState.GetValueOrDefault(dn);
-                // if (!wasTracking && state.Tracking)
-                // {
-                //     if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Tracking On", state.VoiceName, state.VoiceVolume));
-                // }
-                // else if (wasTracking && !state.Tracking)
-                // {
-                //     if (voiceEnabled) _ = InvokeAsync(() => Tts.SpeakAsync("Tracking Off", state.VoiceName, state.VoiceVolume));
-                // }
-
-                _lastAtParkState[dn] = state.AtPark;
-                _lastSlewingState[dn] = state.Slewing;
-                _lastHomeState[dn] = state.AtHome;
-                _lastConnectedState[dn] = IsUiClientConnected(dn);
-                _lastTrackingState[dn] = state.Tracking;
-
-                var seen = _lastLimitWarningSequence.GetValueOrDefault(dn);
-                if (state.LimitWarningSequence <= seen) continue;
-
-                _lastLimitWarningSequence[dn] = state.LimitWarningSequence;
-                if (!string.IsNullOrWhiteSpace(state.LimitWarningMessage))
-                {
-                    Snackbar.Add(state.LimitWarningMessage, Severity.Warning);
-                }
-            }
-
+        private void OnStateChanged(object? sender, EventArgs e) =>
             InvokeAsync(StateHasChanged);
-        }
 
         private void OnDeviceSettingsChanged(object? sender, GreenSwamp.Alpaca.Settings.Models.SkySettings updated)
         {
@@ -141,14 +64,6 @@ namespace GreenSwamp.Alpaca.Server.Pages
             StateService.StateChanged -= OnStateChanged;
             SettingsService.DeviceSettingsChanged -= OnDeviceSettingsChanged;
         }
-
-        // UI client ID delegates to the canonical constant defined on Mount
-        // (ASCOM Alpaca default ClientId; AlpacaRequestContext.ClientId defaults to 0 in the Blazor context)
-        private const long UiClientId = GreenSwamp.Alpaca.MountControl.Mount.UiInternalClientId;
-
-        /// <summary>Returns true when the UI's internal client (key 0) is registered as connected.</summary>
-        private bool IsUiClientConnected(int dn) =>
-            MountRegistry.GetInstance(dn)?.IsClientConnected(UiClientId) ?? false;
 
         private async Task OpenExportDialog()
         {

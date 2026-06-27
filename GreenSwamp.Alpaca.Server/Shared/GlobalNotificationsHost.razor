@@ -1,0 +1,29 @@
+﻿@using GreenSwamp.Alpaca.Server.Services
+@inject MountNotificationService NotificationService
+@inject BrowserTtsService Tts
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+@* Invisible layout-level component. Subscribes to MountNotificationService and
+   speaks or shows snackbars on any page, for every active Blazor circuit. *@
+
+@code {
+    protected override void OnInitialized()
+    {
+        NotificationService.NotificationRequested += OnNotificationRequested;
+    }
+
+    private void OnNotificationRequested(object? sender, MountNotificationEventArgs e)
+    {
+        if (e.IsVoiceEnabled)
+            _ = InvokeAsync(() => Tts.SpeakAsync(e.Text, e.VoiceName, e.VoiceVolume));
+
+        if (e.IsLimitWarning)
+            _ = InvokeAsync(() => Snackbar.Add(e.Text, Severity.Warning));
+    }
+
+    public void Dispose()
+    {
+        NotificationService.NotificationRequested -= OnNotificationRequested;
+    }
+}

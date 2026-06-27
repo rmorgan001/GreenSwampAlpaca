@@ -256,6 +256,9 @@ namespace GreenSwamp.Alpaca.Server
             // Register MonitorDisplayService for live monitor-record display
             builder.Services.AddSingleton<GreenSwamp.Alpaca.Server.Services.MonitorDisplayService>();
 
+            // Register MountNotificationService for global voice and limit-warning notifications
+            builder.Services.AddSingleton<GreenSwamp.Alpaca.Server.Services.MountNotificationService>();
+
             var app = builder.Build();
 
             // Only enable response compression in non-Development environments.
