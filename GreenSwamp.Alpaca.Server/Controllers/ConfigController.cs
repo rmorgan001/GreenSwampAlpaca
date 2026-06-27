@@ -388,7 +388,7 @@ namespace GreenSwamp.Alpaca.Server.Controllers
         /// and UTC offset.  If the file does not yet exist it is created from application
         /// defaults (51.476852° N, 0.0° E, 10 m, UTC+0) before being returned.
         /// These values are used when creating a new device via the device-management workflow
-        /// (Behaviour B1) but are not automatically propagated to existing device files.
+        /// but are not automatically propagated to existing device files.
         /// </remarks>
         /// <returns>The full <see cref="ObservatorySettings"/> object as stored on disk.</returns>
         /// <response code="200">Observatory settings returned successfully.</response>

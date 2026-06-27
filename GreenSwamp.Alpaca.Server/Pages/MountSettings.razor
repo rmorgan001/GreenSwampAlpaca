@@ -13,10 +13,20 @@
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
     <MudText Typo="Typo.h5">Mount Settings</MudText>
+
+    @if (IsActiveMountSimulator)
+    {
+        <MudProgressLinear Color="Color.Primary"
+                           Value="100"
+                           Rounded="true"
+                           Size="Size.Large"
+                           Style="flex: 0 0 33%; max-width: 33%;" />
+    }
+
     <MudButton Color="Color.Default"
                Variant="Variant.Outlined"
                Size="Size.Small"
-               StartIcon="@Icons.Material.Filled.Download" 
+               StartIcon="@Icons.Material.Filled.Download"
                OnClick="OpenExportDialog">
         Export Settings & Logs
     </MudButton>
@@ -33,7 +43,7 @@ else
              ActivePanelIndexChanged="OnDeviceTabChanged">
     @foreach (var dn in GetConfiguredDeviceNumbers())
         {
-            <MudTabPanel Text="@TabLabel(dn)" Class="@GetTabClass(dn)">
+            <MudTabPanel Text="@TabLabel(dn)">
                 @* Inline: reuse TelescopeSetup component/page UI for read-only view *@
                 <MudGrid Spacing="3" Class="mt-1">
                     <MudItem xs="12">
@@ -61,6 +71,7 @@ else
     private int _activeDeviceTabIndex;
     private List<AlpacaDevice> _alpacaDevices = [];
     private Dictionary<int, GreenSwamp.Alpaca.Settings.Models.SkySettings> _deviceSettings = new();
+    private int ActiveTabIndex { get; set; }
 
     protected override void OnInitialized()
     {
@@ -74,7 +85,7 @@ else
         _alpacaDevices = SettingsService.GetAlpacaDevices();
         var keys = GetConfiguredDeviceNumbers();
         var idx = keys.IndexOf(DeviceNumber);
-        _activeDeviceTabIndex = idx >= 0 ? idx : 0;
+        ActiveTabIndex = idx >= 0 ? idx : 0;
     }
 
     private void OnDeviceTabChanged(int index)
@@ -106,10 +117,21 @@ else
             : device.DeviceName;
     }
 
-    private string GetTabClass(int deviceNumber)
+    private bool IsActiveMountSimulator
     {
-        var mountSettings = _deviceSettings.GetValueOrDefault(deviceNumber);
-        return mountSettings?.Mount == "Simulator" ? "gs-tab-simulator" : string.Empty;
+        get
+        {
+            var deviceNumbers = GetConfiguredDeviceNumbers();
+            if (deviceNumbers.Count == 0) return false;
+
+            var activeIndex = ActiveTabIndex;
+            if (activeIndex < 0 || activeIndex >= deviceNumbers.Count) activeIndex = 0;
+
+            var activeDeviceNumber = deviceNumbers[activeIndex];
+            var mountType = _deviceSettings.GetValueOrDefault(activeDeviceNumber)?.Mount;
+
+            return string.Equals(mountType, "Simulator", StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     void EditDevice(int deviceNumber)

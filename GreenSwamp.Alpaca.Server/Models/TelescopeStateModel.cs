@@ -105,7 +105,22 @@ namespace GreenSwamp.Alpaca.Server.Models
         public bool IsGermanPolarMode { get; set; }
         public double AutoHomeAxisX { get; set; }
         public double AutoHomeAxisY { get; set; }
-        
+
+        // Mount gearing details
+        public long[] StepsPerRevolution { get; set; }
+        public double [] StepsWormPerRevolution { get; set; }
+        public long[] StepsTimeFreq { get; set; }
+        public Vector TrackingOffsetRate {  get; set; }
+
+        // Mount capabilities
+        public bool CanPPec { get; set; }
+        public bool CanHomeSensor { get; set; }
+        public bool CanPolarLed { get; set; }
+        public bool CanAdvancedCmdSupport { get; set; }
+        public string MountName { get; set; } = string.Empty;
+        public string MountVersion { get; set; } = string.Empty;
+        public string Capabilities { get; set; } = string.Empty;
+
         /// <summary>
         /// Constructor initializes with default/invalid values
         /// </summary>
@@ -157,6 +172,9 @@ namespace GreenSwamp.Alpaca.Server.Models
             IsGermanPolarMode = false;
             AutoHomeAxisX = 90.0;
             AutoHomeAxisY = 90.0;
-        }
+            StepsPerRevolution = new [] { 0L, 0L };
+            StepsWormPerRevolution = new [] { 0.0, 0.0 };
+            StepsTimeFreq = new [] { 0L, 0L };
     }
+}
 }

@@ -104,7 +104,18 @@ namespace GreenSwamp.Alpaca.Server.Services
                     IsGermanPolarMode = mount.Settings.AlignmentMode == ASCOM.Common.DeviceInterfaces.AlignmentMode.GermanPolar,
                     FlipOnNextGoto = mount.FlipOnNextGoto,
                     AutoHomeAxisX = mount.Settings.AutoHomeAxisX,
-                    AutoHomeAxisY = mount.Settings.AutoHomeAxisY
+                    AutoHomeAxisY = mount.Settings.AutoHomeAxisY,
+                    StepsPerRevolution = mount.StepsPerRevolution,
+                    StepsWormPerRevolution = mount.StepsWormPerRevolution,
+                    StepsTimeFreq = mount.StepsTimeFreq,
+                    TrackingOffsetRate = mount.TrackingOffsetRate,
+                    CanPPec = mount.CanPPec,
+                    CanHomeSensor = mount.CanHomeSensor,
+                    CanPolarLed = mount.CanPolarLed,
+                    CanAdvancedCmdSupport = mount.CanAdvancedCmdSupport,
+                    MountName = mount.MountName,
+                    MountVersion = mount.MountVersion,
+                    Capabilities = mount.Capabilities
                 };
             }
             catch (Exception)

@@ -18,6 +18,16 @@
 
 <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
     <MudText Typo="Typo.h5">Mount Status</MudText>
+
+    @if (IsActiveMountSimulator)
+    {
+        <MudProgressLinear Color="Color.Primary"
+                           Value="100"
+                           Rounded="true"
+                           Size="Size.Large"
+                           Style="flex: 0 0 33%; max-width: 33%;" />
+    }
+
     <MudButton Color="Color.Default"
                Variant="Variant.Outlined"
                Size="Size.Small"
@@ -36,7 +46,7 @@ else
     <MudTabs Rounded="true" Elevation="1" @bind-ActivePanelIndex="ActiveTabIndex" Class="mb-4 gs-tabs-no-transform">
         @foreach (var dn in GetConfiguredDeviceNumbers())
         {
-            <MudTabPanel Text="@TabLabel(dn)" Class="@GetTabClass(dn)">
+            <MudTabPanel Text="@TabLabel(dn)">
                 @{
                     var s = StateService.GetCurrentState(dn);
                     var mountSettings = _deviceSettings.GetValueOrDefault(dn);
@@ -44,15 +54,15 @@ else
 
                 <MudGrid Spacing="3" Class="mt-1">
 
-                    @* -- Row 1: Position | Status --------------------------- *@
+                    @* -- Row 1: Pointing Coordinates | Axis Positions | Status ------------- *@
 
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12" md="4">
                         <MudPaper Elevation="0" Class="pa-3">
-                            <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Position</MudText>
+                            <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Pointing Coordinates</MudText>
                             <MudSimpleTable Dense="true" Elevation="0">
                                 <tbody>
                                     <tr>
-                                        <td style="width:80px"><MudText Typo="Typo.caption" Color="Color.Primary">RA</MudText></td>
+                                        <td style="width:150px"><MudText Typo="Typo.caption" Color="Color.Primary">RA</MudText></td>
                                         <td><MudText Typo="Typo.body2" Class="gs-font-mono">@FormatHMS(s.RightAscension)</MudText></td>
                                     </tr>
                                     <tr>
@@ -80,30 +90,7 @@ else
                         </MudPaper>
                     </MudItem>
 
-                    <MudItem xs="12" md="6">
-                        <MudPaper Elevation="0" Class="pa-3">
-                            <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Status</MudText>
-                            <MudStack Spacing="1">
-                                @StatusRowWithDetail("Mount Connected", s.IsMountRunning,
-                                    mountSettings?.Mount == "SkyWatcher" ? (s.ComPort ?? string.Empty) : string.Empty,
-                                    Color.Success)
-                                @ActiveClientsRow(s.ConnectedClientCount, s.HasEverBeenConnected)
-                                @StatusRow("Slewing", s.Slewing, Color.Warning)
-                                @StatusRow("Pulse Guiding", s.IsPulseGuidingRa || s.IsPulseGuidingDec, Color.Warning)
-                                @StatusRow("Pulse Guide RA", s.IsPulseGuidingRa, Color.Warning)
-                                @StatusRow("Pulse Guide Dec", s.IsPulseGuidingDec, Color.Warning)
-                                @StatusRowWithDetail("Tracking", s.Tracking, s.TrackingRate.ToString(), Color.Success)
-                                @StatusRow("Limits On", s.LimitsOn, Color.Success)
-                                @StatusRow("Limit Warning", s.LimitWarningActive, Color.Warning)
-                                @StatusRow("At Park", s.AtPark, Color.Info)
-                                @StatusRow("At Home", s.AtHome, Color.Info)
-                            </MudStack>
-                        </MudPaper>
-                    </MudItem>
-
-                    @* -- Row 2: Axis Positions | Mount ----------------------- *@
-
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12" md="4">
                         <MudPaper Elevation="0" Class="pa-3">
                             <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Axis Positions</MudText>
                             <MudSimpleTable Dense="true" Elevation="0">
@@ -137,13 +124,36 @@ else
                         </MudPaper>
                     </MudItem>
 
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="0" Class="pa-3">
+                            <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Status</MudText>
+                            <MudStack Spacing="1">
+                                @StatusRowWithDetail("Mount Connected", s.IsMountRunning,
+                                    mountSettings?.Mount == "SkyWatcher" ? (s.ComPort ?? string.Empty) : string.Empty,
+                                    Color.Success)
+                                @ActiveClientsRow(s.ConnectedClientCount, s.HasEverBeenConnected)
+                                @StatusRow("Slewing", s.Slewing, Color.Warning)
+                                @StatusRowWithDetail("Pulse Guiding", s.IsPulseGuidingRa || s.IsPulseGuidingDec,
+                                    s.IsPulseGuidingRa ? (" RA" ?? string.Empty) : string.Empty + (s.IsPulseGuidingDec ? " DEC" : string.Empty),
+                                    Color.Warning)
+                                @StatusRowWithDetail("Tracking", s.Tracking, s.TrackingRate.ToString(), Color.Success)
+                                @StatusRow("Limits On", s.LimitsOn, Color.Success)
+                                @StatusRow("Limit Warning", s.LimitWarningActive, Color.Warning)
+                                @StatusRow("At Park", s.AtPark, Color.Info)
+                                @StatusRow("At Home", s.AtHome, Color.Info)
+                            </MudStack>
+                        </MudPaper>
+                    </MudItem>
+
+                    @* -- Row 2: Primary Mount Info | Additional Mount Info (room for 1 more panel) ------ *@
+
+                    <MudItem xs="12" md="4">
                         <MudPaper Elevation="0" Class="pa-3">
                             <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Mount</MudText>
                             <MudSimpleTable Dense="true" Elevation="0">
                                 <tbody>
                                     <tr>
-                                        <td style="width:80px"><MudText Typo="Typo.caption" Color="Color.Primary">Type</MudText></td>
+                                        <td style="width:150px"><MudText Typo="Typo.caption" Color="Color.Primary">Type</MudText></td>
                                         <td><MudText Typo="Typo.body2">@(mountSettings?.Mount ?? "—")</MudText></td>
                                     </tr>
                                     <tr>
@@ -151,9 +161,35 @@ else
                                         <td><MudText Typo="Typo.body2">@(mountSettings?.AlignmentMode ?? "—")</MudText></td>
                                     </tr>
                                     <tr>
-                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Local Date</MudText></td>
-                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.LocalDate.ToString("dd MMM yyyy  HH:mm:ss.ff", CultureInfo.CurrentCulture)</MudText></td>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Mount Model</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.MountName</MudText></td>
                                     </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Mount Firmware</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.MountVersion</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Advanced Commands</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@BoolToSupported(s.CanAdvancedCmdSupport)</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Home Sensor</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@BoolToSupported(s.CanHomeSensor)</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">PPEC</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@BoolToSupported(s.CanPPec)</MudText></td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudPaper>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="0" Class="pa-3">
+                            <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Mount</MudText>
+                            <MudSimpleTable Dense="true" Elevation="0">
+                                <tbody>
                                     @if (mountSettings?.Mount == "SkyWatcher")
                                     {
                                         <tr>
@@ -165,6 +201,66 @@ else
                                             <td>@BoolIcon(s.LowVoltageEvent, Color.Error)</td>
                                         </tr>
                                     }
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Polar LED</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@BoolToSupported(s.CanPolarLed)</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Capabilities</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.Capabilities</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Custom Offset RA</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.TrackingOffsetRate.X.ToString("N0")</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Custom Offset Dec</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.TrackingOffsetRate.Y.ToString("N0")</MudText></td>
+                                    </tr>
+
+                                </tbody>
+                            </MudSimpleTable>
+                        </MudPaper>
+                    </MudItem>
+
+                    <MudItem xs="12" md="4">
+                        <MudPaper Elevation="0" Class="pa-3">
+                            <MudText Typo="Typo.overline" Class="gs-panel-heading mb-2">Mount</MudText>
+                            <MudSimpleTable Dense="true" Elevation="0">
+                                <tbody>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Steps RA</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.StepsPerRevolution[0].ToString("N0")</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Steps Dec</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.StepsPerRevolution[1].ToString("N0")</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Worm Steps RA</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.StepsWormPerRevolution[0].ToString("N0")</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Worm Steps Dec</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.StepsWormPerRevolution[1].ToString("N0")</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Frequency RA</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.StepsTimeFreq[0].ToString("N0")</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Frequency Dec</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@s.StepsTimeFreq[1].ToString("N0")</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">RA Steps/ArcSec</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@StepsToArcSecs(s.StepsPerRevolution[0])</MudText></td>
+                                    </tr>
+                                    <tr>
+                                        <td><MudText Typo="Typo.caption" Color="Color.Primary">Dec Steps/ArcSec</MudText></td>
+                                        <td><MudText Typo="Typo.body2" Class="gs-font-mono">@StepsToArcSecs(s.StepsPerRevolution[1])</MudText></td>
+                                    </tr>
+
                                 </tbody>
                             </MudSimpleTable>
                         </MudPaper>

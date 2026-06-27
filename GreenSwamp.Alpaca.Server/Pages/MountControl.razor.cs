@@ -1,5 +1,6 @@
 ﻿using ASCOM.Alpaca;
 using GreenSwamp.Alpaca.MountControl;
+using GreenSwamp.Alpaca.Server.Components;
 using GreenSwamp.Alpaca.Settings.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
@@ -12,7 +13,7 @@ namespace GreenSwamp.Alpaca.Server.Pages
 
         [Inject] private NavigationManager NavManager { get; set; } = default!;
 
-        private int _activeDeviceTabIndex;
+        private int ActiveTabIndex { get; set; }
         private List<AlpacaDevice> _alpacaDevices = [];
         private Dictionary<int, GreenSwamp.Alpaca.Settings.Models.SkySettings> _deviceSettings = new();
         private enum CoordMode { RaDec, AltAz }
@@ -37,7 +38,7 @@ namespace GreenSwamp.Alpaca.Server.Pages
             _alpacaDevices = SettingsService.GetAlpacaDevices();
             var keys = GetConfiguredDeviceNumbers();
             var idx = keys.IndexOf(DeviceNumber);
-            _activeDeviceTabIndex = idx >= 0 ? idx : 0;
+            ActiveTabIndex = idx >= 0 ? idx : 0;
         }
 
         private void OnStateChanged(object? sender, EventArgs e) =>
@@ -72,6 +73,14 @@ namespace GreenSwamp.Alpaca.Server.Pages
             var keys = GetConfiguredDeviceNumbers();
             if (index >= 0 && index < keys.Count)
                 NavManager.NavigateTo($"/mount-control/{keys[index]}");
+        }
+
+        private async Task OpenExportDialog()
+        {
+            var parameters = new DialogParameters();
+            var options = new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+            await DialogService.ShowAsync<SettingsExportDialog>("", parameters, options);
         }
 
         /// <summary>Returns true when the UI's internal client is registered as connected.</summary>
@@ -121,10 +130,21 @@ namespace GreenSwamp.Alpaca.Server.Pages
                 : device.DeviceName;
         }
 
-        private string GetTabClass(int deviceNumber)
+        private bool IsActiveMountSimulator
         {
-            var mountSettings = _deviceSettings.GetValueOrDefault(deviceNumber);
-            return mountSettings?.Mount == "Simulator" ? "gs-tab-simulator" : string.Empty;
+            get
+            {
+                var deviceNumbers = GetConfiguredDeviceNumbers();
+                if (deviceNumbers.Count == 0) return false;
+
+                var activeIndex = ActiveTabIndex;
+                if (activeIndex < 0 || activeIndex >= deviceNumbers.Count) activeIndex = 0;
+
+                var activeDeviceNumber = deviceNumbers[activeIndex];
+                var mountType = _deviceSettings.GetValueOrDefault(activeDeviceNumber)?.Mount;
+
+                return string.Equals(mountType, "Simulator", StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         private static string FormatHMS(double hours)

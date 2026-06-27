@@ -1,4 +1,4 @@
-/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
+﻿/* Copyright(C) 2019-2026 Rob Morgan (robert.morgan.e@gmail.com)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published
@@ -36,4 +36,21 @@ namespace GreenSwamp.Alpaca.Settings.Models
         /// </summary>
         AltAz = 2
     }
+
+    /// <summary>
+    /// Telescope mount types
+    /// </summary>
+    public enum MountType
+    {
+        /// <summary>
+        /// Simulator - No physical mount, used for testing and simulation
+        /// </summary>
+        Simulator = 0,
+
+        /// <summary>
+        /// Sky-Watcher - Popular mount brand, supports various models
+        /// </summary>
+        SkyWatcher = 1
+    }
+
 }

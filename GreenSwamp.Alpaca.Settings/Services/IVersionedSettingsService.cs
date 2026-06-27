@@ -94,18 +94,18 @@ namespace GreenSwamp.Alpaca.Settings.Services
         string ObservatorySettingsPath { get; }
 
         /// <summary>Gets the observatory physical settings. Creates observatory.settings.json from
-        /// app defaults on first run if absent (Behaviour B4).</summary>
+        /// app defaults on first run if absent.</summary>
         ObservatorySettings GetObservatorySettings();
 
-        /// <summary>Saves observatory settings to observatory.settings.json (Behaviour B4).
+        /// <summary>Saves observatory settings to observatory.settings.json.
         /// Does not propagate changes to existing device-nn.settings.json files (v1).</summary>
         Task SaveObservatorySettingsAsync(ObservatorySettings settings);
 
         // ── Mode-aware device creation and change ────────────────────────────
 
         /// <summary>Creates a new device-nn.settings.json populated with app defaults for the specified
-        /// alignment mode and observatory properties from observatory.settings.json (Behaviour B1).</summary>
-        Task CreateDeviceForModeAsync(int deviceNumber, string deviceName, AlignmentMode mode);
+        /// alignment mode and observatory properties from observatory.settings.json.</summary>
+        Task CreateDeviceForModeAsync(int deviceNumber, string deviceName, MountType type, AlignmentMode mode);
 
         /// <summary>Changes the alignment mode on an existing device (Behaviour B2).
         /// Properties marked [UniqueSetting] are replaced with the new mode's defaults;

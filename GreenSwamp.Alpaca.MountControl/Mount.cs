@@ -516,7 +516,23 @@ namespace GreenSwamp.Alpaca.MountControl
         /// True when a low-voltage power event has been detected since the mount was connected.
         /// </summary>
         public bool LowVoltageEvent => _lowVoltageEventState;
+
+        public long[] StepsPerRevolution => _stepsPerRevolution;
+        public double[] StepsWormPerRevolution => _stepsWormPerRevolution;
+        public long[] StepsTimeFreq => _stepsTimeFreq;
+        public Vector TrackingOffsetRate => _trackingOffsetRate;
+
+        // Mount hardware capabilities (SkyWatcher only; false/empty if unavailable)
+        public bool CanPPec => _canPPec;
+        public bool CanHomeSensor => _canHomeSensor;
+        public bool CanPolarLed => _canPolarLed;
+        public bool CanAdvancedCmdSupport => _canAdvancedCmdSupport;
+        public string MountName => _mountName;
+        public string MountVersion => _mountVersion;
+        public string Capabilities => _capabilities;
+
         #endregion
+
         /// <summary>
         /// Constructor with optional settings file path
         /// Added deviceName parameter for user-visible device identification

@@ -8,12 +8,32 @@
 @using ASCOM.Alpaca
 @inject IVersionedSettingsService SettingsService
 @inject ISnackbar Snackbar
+@inject IDialogService DialogService
 @inject TelescopeStateService StateService
 @implements IDisposable
 
 <PageTitle>Mount Control</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-3">Mount Control</MudText>
+<MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-4">
+    <MudText Typo="Typo.h5">Mount Control</MudText>
+
+    @if (IsActiveMountSimulator)
+    {
+        <MudProgressLinear Color="Color.Primary"
+                           Value="100"
+                           Rounded="true"
+                           Size="Size.Large"
+                           Style="flex: 0 0 33%; max-width: 33%;" />
+    }
+
+    <MudButton Color="Color.Default"
+               Variant="Variant.Outlined"
+               Size="Size.Small"
+               StartIcon="@Icons.Material.Filled.Download"
+               OnClick="OpenExportDialog">
+        Export Settings & Logs
+    </MudButton>
+</MudStack>
 
 @if (_alpacaDevices.Count == 0)
 {
@@ -22,11 +42,11 @@
 else
 {
     <MudTabs Rounded="true" Elevation="1" Class="mb-4 gs-tabs-no-transform"
-             ActivePanelIndex="@_activeDeviceTabIndex"
+             ActivePanelIndex="@ActiveTabIndex"
              ActivePanelIndexChanged="OnDeviceTabChanged">
         @foreach (var dn in GetConfiguredDeviceNumbers())
         {
-            <MudTabPanel Text="@TabLabel(dn)" Class="@GetTabClass(dn)">
+            <MudTabPanel Text="@TabLabel(dn)">
                 @{
                     var s  = StateService.GetCurrentState(dn);
                     var ms = _deviceSettings.GetValueOrDefault(dn);

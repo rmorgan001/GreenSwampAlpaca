@@ -19,6 +19,7 @@ using GreenSwamp.Alpaca.Server.Components;
 using GreenSwamp.Alpaca.Settings.Services;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
+using System.Globalization;
 
 namespace GreenSwamp.Alpaca.Server.Pages
 {
@@ -171,10 +172,31 @@ namespace GreenSwamp.Alpaca.Server.Pages
                 : device.DeviceName;
         }
 
-        private string GetTabClass(int deviceNumber)
+        private bool IsActiveMountSimulator
         {
-            var mountSettings = _deviceSettings.GetValueOrDefault(deviceNumber);
-            return mountSettings?.Mount == "Simulator" ? "gs-tab-simulator" : string.Empty;
+            get
+            {
+                var deviceNumbers = GetConfiguredDeviceNumbers();
+                if (deviceNumbers.Count == 0) return false;
+
+                var activeIndex = ActiveTabIndex;
+                if (activeIndex < 0 || activeIndex >= deviceNumbers.Count) activeIndex = 0;
+
+                var activeDeviceNumber = deviceNumbers[activeIndex];
+                var mountType = _deviceSettings.GetValueOrDefault(activeDeviceNumber)?.Mount;
+
+                return string.Equals(mountType, "Simulator", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
+        private string BoolToSupported(bool value)
+        {
+            return value ? "Supported" : "Not supported";
+        }
+
+        private string StepsToArcSecs(long steps)
+        {
+            return Math.Round(steps / 360.0 / 3600, 2).ToString(CultureInfo.CurrentCulture);
         }
 
         private string FormatHMS(double hours)

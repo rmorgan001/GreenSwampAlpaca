@@ -749,7 +749,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
             MonitorSettingsChanged?.Invoke(this, settings);
         }
 
-        // ── Observatory settings (Behaviour B4) ──────────────────────────────
+        // ── Observatory settings ──────────────────────────────
 
         public ObservatorySettings GetObservatorySettings()
         {
@@ -822,15 +822,18 @@ namespace GreenSwamp.Alpaca.Settings.Services
 
         // ── Mode-aware device creation and change ─────────────────────────────
 
-        public async Task CreateDeviceForModeAsync(int deviceNumber, string deviceName, AlignmentMode mode)
+        public async Task CreateDeviceForModeAsync(int deviceNumber, string deviceName, MountType type, AlignmentMode mode)
         {
             var modeName = mode.ToString(); // "GermanPolar", "Polar", or "AltAz"
+            var typeName = type.ToString(); // "Simulator" or "SkyWatcher"
 
-            // B1: Bind factory defaults for the requested alignment mode from DeviceTemplates
+            // Bind factory defaults for the requested alignment mode from DeviceTemplates
             var device = new SkySettings();
             _configuration.GetSection($"DeviceTemplates:{modeName}").Bind(device);
+            // Set mount type
+            device.Mount = typeName;
 
-            // B1: Override observatory properties with the first observatory in the collection
+            // Override observatory properties with the first observatory in the collection
             var observatorySettings = GetObservatorySettings();
             var observatory = observatorySettings.Observatories.FirstOrDefault() ?? new ObservatoryInfo();
             device.Latitude = observatory.Latitude;
@@ -843,7 +846,7 @@ namespace GreenSwamp.Alpaca.Settings.Services
             device.Enabled = true;
 
             await SaveDeviceSettingsAsync(deviceNumber, device);
-            LogSafe("INFO", $"Created device {deviceNumber} ({deviceName}) for mode {modeName}");
+            LogSafe("INFO", $"Created device {deviceNumber} ({deviceName}) for mount {typeName} and mode {modeName}");
         }
 
         public async Task ChangeAlignmentModeAsync(int deviceNumber, AlignmentMode newMode)

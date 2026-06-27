@@ -13,6 +13,8 @@ using ObservatoryInfo = GreenSwamp.Alpaca.Settings.Models.ObservatoryInfo;
 using ObservatorySettings = GreenSwamp.Alpaca.Settings.Models.ObservatorySettings;
 using ServerConfig = GreenSwamp.Alpaca.Settings.Models.ServerConfig;
 using SkySettings = GreenSwamp.Alpaca.Settings.Models.SkySettings;
+using MountType = GreenSwamp.Alpaca.Settings.Models.MountType;
+using AlignmentMode = GreenSwamp.Alpaca.Settings.Models.AlignmentMode;
 
 namespace GreenSwamp.Alpaca.Server.Pages;
 
@@ -418,16 +420,16 @@ public partial class SettingsExplorer : IDisposable
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
 
         var result = await dialog.Result;
-        if (result.Canceled || result.Data is not ValueTuple<string, AlignmentMode> add)
+        if (result.Canceled || result.Data is not ValueTuple<string, MountType, AlignmentMode> add)
             return;
 
         _deviceManagerBusy = true;
         try
         {
-            var (deviceName, alignmentMode) = add;
+            var (deviceName, mountType, alignmentMode) = add;
             var nextDeviceNumber = _deviceWork.Keys.DefaultIfEmpty(-1).Max() + 1;
 
-            await SettingsService.CreateDeviceForModeAsync(nextDeviceNumber, deviceName, alignmentMode);
+            await SettingsService.CreateDeviceForModeAsync(nextDeviceNumber, deviceName, mountType, alignmentMode);
             await SettingsService.AddAlpacaDeviceAsync(new AlpacaDevice
             {
                 DeviceNumber = nextDeviceNumber,
