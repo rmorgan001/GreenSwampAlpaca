@@ -71,7 +71,6 @@ else
     private int _activeDeviceTabIndex;
     private List<AlpacaDevice> _alpacaDevices = [];
     private Dictionary<int, GreenSwamp.Alpaca.Settings.Models.SkySettings> _deviceSettings = new();
-    private int ActiveTabIndex { get; set; }
 
     protected override void OnInitialized()
     {
@@ -85,7 +84,7 @@ else
         _alpacaDevices = SettingsService.GetAlpacaDevices();
         var keys = GetConfiguredDeviceNumbers();
         var idx = keys.IndexOf(DeviceNumber);
-        ActiveTabIndex = idx >= 0 ? idx : 0;
+        _activeDeviceTabIndex = idx >= 0 ? idx : 0;
     }
 
     private void OnDeviceTabChanged(int index)
@@ -124,7 +123,7 @@ else
             var deviceNumbers = GetConfiguredDeviceNumbers();
             if (deviceNumbers.Count == 0) return false;
 
-            var activeIndex = ActiveTabIndex;
+            var activeIndex = _activeDeviceTabIndex;
             if (activeIndex < 0 || activeIndex >= deviceNumbers.Count) activeIndex = 0;
 
             var activeDeviceNumber = deviceNumbers[activeIndex];
