@@ -51,6 +51,7 @@ else
                     var s  = StateService.GetCurrentState(dn);
                     var ms = _deviceSettings.GetValueOrDefault(dn);
                     var connected = IsUiClientConnected(dn);
+                    var mount = MountRegistry.GetInstance(dn);
                 }
 
                 @* -- Compact position header ------------------------------- *@
@@ -81,45 +82,105 @@ else
 
                 @* -- State icon row ----------------------------------------- *@
                 <MudPaper Elevation="0" Class="pa-1 mb-2">
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
 
-                        <MudTooltip Text="@(s.AtHome ? "At Home" : "Not at Home")" Placement="Placement.Bottom" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.Home"
-                                     Color="@(s.AtHome ? Color.Success : Color.Default)"
-                                     Size="Size.Large" />
-                        </MudTooltip>
+                        @* -- Status indicators (left) *@
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
 
-                        <MudTooltip Text="@(s.AtPark ? "Parked" : "Not Parked")" Placement="Placement.Bottom" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.LocalParking"
-                                     Color="@(s.AtPark ? Color.Info : Color.Default)"
-                                     Size="Size.Large" />
-                        </MudTooltip>
+                            <MudTooltip Text="@(s.AtHome ? "At Home" : "Not at Home")" Placement="Placement.Bottom" Arrow="true">
+                                <MudIcon Icon="@Icons.Material.Filled.Home"
+                                         Color="@(s.AtHome ? Color.Success : Color.Default)"
+                                         Size="Size.Large" />
+                            </MudTooltip>
 
-                        <MudTooltip Text="@(s.Slewing ? "Slewing" : "Stationary")" Placement="Placement.Bottom" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.Moving"
-                                     Color="@(s.Slewing ? Color.Warning : Color.Default)"
-                                     Size="Size.Large" />
-                        </MudTooltip>
+                            <MudTooltip Text="@(s.AtPark ? "Parked" : "Not Parked")" Placement="Placement.Bottom" Arrow="true">
+                                <MudIcon Icon="@Icons.Material.Filled.LocalParking"
+                                         Color="@(s.AtPark ? Color.Info : Color.Default)"
+                                         Size="Size.Large" />
+                            </MudTooltip>
 
-                        <MudTooltip Text="@(s.Tracking ? $"Tracking ({s.TrackingRate})" : "Tracking Off")"
-                                    Placement="Placement.Bottom" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.TrackChanges"
-                                     Color="@(s.Tracking ? Color.Success : Color.Default)"
-                                     Size="Size.Large" />
-                        </MudTooltip>
+                            <MudTooltip Text="@(s.Slewing ? "Slewing" : "Stationary")" Placement="Placement.Bottom" Arrow="true">
+                                <MudIcon Icon="@Icons.Material.Filled.Moving"
+                                         Color="@(s.Slewing ? Color.Warning : Color.Default)"
+                                         Size="Size.Large" />
+                            </MudTooltip>
 
-                        <MudTooltip Text="@(s.LimitsOn ? "Limits On" : "Limits Off")"
-                                    Placement="Placement.Bottom" Arrow="true">
-                            <MudIcon Icon="@LimitsOnIcon"
-                                     Color="@(s.LimitsOn ? Color.Success : Color.Default)"
-                                     Size="Size.Large" />
-                        </MudTooltip>
+                            <MudTooltip Text="@(s.Tracking ? $"Tracking ({s.TrackingRate})" : "Tracking Off")"
+                                        Placement="Placement.Bottom" Arrow="true">
+                                <MudIcon Icon="@Icons.Material.Filled.TrackChanges"
+                                         Color="@(s.Tracking ? Color.Success : Color.Default)"
+                                         Size="Size.Large" />
+                            </MudTooltip>
 
-                        <MudTooltip Text="@(!s.VoiceActive ? "Voice on" : "Voice off")" Placement="Placement.Top" Arrow="true">
-                            <MudIcon Color="Color.Primary"
-                                     Icon="@(!s.VoiceActive ? Icons.Material.Filled.RecordVoiceOver : Icons.Material.Filled.VoiceOverOff)"
-                                     Size="Size.Large" />
-                        </MudTooltip>
+                            <MudTooltip Text="@(s.LimitsOn ? "Limits On" : "Limits Off")"
+                                        Placement="Placement.Bottom" Arrow="true">
+                                <MudIcon Icon="@LimitsOnIcon"
+                                         Color="@(s.LimitsOn ? Color.Success : Color.Default)"
+                                         Size="Size.Large" />
+                            </MudTooltip>
+
+                            <MudTooltip Text="@(s.VoiceActive ? "Voice on" : "Voice off")" Placement="Placement.Top" Arrow="true">
+                                <MudIcon Color="Color.Primary"
+                                         Icon="@(s.VoiceActive ? Icons.Material.Filled.RecordVoiceOver : Icons.Material.Filled.VoiceOverOff)"
+                                         Size="Size.Large" />
+                            </MudTooltip>
+
+                        </MudStack>
+
+                        @* -- Park position controls (right) *@
+                        @{
+                            var effectiveParkName = (s.ParkPositionNames.Count > 0 && s.ParkPositionNames.Contains(s.ParkSelectedName))
+                                ? s.ParkSelectedName!
+                                : s.ParkPositionNames.FirstOrDefault(p => string.Equals(p, "Default", StringComparison.OrdinalIgnoreCase))
+                                  ?? s.ParkPositionNames.FirstOrDefault()
+                                  ?? "—";
+                            var selectorDisabled = !connected || !(mount?.Settings.CanPark ?? false);
+                        }
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0">
+
+                            @* Display only: currently selected park position name *@
+                            <MudText Typo="Typo.body1" Color="Color.Primary"
+                                     Style="padding: 0 8px; white-space: nowrap; font-size: 1.1rem; font-weight: 500;">
+                                @effectiveParkName
+                            </MudText>
+
+                            @* Park position selector — ActivatorContent gives identical Size.Large rendering to the gear *@
+                            <MudTooltip Text="Select park position" Placement="Placement.Top" Arrow="true">
+                                <MudMenu Disabled="@selectorDisabled">
+                                    <ActivatorContent>
+                                        <MudIconButton Icon="@Icons.Material.Filled.ArrowDropDown"
+                                                       Color="Color.Primary"
+                                                       Size="Size.Large"
+                                                       Disabled="@selectorDisabled"
+                                                       OnClick="@context.ToggleAsync" />
+                                    </ActivatorContent>
+                                    <ChildContent>
+                                        @if (s.ParkPositionNames.Count > 0)
+                                        {
+                                            @foreach (var posName in s.ParkPositionNames)
+                                            {
+                                                <MudMenuItem OnClick="@(() => OnParkPositionSelectedInStatusBar(dn, posName))">@posName</MudMenuItem>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <MudMenuItem Disabled="true">No positions configured</MudMenuItem>
+                                        }
+                                    </ChildContent>
+                                </MudMenu>
+                            </MudTooltip>
+
+                            @* Manage park positions *@
+                            <MudTooltip Text="Create, update or delete park positions" Placement="Placement.Top" Arrow="true">
+                                <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                                               Size="Size.Large"
+                                               Color="Color.Primary"
+                                               Disabled="@(!connected)"
+                                               OnClick="@(() => OpenManageParkPositionsDialogAsync(dn))" />
+                            </MudTooltip>
+
+                        </MudStack>
+
                     </MudStack>
                 </MudPaper>
 
@@ -156,7 +217,7 @@ else
                         <HandControllerPanel DeviceNumber="@dn" IsEnabled="@connected" />
                     </MudPaper>
 
-                    <MudPaper Elevation="1" Class="pa-3" Style="min-width:240px">
+                    <MudPaper Elevation="1" Class="pa-3">
                         <MudStack Spacing="2" AlignItems="AlignItems.Center">
                             @* Park..Limits vertical, centered *@
                             <MountButtonBar State="@s"
@@ -165,42 +226,46 @@ else
                                             Vertical="true"
                                             ShowPrimaryButtons="true"
                                             ShowStopButton="false" />
+                        </MudStack>
+                    </MudPaper>
 
-                            <MudDivider Class="my-1" Style="width:100%" />
+                </MudStack>
 
-                            @* Stop left, Disconnect right *@
-                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Style="width:100%">
-                                <MountButtonBar State="@s"
-                                                DeviceNumber="@dn"
-                                                IsConnected="@connected"
-                                                Vertical="false"
-                                                ShowPrimaryButtons="false"
-                                                ShowStopButton="true" />
+                @* -- Bottom action bar ------------------------------------- *@
+                <MudPaper Elevation="1" Class="pa-2 mt-3">
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
 
+                        @* Left: Shutdown controls *@
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudCheckBox @bind-Value="EnableShutdown" Label="Confirm shutdown" Dense="true" Color="Color.Primary" />
+                            <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Gracefully stops the server process. Use only when all mounts are parked and disconnected." Placement="Placement.Top" Arrow="true">
+                                <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Default" />
+                            </MudTooltip>
+                            <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="@AllowShutdown" OnClick="Shutdown">
+                                Shutdown
+                            </MudButton>
+                        </MudStack>
+
+                        @* Right: Stop + Connect *@
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MountButtonBar State="@s"
+                                            DeviceNumber="@dn"
+                                            IsConnected="@connected"
+                                            Vertical="false"
+                                            ShowPrimaryButtons="false"
+                                            ShowStopButton="true" />
                             <MudTooltip Text="Click to enable / disable controls" Placement="Placement.Top" Arrow="true">
                                 <MudButton Variant="Variant.Outlined"
                                            Color="@(connected ? Color.Error : Color.Success)"
                                            Size="Size.Small"
                                            OnClick="@(() => OnConnectToggleAsync(dn))">
-                                                 @(connected ? "Disconnect" : "Connect")
-                                                </MudButton>
-                                            </MudTooltip>
-                                            </MudStack>
+                                    @(connected ? "Disconnect" : "Connect")
+                                </MudButton>
+                            </MudTooltip>
+                        </MudStack>
 
-                                        </MudStack>
-                                    </MudPaper>
-
-                </MudStack>
-
-                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
-                    <MudCheckBox @bind-Value="EnableShutdown" Label="Confirm shutdown" Dense="true" Color="Color.Primary" />
-                    <MudTooltip Inline="false" RootStyle="max-width:260px" Text="Gracefully stops the server process. Use only when all mounts are parked and disconnected." Placement="Placement.Left" Arrow="true">
-                            <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Default" />
-                        </MudTooltip>
-                </MudStack>
-                <MudButton Variant="Variant.Filled" Color="Color.Error" Disabled="@AllowShutdown" OnClick="Shutdown">
-                    Shutdown
-                </MudButton>
+                    </MudStack>
+                </MudPaper>
             </MudTabPanel>
         }
     </MudTabs>

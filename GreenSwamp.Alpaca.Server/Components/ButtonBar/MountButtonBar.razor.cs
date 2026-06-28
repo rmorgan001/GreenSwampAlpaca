@@ -36,23 +36,6 @@ namespace GreenSwamp.Alpaca.Server.Components.ButtonBar
             CloseOnEscapeKey = true
         };
 
-        // -- Manage Park Positions ---------------------------------------------
-        private async Task OpenManageParkPositionsDialogAsync(int deviceNumber)
-        {
-            var parameters = new DialogParameters
-            {
-                [nameof(ManageParkPositionsDialog.DeviceNumber)] = deviceNumber
-            };
-            var options = new DialogOptions
-            {
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-                CloseOnEscapeKey = true,
-                CloseButton = true
-            };
-            await DialogService.ShowAsync<ManageParkPositionsDialog>("", parameters, options);
-        }
-
         // -- Park --------------------------------------------------------------
         private async Task OnParkClickAsync()
         {
@@ -76,18 +59,6 @@ namespace GreenSwamp.Alpaca.Server.Components.ButtonBar
                     () => DeviceManager.GetTelescope((uint)DeviceNumber).Park(),
                     "Park failed");
             }
-        }
-
-        private void OnParkPositionSelected(string positionName)
-        {
-            var mount = Mount;
-            if (mount == null) { Snackbar.Add($"Mount device {DeviceNumber} not found", Severity.Error); return; }
-
-            var position = mount.Settings.ParkPositions?.Find(p => p.Name == positionName);
-            if (position == null) { Snackbar.Add($"Park position '{positionName}' not found", Severity.Warning); return; }
-
-            mount.ParkSelected = position;
-            Snackbar.Add($"Park position set to: {positionName}", Severity.Info);
         }
 
         // -- Home --------------------------------------------------------------

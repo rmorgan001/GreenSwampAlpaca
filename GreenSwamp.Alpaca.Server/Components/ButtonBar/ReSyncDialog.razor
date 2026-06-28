@@ -3,14 +3,14 @@
 <MudDialog>
     <TitleContent>
         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-            <MudIcon Icon="@Icons.Material.Filled.Sync" Color="Color.Primary" />
+            <MudIcon Icon="@Icons.Material.Filled.SettingsEthernet" Color="Color.Primary" />
             <MudText Typo="Typo.h6">ReSync Axes</MudText>
         </MudStack>
     </TitleContent>
     <DialogContent>
         <MudStack Spacing="3" Class="mt-2">
             <MudText Typo="Typo.body2">
-                Reset the axis position counters to a reference point without moving the mount.
+                Resync the axixes to a reference point without moving the mount.
             </MudText>
             <MudRadioGroup T="ReSyncMode" @bind-Value="_mode">
                 <MudRadio T="ReSyncMode" Value="ReSyncMode.Home" Color="Color.Primary">Sync to Home position</MudRadio>

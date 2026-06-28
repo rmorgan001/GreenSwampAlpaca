@@ -11,66 +11,6 @@
 
     @if (ShowPrimaryButtons)
     {
-        @* -- Manage park positions ------------------------------------------- *@
-        <MudTooltip Text="Create, update or delete park positions"
-                    Placement="Placement.Top" Arrow="true">
-            <MudButton Variant="Variant.Outlined"
-                       Color="Color.Default"
-                       Size="Size.Small"
-                       StartIcon="@Icons.Material.Filled.LocalParking"
-                       Disabled="@(!IsConnected)"
-                       OnClick="@(() => OpenManageParkPositionsDialogAsync(DeviceNumber))">
-                Manage Park Positions
-            </MudButton>
-        </MudTooltip>
-
-        <MudButtonGroup Variant="Variant.Outlined"
-                        Size="Size.Small"
-                        DropShadow="false"
-                        OverrideStyles="false">
-
-            @* -- Park / Unpark ----------------------------------------------- *@
-            <MudTooltip Text="@(State.AtPark ? "Unpark the mount" : "Park the mount at the selected position")"
-                        Placement="Placement.Top" Arrow="true">
-                <MudButton Variant="Variant.Outlined"
-                           Color="@(State.AtPark ? Color.Warning : Color.Primary)"
-                           Size="Size.Small"
-                           Disabled="@(!IsConnected || (State.AtPark
-                                                ? !(Mount?.Settings.CanUnPark ?? false)
-                                                : !(Mount?.Settings.CanPark ?? false)))"
-                           OnClick="OnParkClickAsync">
-                    @if (State.AtPark)
-                    {
-                        @(string.IsNullOrEmpty(State.ParkSelectedName) ? "Unpark" : $"Unpark: {State.ParkSelectedName}")
-                    }
-                    else
-                    {
-                        @(string.IsNullOrEmpty(State.ParkSelectedName) ? "Park" : $"Park: {State.ParkSelectedName}")
-                    }
-                </MudButton>
-            </MudTooltip>
-            <MudTooltip Text="Select park position" Placement="Placement.Top" Arrow="true">
-                <MudMenu Icon="@Icons.Material.Filled.ArrowDropDown"
-                         Variant="Variant.Outlined"
-                         Color="@(State.AtPark ? Color.Warning : Color.Primary)"
-                         Size="Size.Small"
-                         Style="align-self: auto;"
-                         Disabled="@(State.AtPark || !IsConnected || !(Mount?.Settings.CanPark ?? false))">
-                    @if (State.ParkPositionNames.Count > 0)
-                    {
-                        @foreach (var posName in State.ParkPositionNames)
-                        {
-                            <MudMenuItem OnClick="@(() => OnParkPositionSelected(posName))">@posName</MudMenuItem>
-                        }
-                    }
-                    else
-                    {
-                        <MudMenuItem Disabled="true">No positions configured</MudMenuItem>
-                    }
-                </MudMenu>
-            </MudTooltip>
-        </MudButtonGroup>
-
         @* -- Park ----------------------------------------------------------- *@
         <MudTooltip Text="@(State.AtPark ? "Unpark the mount" : "Park the mount at the selected position")"
                     Placement="Placement.Top" Arrow="true">
@@ -106,7 +46,7 @@
         </MudTooltip>
 
         @* -- ReSync ------------------------------------------------------ *@
-        <MudTooltip Text="Reset axis counters to a reference position" Placement="Placement.Top" Arrow="true">
+        <MudTooltip Text="Resync axes to a reference position" Placement="Placement.Top" Arrow="true">
             <MudIconButton Variant="Variant.Text" Color="Color.Primary"
                            Icon="@Icons.Material.Filled.SettingsEthernet"
                            Size="Size.Large"
@@ -129,7 +69,7 @@
         }
 
         @* -- AutoHome ---------------------------------------------------- *@
-        <MudTooltip Text="Search for home sensor and re-index axes" Placement="Placement.Top" Arrow="true">
+        <MudTooltip Text="Search for home sensor and reset axes" Placement="Placement.Top" Arrow="true">
             <MudIconButton Variant="Variant.Text"
                        Color="@(State.IsAutoHomeRunning ? Color.Warning : Color.Primary)"
                        Icon="@HomeSearchIcon"
@@ -153,7 +93,7 @@
         </MudTooltip>
 
         @* -- Voice ----------------------------------------------------------- *@
-        <MudTooltip Text="@(!State.VoiceActive ? "Voice on" : "Voice off")" Placement="Placement.Top" Arrow="true">
+        <MudTooltip Text="@(!State.VoiceActive ? "Enable voice announcements" : "Disable voice announcements")" Placement="Placement.Top" Arrow="true">
             <MudIconButton Color="Color.Primary" Variant="Variant.Text"
                            Icon="@(!State.VoiceActive ? Icons.Material.Filled.RecordVoiceOver : Icons.Material.Filled.VoiceOverOff)"
                            Size="Size.Large"
