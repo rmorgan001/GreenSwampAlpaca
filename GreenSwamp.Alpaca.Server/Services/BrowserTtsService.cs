@@ -7,11 +7,15 @@ namespace GreenSwamp.Alpaca.Server.Services
     /// </summary>
     public sealed class BrowserTtsService(IJSRuntime js) : IAsyncDisposable
     {
+        // A new token is generated each server start, forcing the browser to re-fetch
+        // tts.js regardless of its module-registry cache state.
+        private static readonly string _jsVersion = Guid.NewGuid().ToString("N");
+
         private IJSObjectReference? _module;
 
         private async ValueTask<IJSObjectReference> GetModuleAsync()
             => _module ??= await js.InvokeAsync<IJSObjectReference>(
-                "import", "./js/tts.js");
+                "import", $"./js/tts.js?v={_jsVersion}");
 
         /// <summary>
         /// Speaks <paramref name="text"/> using the specified voice and volume.
