@@ -1,5 +1,6 @@
 ﻿@page "/mount-control"
 @page "/mount-control/{DeviceNumber:int}"
+@using ASCOM.Common.DeviceInterfaces;
 @using GreenSwamp.Alpaca.Server.Components
 @using GreenSwamp.Alpaca.Server.Components.ButtonBar
 @using GreenSwamp.Alpaca.Server.Services
@@ -109,6 +110,13 @@ else
                                         Placement="Placement.Bottom" Arrow="true">
                                 <MudIcon Icon="@Icons.Material.Filled.TrackChanges"
                                          Color="@(s.Tracking ? Color.Success : Color.Default)"
+                                         Size="Size.Large" />
+                            </MudTooltip>
+
+                            <MudTooltip Text="@(s.SideOfPier == PointingState.Normal ? $"Pier Side East" : "Pier Side West")"
+                                        Placement="Placement.Bottom" Arrow="true">
+                                <MudIcon Icon="@(s.SideOfPier == PointingState.Normal ? Icons.Material.Filled.NorthEast : Icons.Material.Filled.NorthWest)"
+                                         Color="@(connected ? Color.Success : Color.Default)"
                                          Size="Size.Large" />
                             </MudTooltip>
 
