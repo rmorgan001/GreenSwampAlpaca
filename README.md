@@ -2,7 +2,7 @@
 
 **ASCOM Alpaca Server for Telescope Mount Control**
 
-A modern .NET 8 Blazor-based ASCOM Alpaca server that provides remote control of astronomical telescope mounts via a RESTful HTTP API. Supports both simulated mounts and physical SkyWatcher/Orion mounts.
+A modern .NET 10 Blazor-based ASCOM Alpaca server that provides remote control of astronomical telescope mounts via a RESTful HTTP API. Supports both simulated mounts and physical SkyWatcher/Orion mounts.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)](https://dotnet.microsoft.com/download)
@@ -26,7 +26,6 @@ A modern .NET 8 Blazor-based ASCOM Alpaca server that provides remote control of
 ### 🎯 **Advanced Features**
 - **Precision GOTO** - Multi-stage slewing with sub-arcsecond precision
 - **Pulse Guiding** - Full support for autoguiding applications (PHD2, MetaGuide)
-- **Periodic Error Correction (PEC)** - Record and playback PEC curves
 - **Tracking Modes** - Sidereal, Lunar, Solar, and King rates
 - **Park Positions** - Multiple configurable park positions
 - **Auto Home** - Automated homing using mount sensors
@@ -39,6 +38,4 @@ A modern .NET 8 Blazor-based ASCOM Alpaca server that provides remote control of
 - **Position Display** - Live RA/Dec, Alt/Az, and status information
 - **Configuration Management** - Web-based settings and calibration
 - **Monitoring & Logging** - Real-time operation logs and diagnostics
-llation
 
-1. **Clone the repository:**
